@@ -6,6 +6,13 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  --background-dark: 16, 16, 16;
+  --background-primary: 27, 27, 27;
+  --btn-primary: 255, 229, 0;
+  --sidenav-btn-bg: 92, 83, 1;
+  --sidenav-btn-primary: 246, 237, 153;
+  --sidenav-btn-secondary: 230, 183, 2;
+  --text-primary: 248, 248, 248;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,4 +37,35 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.bg-neutral {
+  background-color: rgb(var(--background-dark));
+  background-repeat: no-repeat;
+}
+
+[data-animation-speed="slow"] {
+  --_animation-speed: 40s;
+}
+
+[data-animation-speed="fast"] {
+  --_animation-speed: 5s;
+}
+
+[data-animation-direction="left"] {
+  --_animation-direction: forwards;
+}
+
+[data-animation-direction="right"] {
+  --_animation-direction: reverse;
+}
+
+.mask {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    white 20%,
+    white 80%,
+    transparent
+  );
 }

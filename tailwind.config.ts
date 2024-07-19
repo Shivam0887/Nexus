@@ -8,13 +8,42 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      colors: {
+        primary: "rgb(var(--background-primary))",
+        "btn-primary": "rgb(var(--btn-primary))",
+        "text-primary": "rgb(var(--text-primary))",
+        "text-secondary": "rgb(var(--text-primary) / 50%)",
+        "sidenav-btn-bg": "rgb(var(--sidenav-btn-bg))",
+        "sidenav-btn-primary": "rgb(var(--sidenav-btn-primary))",
+        "sidenav-btn-secondary": "rgb(var(--sidenav-btn-secondary))",
+      },
       backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+        "gradient-radial":
+          "radial-gradient(circle at center, var(--tw-gradient-stops))",
+      },
+      animation: {
+        "infinite-move":
+          "move var(--_animation-speed, 10s) linear infinite var(--_animation-direction, forwards)",
+      },
+      keyframes: {
+        move: {
+          to: {
+            transform: "translateX(calc(-50% - 1.25rem))",
+          },
+        },
       },
     },
   },
   plugins: [],
+  // blocklist
+  // corePlugins
+  // darkMode
+  // experimental
+  // future
+  // important
+  // prefix
+  // presets
+  // safelist
+  // separator
 };
 export default config;
