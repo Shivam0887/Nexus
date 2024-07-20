@@ -1,3 +1,5 @@
+export const words = ["visual", "contextual", "voice"];
+
 export const images = [
   {
     src: "./Gmail.svg",

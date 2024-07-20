@@ -25,12 +25,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  cursor: url("./../public/cursor.svg"), auto;
 }
 
 @layer utilities {
@@ -68,4 +63,68 @@ body {
     white 80%,
     transparent
   );
+}
+
+.animate-modal {
+  width: 9rem;
+  height: 3rem;
+  overflow: hidden;
+  position: relative;
+  border-radius: 1rem;
+  background-color: rgb(var(--btn-primary));
+  color: black;
+  font-weight: 700;
+
+  .modal_icon,
+  .modal_text {
+    padding: 0.5rem;
+    position: absolute;
+    width: 8rem;
+    text-align: center;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.5s;
+  }
+
+  .modal_icon {
+    display: flex;
+    justify-content: center;
+    left: -50%;
+  }
+}
+
+.animate-modal:hover {
+  .modal_icon {
+    left: 50%;
+  }
+
+  .modal_text {
+    left: 150%;
+  }
+}
+
+@media (max-width: 640px) {
+  .animate-modal {
+    width: 7rem;
+    height: 2.5rem;
+
+    .modal_icon,
+    .modal_text {
+      font-size: small;
+    }
+  }
+}
+
+.char {
+  opacity: 0;
+  filter: blur(5px);
+  animation: fadeIn 1.5s forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+  }
 }

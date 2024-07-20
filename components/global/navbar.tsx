@@ -24,7 +24,7 @@ export default function Navbar() {
           </h2>
         </div>
         <div className="flex gap-10 items-center">
-          <ul className="relative flex justify-center gap-10">
+          <ul className="relative hidden md:flex justify-center gap-10 ">
             <li
               onMouseOver={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
