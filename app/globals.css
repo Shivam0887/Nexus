@@ -23,9 +23,25 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   cursor: url("./../public/cursor.svg"), auto;
+  scrollbar-color: rgb(34, 34, 34);
+  scrollbar-width: 20px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: rgb(255, 238, 0);
+}
+
+body::-webkit-scrollbar {
+  width: 5px;
+  height: 8px;
+  background-color: #101010;
 }
 
 @layer utilities {
@@ -119,12 +135,71 @@ body {
 .char {
   opacity: 0;
   filter: blur(5px);
-  animation: fadeIn 1.5s forwards;
+  animation: fadeIn 0.5s linear forwards;
 }
 
 @keyframes fadeIn {
   to {
     opacity: 1;
     filter: blur(0px);
+  }
+}
+
+.card1 {
+  left: 10%;
+  transform: rotateX(50deg) rotateY(50deg) rotateZ(-50deg);
+
+  @media (min-width: 768px) {
+    left: 20%;
+  }
+}
+
+.card2 {
+  left: 20%;
+  transform: rotateX(45deg) rotateY(45deg) rotateZ(-45deg);
+
+  @media (min-width: 768px) {
+    left: 30%;
+  }
+}
+
+.card3 {
+  left: 30%;
+  transform: rotateX(40deg) rotateY(40deg) rotateZ(-40deg);
+
+  @media (min-width: 768px) {
+    left: 40%;
+  }
+}
+
+.card4 {
+  left: 40%;
+  transform: rotateX(35deg) rotateY(35deg) rotateZ(-35deg);
+
+  @media (min-width: 768px) {
+    left: 50%;
+  }
+}
+
+.card5 {
+  left: 50%;
+  transform: rotateX(30deg) rotateY(30deg) rotateZ(-30deg);
+
+  @media (min-width: 768px) {
+    left: 60%;
+  }
+}
+
+.animate-forwards {
+  width: 600px;
+  height: 500px;
+  z-index: 50;
+  left: 50%;
+  top: -50%;
+  transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) translate(-50%, -50%);
+
+  @media screen and (max-width: 640px) {
+    width: 80vw;
+    height: 70vh;
   }
 }

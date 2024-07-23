@@ -1,23 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Flipwords = ({ words }: { words: string[] }) => {
   const [word, setWord] = useState<string[]>([]);
+  const wordsRef = useRef(words);
 
   useEffect(() => {
     let i = 0;
-    let n = words.length;
+    let n = wordsRef.current.length;
 
     const animate = () => {
       let j = 0;
 
       const id = setInterval(() => {
-        const s = words[i][j];
+        const s = wordsRef.current[i][j];
         setWord((prev) => [...prev, s]);
         j++;
 
-        if (j === words[i].length) {
+        if (j === wordsRef.current[i].length) {
           i = (i + 1) % n;
 
           clearInterval(id);
@@ -31,7 +32,7 @@ export const Flipwords = ({ words }: { words: string[] }) => {
     };
 
     animate();
-  }, [words]);
+  }, []);
 
   return (
     <span className="text-btn-primary">

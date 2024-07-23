@@ -52,7 +52,7 @@ export default function Navbar() {
               </span>
             </li>
             <li className="p-2">
-              <Link href="/#featues">Features</Link>
+              <Link href="/#features">Features</Link>
             </li>
             <li className="p-2">
               <Link href="/#pricing">Pricing</Link>

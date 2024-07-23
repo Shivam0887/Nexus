@@ -1,11 +1,13 @@
-import { InfiniteCard } from "@/components/ui/infinite-card";
+import Cards from "@/components/ui/cards";
 import { Flipwords } from "@/components/ui/flipwords";
-
-import { MaxWidthWrapper } from "@/components/global/max-width-wrapper";
-import { temp, words } from "@/lib/constants";
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { Spotlight } from "@/components/ui/spotlight";
+import { InfiniteCard } from "@/components/ui/infinite-card";
+
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
+
+import { features, temp, words } from "@/lib/constants";
+import { MaxWidthWrapper } from "@/components/global/max-width-wrapper";
 
 export default function Home() {
   return (
@@ -65,11 +67,19 @@ export default function Home() {
         </div>
 
         {/* features section */}
-        <div className="overflow-hidden spotlight_container relative h-screen pt-20 px-10">
-          <div className="spotlight_item absolute h-max md:w-1/2 w-full opacity-0 left-[15%] transition-all duration-[2000ms] -top-40 translate-y-[-100%]">
+        <div
+          id="features"
+          className="overflow-hidden spotlight_container relative min-h-screen px-10"
+        >
+          {/* Grid bg */}
+          <div className="h-full left-1/2 -translate-x-1/2 w-full bg-primary bg-grid-small-white/[0.1] absolute [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha] opacity-50" />
+
+          {/* Spotlight */}
+          <div className="spotlight_item absolute h-max md:w-1/2 w-full opacity-0 left-0 transition-all duration-[2000ms] -top-40 translate-y-[-100%]">
             <Spotlight />
           </div>
-          <div className="max-w-2xl">
+
+          <div className="relative pt-20 max-w-2xl">
             <h1 className="sm:text-5xl text-3xl">
               Unleash the Power of Advanced{" "}
               <span>
@@ -85,6 +95,19 @@ export default function Home() {
               search, voice search, and advanced filtering and sorting, Nexus
               revolutionizes the way you search for information.
             </p>
+          </div>
+
+          <div className="relative my-12 flex [perspective:1000px]">
+            {features.map(({ colorPalette, desc, title }, i) => (
+              <Cards
+                key={colorPalette}
+                colorPalette={colorPalette}
+                title={title}
+                desc={(desc[0].toUpperCase() + desc.substring(1)).split(" ")}
+                delay={(i + 1) * 100}
+                className={`w-[300px] h-[250px] absolute transition-all duration-500 card${i + 1}`}
+              />
+            ))}
           </div>
         </div>
       </main>
