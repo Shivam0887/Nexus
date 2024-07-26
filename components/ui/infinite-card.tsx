@@ -1,6 +1,6 @@
 "use client";
 
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -13,6 +13,7 @@ type InfiniteCardProps = {
     height: number;
   }[];
   className?: string;
+  itemsClassName?: string;
   animationSpeed?: "slow" | "normal" | "fast";
   animationDirection?: "left" | "right";
   animationDelay?: string;
@@ -22,6 +23,7 @@ type InfiniteCardProps = {
 export const InfiniteCard = ({
   cardItems,
   className,
+  itemsClassName,
   animationDirection = "left",
   animationSpeed = "normal",
   animationDelay = "0s",
@@ -44,14 +46,17 @@ export const InfiniteCard = ({
 
   return (
     <div
-      className={clsx("overflow-hidden relative w-[512px]", className, {
+      className={cn("overflow-hidden relative w-[512px]", className, {
         mask: mask,
       })}
       data-animation-speed={animationSpeed}
       data-animation-direction={animationDirection}
     >
       <div
-        className="flex w-max h-[250px] gap-10 animate-infinite-move"
+        className={cn(
+          "flex w-max h-[250px] gap-10 animate-infinite-move",
+          itemsClassName
+        )}
         style={{ animationDelay }}
       >
         {items.map(({ alt, src, key, height, width }) => (

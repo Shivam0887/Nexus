@@ -50,7 +50,7 @@ export const StickyScroll = ({
           (container.scrollHeight - container.clientHeight);
 
         beam.style.top = `${scrollYProgress * 100}%`;
-        beam.style.height = `${scrollYProgress * 50}%`;
+        beam.style.height = `${scrollYProgress * 25}%`;
 
         let closestBreakpointIndex = 0;
 
@@ -119,7 +119,7 @@ export const StickyScroll = ({
             >
               <h2
                 className={cn(
-                  "text-3xl font-bold text-[#cbd5e1] opacity-30 transition-opacity duration-500 ease-linear",
+                  "md:text-3xl text-2xl font-bold text-[#cbd5e1] opacity-30 transition-opacity duration-500 ease-linear",
                   activeCard === index && "opacity-100"
                 )}
               >
@@ -127,7 +127,7 @@ export const StickyScroll = ({
               </h2>
               <p
                 className={cn(
-                  "text-lg text-[#94a3b8] opacity-30 transition-opacity duration-500 ease-linear",
+                  "md:text-lg text-base text-[#94a3b8] opacity-30 transition-opacity duration-500 ease-linear",
                   activeCard === index && "opacity-100"
                 )}
               >

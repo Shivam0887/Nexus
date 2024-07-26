@@ -6,7 +6,7 @@ import { InfiniteCard } from "@/components/ui/infinite-card";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { content, features, temp, words } from "@/lib/constants";
+import { content, features, images, temp, words } from "@/lib/constants";
 import { MaxWidthWrapper } from "@/components/global/max-width-wrapper";
 import Image from "next/image";
 import { StickyScroll } from "@/components/ui/sticky-scroll";
@@ -55,14 +55,14 @@ export default function Home() {
               <div className="w-[110vh] h-max md:flex flex-col rotate-90 justify-center items-center gap-10">
                 <InfiniteCard
                   cardItems={temp.slice(0, 3)}
-                  animationSpeed="slow"
                   className="w-full"
+                  animationSpeed="slow"
                 />
                 <InfiniteCard
                   cardItems={temp.slice(3)}
-                  animationSpeed="slow"
                   animationDelay="-5s"
                   className="w-full"
+                  animationSpeed="slow"
                 />
               </div>
             </section>
@@ -83,7 +83,7 @@ export default function Home() {
           </div>
 
           <div className="relative pt-20 max-w-2xl">
-            <h1 className="sm:text-5xl text-3xl">
+            <h1 className="md:text-5xl text-3xl">
               Unleash the Power of Advanced{" "}
               <span>
                 <Flipwords words={words} />
@@ -119,7 +119,7 @@ export default function Home() {
         {/* working section */}
 
         <div className="flex flex-col h-screen overflow-hidden relative gap-20 items-center py-10">
-          <h1 className="sm:text-5xl text-3xl sticky z-50 top-10">
+          <h1 className="md:text-5xl text-3xl sticky z-50 top-10">
             How Nexus Works<span className="text-btn-primary">?</span>
           </h1>
           <WavyBackground
@@ -128,10 +128,28 @@ export default function Home() {
             waveWidth={30}
             containerClassName="[mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha]"
           >
-            <div className="relative w-[80%]">
+            <div className="relative sm:w-[90%] w-full">
               <StickyScroll content={content} />
             </div>
           </WavyBackground>
+        </div>
+
+        <div className="px-10 my-20 flex flex-col gap-10 items-center">
+          <h1 className="md:text-5xl text-3xl">
+            All your favorite apps. One{" "}
+            <span className="text-btn-primary">AI search</span>
+          </h1>
+          <p>
+            Instantly sync your favorite apps like Gmail, Slack, Notion, and
+            Drive to quickly find answers and information in real time
+          </p>
+          <InfiniteCard
+            cardItems={images}
+            className="sm:w-[90%] w-full mt-10"
+            animationSpeed="slow"
+            itemsClassName="h-[64px]"
+            mask
+          />
         </div>
       </main>
     </MaxWidthWrapper>

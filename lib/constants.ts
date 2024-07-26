@@ -56,6 +56,62 @@ export const images = [
     width: 64,
     height: 64,
   },
+  {
+    src: "./Discord.svg",
+    alt: "Discord logo",
+    key: "discord",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Dropbox.svg",
+    alt: "Dropbox logo",
+    key: "dropbox",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Github.svg",
+    alt: "GitHub logo",
+    key: "gitHub",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Google_Docs.svg",
+    alt: "Google Docs logo",
+    key: "docs",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Google_Drive.svg",
+    alt: "Google Drive logo",
+    key: "drive",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Notion.svg",
+    alt: "Notion logo",
+    key: "notion",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./OneDrive.svg",
+    alt: "OneDrive logo",
+    key: "oneDrive",
+    width: 64,
+    height: 64,
+  },
+  {
+    src: "./Outlook.svg",
+    alt: "Outlook logo",
+    key: "outlook",
+    width: 64,
+    height: 64,
+  },
 ];
 
 export const temp = [
