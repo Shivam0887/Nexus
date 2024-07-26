@@ -175,3 +175,21 @@ export const colorPalettes: COLOR_PALETTES = {
     },
   },
 };
+
+export const content = [
+  {
+    title: "Sign up - Quick Registration",
+    desc: "Create your Nexus account with your email and a password, or use your Google account for instant access.",
+    content: "",
+  },
+  {
+    title: "Connect your Apps - Easy Integration",
+    desc: "Link your work apps like Gmail, Slack, OneDrive, and Google Drive through a secure process. Nexus uses safe APIs to ensure your data remains private.",
+    content: "",
+  },
+  {
+    title: "Start searching - Instant Access",
+    desc: "Type your query into the search bar to quickly find emails, messages, tickets, or documents from all connected apps. Enjoy advanced features like contextual search, voice search, and real-time results.",
+    content: "",
+  },
+];

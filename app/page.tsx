@@ -6,13 +6,16 @@ import { InfiniteCard } from "@/components/ui/infinite-card";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { features, temp, words } from "@/lib/constants";
+import { content, features, temp, words } from "@/lib/constants";
 import { MaxWidthWrapper } from "@/components/global/max-width-wrapper";
+import Image from "next/image";
+import { StickyScroll } from "@/components/ui/sticky-scroll";
+import { WavyBackground } from "@/components/ui/wavy-background";
 
 export default function Home() {
   return (
     <MaxWidthWrapper>
-      <main>
+      <main className="relative">
         {/* Hero section */}
         <div className="bg-[url('/bg-gradient.png')] bg-no-repeat bg-center bg-cover overflow-hidden h-[calc(100vh-56px)]">
           <div className="w-full h-full flex gap-10">
@@ -49,7 +52,7 @@ export default function Home() {
               <span className="absolute right-32 -bottom-32 opacity-10 rounded-full w-28 h-28 bg-gradient-radial from-[#D9D9D9] to-[#737373]" />
             </section>
             <section className="hidden w-1/2 md:flex justify-center">
-              <div className="w-[100vh] h-max md:flex flex-col rotate-90 justify-center items-center gap-10">
+              <div className="w-[110vh] h-max md:flex flex-col rotate-90 justify-center items-center gap-10">
                 <InfiniteCard
                   cardItems={temp.slice(0, 3)}
                   animationSpeed="slow"
@@ -105,10 +108,30 @@ export default function Home() {
                 title={title}
                 desc={(desc[0].toUpperCase() + desc.substring(1)).split(" ")}
                 delay={(i + 1) * 100}
-                className={`w-[300px] h-[250px] absolute transition-all duration-500 card${i + 1}`}
+                className={`w-[300px] h-[250px] absolute transition-all duration-500 card${
+                  i + 1
+                }`}
               />
             ))}
           </div>
+        </div>
+
+        {/* working section */}
+
+        <div className="flex flex-col h-screen overflow-hidden relative gap-20 items-center py-10">
+          <h1 className="sm:text-5xl text-3xl sticky z-50 top-10">
+            How Nexus Works<span className="text-btn-primary">?</span>
+          </h1>
+          <WavyBackground
+            className="w-full flex justify-center"
+            backgroundFill="#101010"
+            waveWidth={30}
+            containerClassName="[mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha]"
+          >
+            <div className="relative w-[80%]">
+              <StickyScroll content={content} />
+            </div>
+          </WavyBackground>
         </div>
       </main>
     </MaxWidthWrapper>
