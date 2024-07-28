@@ -1,4 +1,5 @@
-import { COLOR_PALETTES, PALETTE_NAME } from "./types";
+import { COLOR_PALETTES, FAQ, PALETTE_NAME, PLAN } from "./types";
+import { Check, X } from "lucide-react";
 
 export const words = ["visual", "contextual", "voice"];
 
@@ -81,13 +82,6 @@ export const images = [
     src: "./Google_Docs.svg",
     alt: "Google Docs logo",
     key: "docs",
-    width: 64,
-    height: 64,
-  },
-  {
-    src: "./Google_Drive.svg",
-    alt: "Google Drive logo",
-    key: "drive",
     width: 64,
     height: 64,
   },
@@ -247,5 +241,101 @@ export const content = [
     title: "Start searching - Instant Access",
     desc: "Type your query into the search bar to quickly find emails, messages, tickets, or documents from all connected apps. Enjoy advanced features like contextual search, voice search, and real-time results.",
     content: "",
+  },
+];
+
+export const plans: PLAN[] = [
+  {
+    plan: "Starter",
+    price: "0",
+    desc: "For starter, get started with free plan forever and ever.",
+    features: [
+      {
+        content: "50 credits global search",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "50 credits for AI chat, translate, and summarize",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "10 credits for visual search",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "Multiple account integrations",
+        icon: X,
+        available: false,
+      },
+      {
+        content: "Workspace analytics",
+        icon: X,
+        available: false,
+      },
+      {
+        content: "Intregration Passkey",
+        icon: X,
+        available: false,
+      },
+    ],
+  },
+  {
+    plan: "Professional",
+    price: "19",
+    desc: "For professional, get everything in free plus something extra.",
+    features: [
+      {
+        content: "Unlimited global search",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "Unlimited credits for AI chat, translate, and summarize",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "100 credits for visual search",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "Multiple account integrations",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "Workspace analytics",
+        icon: Check,
+        available: true,
+      },
+      {
+        content: "Intregration Passkey",
+        icon: Check,
+        available: true,
+      },
+    ],
+  },
+];
+
+export const faqs: FAQ[] = [
+  {
+    title: "How does Nexus work?",
+    desc: "Nexus uses AI-powered search algorithms to centralize information from various work applications. It fetches data in real-time without storing it, ensuring security and privacy.",
+  },
+  {
+    title: "What are the advanced features of Nexus?",
+    desc: "Nexus offers advanced features like smart contextual search, voice search, advanced filtering and sorting, personalized dashboards, multi-language support, visual search capability, authentication security, saved filter presets, and integration with Google Calendar.",
+  },
+  {
+    title: "How can I integrate Nexus with my work applications?",
+    desc: "Nexus supports integration with popular work applications like Gmail, Slack, Notion, and Google Drive. You can easily connect your accounts and access data from these platforms within Nexus.",
+  },
+  {
+    title: "Can I search using images in Nexus?",
+    desc: "Absolutely! Nexus integrates image recognition technology, allowing you to search using images and receive related documents or information.",
   },
 ];

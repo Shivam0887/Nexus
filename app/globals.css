@@ -147,7 +147,7 @@ body::-webkit-scrollbar {
 
 .card1 {
   left: 10%;
-  transform: rotateX(50deg) rotateY(50deg) rotateZ(-50deg);
+  transform: rotateX(45deg) rotateY(50deg) rotateZ(-50deg);
 
   @media (min-width: 768px) {
     left: 20%;
@@ -156,7 +156,7 @@ body::-webkit-scrollbar {
 
 .card2 {
   left: 20%;
-  transform: rotateX(45deg) rotateY(45deg) rotateZ(-45deg);
+  transform: rotateX(40deg) rotateY(45deg) rotateZ(-45deg);
 
   @media (min-width: 768px) {
     left: 30%;
@@ -165,7 +165,7 @@ body::-webkit-scrollbar {
 
 .card3 {
   left: 30%;
-  transform: rotateX(40deg) rotateY(40deg) rotateZ(-40deg);
+  transform: rotateX(35deg) rotateY(40deg) rotateZ(-40deg);
 
   @media (min-width: 768px) {
     left: 40%;
@@ -174,7 +174,7 @@ body::-webkit-scrollbar {
 
 .card4 {
   left: 40%;
-  transform: rotateX(35deg) rotateY(35deg) rotateZ(-35deg);
+  transform: rotateX(30deg) rotateY(35deg) rotateZ(-35deg);
 
   @media (min-width: 768px) {
     left: 50%;
@@ -183,7 +183,7 @@ body::-webkit-scrollbar {
 
 .card5 {
   left: 50%;
-  transform: rotateX(30deg) rotateY(30deg) rotateZ(-30deg);
+  transform: rotateX(25deg) rotateY(30deg) rotateZ(-30deg);
 
   @media (min-width: 768px) {
     left: 60%;
@@ -195,11 +195,56 @@ body::-webkit-scrollbar {
   height: 500px;
   z-index: 50;
   left: 50%;
-  top: -50%;
   transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) translate(-50%, -50%);
 
   @media screen and (max-width: 640px) {
     width: 80vw;
     height: 70vh;
+  }
+}
+
+.pricing-card {
+  box-shadow: 0px 5px 10px 5px var(--shadow-color);
+  transition: box-shadow 0.5s;
+}
+
+.pricing-card.items-card1 {
+  --shadow-color: #854d0e;
+}
+
+.pricing-card.items-card2 {
+  --shadow-color: #075985;
+}
+
+.pricing-card:hover {
+  box-shadow: 0px 0px 10px 10px var(--shadow-color);
+}
+
+.pricing-card.stagger {
+  transform: translateX(-100%);
+  opacity: 0;
+  filter: blur(10px);
+}
+
+.pricing-card.stagger:first-child {
+  animation: stagger 1s ease forwards;
+}
+
+.pricing-card.stagger:last-child {
+  animation: stagger 1s ease 0.5s forwards;
+}
+
+.text {
+  background-clip: text;
+  font-weight: 600;
+  color: transparent;
+  background-image: linear-gradient(to top, #f5f5f5, #a3a3a3);
+}
+
+@keyframes stagger {
+  to {
+    transform: translateX(0%);
+    opacity: 1;
+    filter: blur(0px);
   }
 }

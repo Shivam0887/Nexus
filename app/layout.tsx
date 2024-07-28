@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${noto.className} bg-neutral`}>
+      <body className={`${noto.className} bg-neutral relative`}>
         <Navbar />
         {children}
       </body>

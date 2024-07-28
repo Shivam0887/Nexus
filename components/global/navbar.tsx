@@ -16,7 +16,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="bg-neutral">
+    <header className="bg-neutral-900/60 border-neutral-900 border-b backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
       <nav className="flex py-4 px-10 justify-between items-center">
         <div>
           <h2 className="text-2xl">
@@ -63,6 +63,6 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
-    </div>
+    </header>
   );
 }

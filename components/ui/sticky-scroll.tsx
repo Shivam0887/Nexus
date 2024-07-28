@@ -119,7 +119,7 @@ export const StickyScroll = ({
             >
               <h2
                 className={cn(
-                  "md:text-3xl text-2xl font-bold text-[#cbd5e1] opacity-30 transition-opacity duration-500 ease-linear",
+                  "md:text-3xl sm:text-2xl text-xl font-bold text-[#cbd5e1] opacity-30 transition-opacity duration-500 ease-linear",
                   activeCard === index && "opacity-100"
                 )}
               >
@@ -127,7 +127,7 @@ export const StickyScroll = ({
               </h2>
               <p
                 className={cn(
-                  "md:text-lg text-base text-[#94a3b8] opacity-30 transition-opacity duration-500 ease-linear",
+                  "md:text-lg sm:text-base text-sm text-[#94a3b8] opacity-30 transition-opacity duration-500 ease-linear",
                   activeCard === index && "opacity-100"
                 )}
               >

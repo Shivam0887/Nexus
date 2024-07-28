@@ -12,14 +12,13 @@ export const Spotlight = () => {
       ".spotlight_item"
     ) as HTMLDivElement;
 
-    const observer = new IntersectionObserver((entries) => {
+    const observer = new IntersectionObserver((entries, observer) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           spotlightItem.style.opacity = "100%";
           spotlightItem.style.translate = "0% 100%";
-        } else {
-          spotlightItem.style.opacity = "0%";
-          spotlightItem.style.translate = "0% -100%";
+
+          observer.unobserve(spotlightContainer);
         }
       });
     });
