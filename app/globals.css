@@ -120,29 +120,10 @@ body::-webkit-scrollbar {
   }
 }
 
-@media (max-width: 640px) {
-  .animate-modal {
-    width: 7rem;
-    height: 2.5rem;
-
-    .modal_icon,
-    .modal_text {
-      font-size: small;
-    }
-  }
-}
-
 .char {
   opacity: 0;
   filter: blur(5px);
   animation: fadeIn 0.5s linear forwards;
-}
-
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-    filter: blur(0px);
-  }
 }
 
 .card1 {
@@ -206,6 +187,7 @@ body::-webkit-scrollbar {
 .pricing-card {
   box-shadow: 0px 5px 10px 5px var(--shadow-color);
   transition: box-shadow 0.5s;
+  transform: translateX(-110%);
 }
 
 .pricing-card.items-card1 {
@@ -221,7 +203,7 @@ body::-webkit-scrollbar {
 }
 
 .pricing-card.stagger {
-  transform: translateX(-100%);
+  transform: translateX(-110%);
   opacity: 0;
   filter: blur(10px);
 }
@@ -241,10 +223,100 @@ body::-webkit-scrollbar {
   background-image: linear-gradient(to top, #f5f5f5, #a3a3a3);
 }
 
+.menu > div:first-child,
+.menu::after,
+.menu::before {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 3px;
+  opacity: 1;
+  background-color: #a3a3a3;
+  border-radius: 10px;
+  margin-top: 5px;
+}
+
+.cross {
+  position: absolute;
+  top: -1px;
+  left: 0px;
+  width: 125%;
+  height: 100%;
+
+  .line1,
+  .line2 {
+    position: absolute;
+    top: 5%;
+    left: 0%;
+    opacity: 0;
+    width: 0%;
+    height: 2.5px;
+    background-color: #a3a3a3;
+    border-radius: 10px;
+    transform-origin: left center;
+    rotate: 45deg;
+    animation: cross 0.2s ease forwards 0.5s;
+  }
+
+  .line2 {
+    top: 95%;
+    rotate: -45deg;
+  }
+}
+
+.menu::before {
+  margin-top: 0px;
+}
+
+.menu.alter::after {
+  animation: change 0.5s ease 0.2s forwards;
+}
+
+.menu > div:first-child.alter {
+  animation: change 0.5s ease 0.1s forwards;
+}
+
+.menu.alter::before {
+  animation: change 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes cross {
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+@keyframes change {
+  to {
+    width: 0px;
+    opacity: 0;
+  }
+}
+
 @keyframes stagger {
   to {
     transform: translateX(0%);
     opacity: 1;
     filter: blur(0px);
+  }
+}
+
+@media (max-width: 640px) {
+  .animate-modal {
+    width: 8rem;
+    height: 3rem;
+
+    .modal_icon,
+    .modal_text {
+      font-size: medium;
+    }
   }
 }

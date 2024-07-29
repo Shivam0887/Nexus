@@ -90,7 +90,7 @@ export const StickyScroll = ({
 
   return (
     <div
-      className="h-[30rem] w-[80%] mx-auto [scrollbar-width:none] overflow-y-auto flex relative px-3 rounded-lg transition duration-500 ease-linear"
+      className="h-[30rem] sm:w-[80%] w-[90%] mx-auto [scrollbar-width:none] overflow-y-auto flex relative px-3 rounded-lg transition duration-500 ease-linear"
       ref={ref}
       style={{
         backgroundColor: backgroundColors[activeCard],

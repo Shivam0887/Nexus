@@ -17,14 +17,14 @@ export default function Navbar() {
 
   return (
     <header className="bg-neutral-900/60 border-neutral-900 border-b backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
-      <nav className="flex py-4 px-10 justify-between items-center">
+      <nav className="flex py-4 sm:px-10 px-4 justify-between items-center">
         <div>
-          <h2 className="text-2xl">
+          <h2 className="sm:text-2xl text-xl">
             <Link href="/">Nexus</Link>
           </h2>
         </div>
         <div className="flex gap-10 items-center">
-          <ul className="relative hidden md:flex justify-center gap-10 ">
+          <ul className="relative md:text-lg text-base flex justify-center sm:gap-10 gap-4">
             <li
               onMouseOver={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
@@ -58,7 +58,7 @@ export default function Navbar() {
               <Link href="/#pricing">Pricing</Link>
             </li>
           </ul>
-          <button className="text-black bg-btn-primary py-2 px-8 rounded-2xl font-medium">
+          <button className="hidden sm:block text-black bg-btn-primary py-2 px-8 rounded-2xl font-medium">
             Sign up
           </button>
         </div>

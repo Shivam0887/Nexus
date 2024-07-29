@@ -23,8 +23,8 @@ export default function Home() {
           <section className="bg-[url('/bg-gradient.png')] bg-no-repeat bg-center lg:bg-cover overflow-hidden md:max-h-max h-[calc(100vh-56px)] lg:pb-[5.5rem]">
             <div className="w-full flex gap-10">
               <section className="relative my-40 flex flex-col justify-around px-10 space-y-4 w-full lg:w-1/2">
-                <div className="text">
-                  <h1 className="sm:text-5xl text-4xl">
+                <div>
+                  <h1 className="sm:text-5xl text-4xl text">
                     <span className="relative text">
                       Nexus
                       <span className="absolute z-0 -left-2 -top-14 opacity-20 rounded-full w-24 h-24 bg-gradient-to-b from-[#D9D9D9]" />
@@ -36,7 +36,7 @@ export default function Home() {
                     </span>{" "}
                     Assistant
                   </h1>
-                  <p className="sm:text-base text-sm !font-normal lg:mt-6 mt-10">
+                  <p className="sm:text-base text-sm !font-normal lg:mt-6 mt-10 text">
                     Centralize and access data across multiple work applications
                     with Nexus. Boost productivity and efficiency with instant
                     answers, document generation, and streamlined search
@@ -75,9 +75,6 @@ export default function Home() {
             id="features"
             className="overflow-hidden spotlight_container relative max-h-screen px-10"
           >
-            {/* Grid bg */}
-            {/* <div className="h-full left-1/2 -translate-x-1/2 w-full bg-primary bg-grid-small-white/[0.1] absolute [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha] opacity-50" /> */}
-
             {/* Spotlight */}
             <div className="spotlight_item absolute h-max md:w-1/2 w-full opacity-0 left-0 transition-all duration-[2000ms] -top-40 translate-y-[-100%]">
               <Spotlight />

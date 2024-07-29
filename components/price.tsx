@@ -7,19 +7,15 @@ import { plans } from "@/lib/constants";
 const Price = () => {
   useEffect(() => {
     const cards = document.querySelectorAll(".pricing-card");
-    const cardContainer = document.getElementById("pricing");
 
-    const observer = new IntersectionObserver(
-      (entries, observer) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("stagger");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0 }
-    );
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("stagger");
+          observer.unobserve(entry.target);
+        }
+      });
+    });
 
     cards.forEach((card) => observer.observe(card));
   }, []);
