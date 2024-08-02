@@ -63,6 +63,7 @@ const PricingCard = ({ options }: { options: PLAN }) => {
       </div>
 
       <AnimatedModal
+        href={`/billing?plan=${options.plan}`}
         icon={<ChevronRight />}
         className={`!w-full text-sm ${
           options.plan === "Starter" ? "!bg-btn-primary" : "!bg-sky-500"

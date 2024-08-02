@@ -30,7 +30,7 @@ const Accordion = ({ faqs }: { faqs: FAQ[] }) => {
         <div
           key={title}
           className={cn(
-            "bg-neutral-900 py-4 sm:px-10 px-6 flex flex-col justify-start space-y-2 text-neutral-300 rounded-3xl",
+            "bg-neutral-900 py-4 sm:px-10 px-6 flex transition-all duration-300 flex-col justify-start space-y-2 text-neutral-300 rounded-3xl",
             cardNum.has(i) && "bg-neutral-950"
           )}
         >
@@ -42,7 +42,14 @@ const Accordion = ({ faqs }: { faqs: FAQ[] }) => {
             {title}
             {cardNum.has(i) ? <ChevronUp /> : <ChevronDown />}
           </button>
-          <p className={`${cardNum.has(i) ? "block" : " hidden"}`}>{desc}</p>
+          <div
+            className={cn(
+              "transition-all duration-300 grid grid-rows-[0fr]",
+              cardNum.has(i) && "grid-rows-[1fr]"
+            )}
+          >
+            <p className="overflow-hidden">{desc}</p>
+          </div>
         </div>
       ))}
     </div>

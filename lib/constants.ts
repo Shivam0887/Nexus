@@ -1,5 +1,9 @@
 import { COLOR_PALETTES, FAQ, PALETTE_NAME, PLAN } from "./types";
 import { Check, X } from "lucide-react";
+import Analytics from "@/components/icons/analytics";
+import Integration from "@/components/icons/integration";
+import Settings from "@/components/icons/settings";
+import Search from "@/components/icons/search";
 
 export const words = ["visual", "contextual", "voice"];
 
@@ -338,4 +342,11 @@ export const faqs: FAQ[] = [
     title: "Can I search using images in Nexus?",
     desc: "Absolutely! Nexus integrates image recognition technology, allowing you to search using images and receive related documents or information.",
   },
+];
+
+export const icons = [
+  { Icon: Search, href: "/search", label: "Search" },
+  { Icon: Analytics, href: "/analytics", label: "Analytics" },
+  { Icon: Integration, href: "/integrations", label: "Integrations" },
+  { Icon: Settings, href: "/settings", label: "Settings" },
 ];

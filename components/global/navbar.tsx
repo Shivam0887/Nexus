@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignOutButton,
+  UserButton,
+} from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -58,9 +65,16 @@ export default function Navbar() {
               <Link href="/#pricing">Pricing</Link>
             </li>
           </ul>
-          <button className="hidden sm:block text-black bg-btn-primary py-2 px-8 rounded-2xl font-medium">
-            Sign up
-          </button>
+          <SignedOut>
+            <SignInButton>
+              <button className="hidden sm:block text-black bg-btn-primary py-2 px-8 rounded-2xl font-medium">
+                Sign up
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
         </div>
       </nav>
     </header>

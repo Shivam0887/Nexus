@@ -36,7 +36,7 @@ export default function Home() {
                     </span>{" "}
                     Assistant
                   </h1>
-                  <p className="sm:text-base text-sm !font-normal lg:mt-6 mt-10 text">
+                  <p className="sm:text-base text-sm !font-normal lg:mt-6 mt-10">
                     Centralize and access data across multiple work applications
                     with Nexus. Boost productivity and efficiency with instant
                     answers, document generation, and streamlined search
@@ -45,7 +45,7 @@ export default function Home() {
                 </div>
 
                 <div className="!mt-32">
-                  <AnimatedModal icon={<ChevronRight />}>
+                  <AnimatedModal icon={<ChevronRight />} href="/search">
                     Get started
                   </AnimatedModal>
                 </div>
