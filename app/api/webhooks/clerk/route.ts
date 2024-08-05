@@ -74,6 +74,20 @@ export async function POST(req: Request) {
         await User.findByIdAndDelete(user._id);
       }
     }
+  } else if (eventType === "user.updated") {
+    const imageUrl = evt.data.image_url;
+    const username = evt.data.username;
+    const userId = evt.data.id;
+
+    await User.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          imageUrl,
+          username,
+        },
+      }
+    );
   }
 
   return new Response("User created successfully", { status: 200 });

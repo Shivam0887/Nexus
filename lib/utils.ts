@@ -18,26 +18,41 @@ export async function ConnectToDB() {
   }
 
   if (!isConnected) {
-    isConnected = true;
-
     mongoose.set("strictQuery", true);
     await mongoose.connect(URI, {
       dbName: "Nexus",
     });
 
-    mongoose.connection.on("connected", () => {
-      console.log("✅ Connected to MongoDB!");
-    });
-    mongoose.connection.on("connecting", () => {
-      console.log("⏳ Connecting to MongoDB...");
-    });
-    mongoose.connection.on("disconnected", () => {
-      console.log("⚠️ Disconnected to MongoDB!");
-    });
+    switch (mongoose.connection.readyState) {
+      case 0: {
+        console.log("⚠️ Disconnected to MongoDB!");
+        break;
+      }
+      case 1: {
+        console.log("✅ Connected to MongoDB!");
+        break;
+      }
+      case 2: {
+        console.log("⏳ Connecting to MongoDB...");
+        break;
+      }
+      case 3: {
+        console.log("⏳ Disconnecting to MongoDB...");
+        break;
+      }
+      default: {
+        console.log("Unknown state");
+      }
+    }
 
+    mongoose.connection.off("error", () => {
+      console.log("❌ Error in MongoDB connection");
+    });
     mongoose.connection.on("error", () => {
       console.log("❌ Error in MongoDB connection");
     });
+
+    isConnected = true;
   } else {
     console.log("😎 Already connected to MongoDB!");
   }

@@ -17,6 +17,7 @@ const config: Config = {
         primary: "rgb(var(--background-primary))",
         secondary: "rgb(var(--background-dark))",
         "btn-primary": "rgb(var(--btn-primary))",
+        "btn-secondary": "rgb(var(--btn-secondary))",
         "text-primary": "rgb(var(--text-primary))",
         "text-secondary": "rgb(var(--text-primary) / 50%)",
         "sidenav-btn-bg": "rgb(var(--sidenav-btn-bg))",

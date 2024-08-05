@@ -9,6 +9,7 @@
   --background-dark: 16, 16, 16;
   --background-primary: 27, 27, 27;
   --btn-primary: 255, 229, 0;
+  --btn-secondary: 217, 217, 217;
   --sidenav-btn-bg: 92, 83, 1;
   --sidenav-btn-primary: 246, 237, 153;
   --sidenav-btn-secondary: 255, 155, 0;
@@ -34,11 +35,11 @@ body {
   scrollbar-width: 20px;
 }
 
-body::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: rgb(255, 238, 0);
 }
 
-body::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 5px;
   height: 8px;
   background-color: #101010;
