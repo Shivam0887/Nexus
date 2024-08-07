@@ -144,7 +144,7 @@ export default function Home() {
             </p>
             <InfiniteCard
               cardItems={images}
-              className="sm:w-[90%] w-full mt-10"
+              className="sm:max-w-[928px] w-full mt-10"
               animationSpeed="slow"
               itemsClassName="h-[64px] gap-14"
               mask
