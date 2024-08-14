@@ -39,3 +39,8 @@ export type FAQ = {
   title: string;
   desc: string;
 };
+
+export type PasskeyState = {
+  success: boolean;
+  error: string;
+};

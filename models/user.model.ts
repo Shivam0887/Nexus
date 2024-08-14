@@ -1,4 +1,4 @@
-import { Schema, model, models, InferSchemaType, Mongoose } from "mongoose";
+import { Schema, model, models, InferSchemaType } from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -18,6 +18,15 @@ const userSchema = new Schema(
     imageUrl: {
       type: String,
       required: true,
+    },
+    passkey: String,
+    hasPasskey: {
+      type: Boolean,
+      default: () => false,
+    },
+    shouldRemember: {
+      type: Boolean,
+      default: () => false,
     },
   },
   { timestamps: true }

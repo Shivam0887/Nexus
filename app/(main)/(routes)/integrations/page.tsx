@@ -1,14 +1,56 @@
+"use client";
+
 import { Inter } from "next/font/google";
 import { images } from "@/lib/constants";
 import IntegrationCard from "@/components/integration-card";
 import Image from "next/image";
+import Security from "@/components/security";
+import { useEffect, useRef, useState } from "react";
+import { getUser } from "@/actions/user.actions";
 
 const inter = Inter({ subsets: ["latin"] });
 
 const Page = () => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const securityRef = useRef<HTMLDivElement | null>(null);
+
+  const [isMediumScreen, setIsMediumScreen] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const securityContainer = securityRef.current;
+
+    if (container && securityContainer) {
+      securityContainer.style.height = isMediumScreen
+        ? `${container.scrollHeight}px`
+        : `${container.clientHeight}px`;
+    }
+  }, [isMediumScreen]);
+
+  useEffect(() => {
+    getUser()
+      .then(({ hasPasskey }) => setHasPasskey(hasPasskey))
+      .catch((e) => console.log(e));
+
+    const container = containerRef.current;
+
+    const handleResize = () => {
+      if (container) {
+        const width = window.innerWidth;
+        setIsMediumScreen(width < 768);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <div
-      className={`relative m-4 h-[calc(100%-2rem)] overflow-auto flex md:flex-row flex-col bg-neutral-900 rounded-2xl ${inter.className}`}
+      ref={containerRef}
+      className={`relative select-none sm:mx-4 my-4 mx-0 overflow-y-auto max-h-[calc(100%-2rem)] flex md:flex-row flex-col bg-neutral-900 rounded-2xl ${inter.className}`}
     >
       <Image
         src="/pattern.svg"
@@ -17,6 +59,11 @@ const Page = () => {
         priority
         className="object-cover md:inline hidden z-0 opacity-5"
       />
+
+      {!hasPasskey && (
+        <Security setHasPasskey={setHasPasskey} ref={securityRef} />
+      )}
+
       <div className="relative z-50 md:px-20 py-14 px-10 flex-1 flex flex-col gap-5 justify-evenly">
         <div className="space-y-6">
           <p className="uppercase text-neutral-500">integration</p>
@@ -52,7 +99,7 @@ const Page = () => {
         </div>
       </div>
 
-      <div className="relative z-50 flex flex-col items-center my-10 md:overflow-auto gap-10 flex-1">
+      <div className="relative z-50 flex flex-col items-center py-10 md:overflow-auto gap-10 flex-1">
         {images.map(({ alt, desc, src, key }) => (
           <IntegrationCard alt={alt} src={src} desc={desc} key={key} />
         ))}
