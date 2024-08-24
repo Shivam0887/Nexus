@@ -12,7 +12,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
   if (!user) throw new Error("Please sign-in to continue...");
 
   return (
-    <div className="flex md:h-[calc(100vh-77px)] h-[calc(100vh-73px)]">
+    <div className="flex h-[calc(100vh-4rem)]">
       <SidebaNav username={user.username} />
       <div className="flex-1 h-full">{children}</div>
     </div>

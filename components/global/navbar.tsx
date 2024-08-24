@@ -2,6 +2,7 @@
 
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -18,15 +19,20 @@ export default function Navbar() {
   };
 
   return (
-    <header className="bg-neutral-900/60 border-neutral-900 border-b backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
+    <header className="h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
       <nav className="flex py-4 sm:px-10 px-4 justify-between items-center">
         <div>
           <h2 className="sm:text-2xl text-xl">
-            <Link href="/">Nexus</Link>
+            <Link href="/">
+              <span className="sm:inline hidden">Nexus</span>
+              <span className="sm:hidden block relative size-6">
+                <Image src="/logo.jpeg" alt="logo" fill />
+              </span>
+            </Link>
           </h2>
         </div>
-        <div className="flex gap-10 items-center">
-          <ul className="relative md:text-lg text-base flex justify-center sm:gap-10 gap-4">
+        <div className="flex gap-4 items-center">
+          <ul className="hidden relative lg:text-lg md:text-base text-sm md:flex justify-center sm:gap-4">
             <li
               onMouseOver={handleMouseEnter}
               onMouseLeave={handleMouseLeave}

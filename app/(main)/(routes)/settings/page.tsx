@@ -38,7 +38,7 @@ const Page = () => {
   }
 
   return (
-    <div className="m-4 mb-0 h-[calc(100%-2rem)] rounded-2xl [scrollbar-width:none] overflow-auto bg-neutral-900 select-none">
+    <div className="sm:mx-4 mx-0 my-4 h-[calc(100%-2rem)] rounded-2xl [scrollbar-width:none] overflow-auto bg-neutral-900 select-none">
       {/* Cover image */}
       <div className="relative h-[250px]">
         <div className="h-full relative [mask-image:linear-gradient(black_80%,transparent)] [mask-mode:alpha]">

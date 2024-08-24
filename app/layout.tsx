@@ -23,6 +23,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${noto.className} bg-neutral relative`}>
+          <div id="drawer-portal"></div>
           <Navbar />
           {children}
         </body>

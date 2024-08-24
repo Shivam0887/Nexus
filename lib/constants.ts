@@ -344,3 +344,29 @@ export const icons = [
   { Icon: Integration, href: "/integrations", label: "Integrations" },
   { Icon: Settings, href: "/settings", label: "Settings" },
 ];
+
+const FILTER = {
+  Gmail: "gmail",
+  Notion: "notion",
+  Slack: "slack",
+  Discord: "discord",
+  Google_Drive: "google drive",
+  Teams: "teams",
+  GitHub: "github",
+  Google_Docs: "google docs",
+  One_Drive: "one drive",
+};
+
+export const filterData = [
+  "Gmail",
+  "Notion",
+  "Slack",
+  "Discord",
+  "Google Drive",
+  "Teams",
+  "GitHub",
+  "Google Docs",
+  "OneDrive",
+];
+
+export const sortData = ["date", "last hour", "last day", "last week"];

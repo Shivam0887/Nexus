@@ -45,13 +45,6 @@ export async function ConnectToDB() {
       }
     }
 
-    mongoose.connection.off("error", () => {
-      console.log("❌ Error in MongoDB connection");
-    });
-    mongoose.connection.on("error", () => {
-      console.log("❌ Error in MongoDB connection");
-    });
-
     isConnected = true;
   } else {
     console.log("😎 Already connected to MongoDB!");

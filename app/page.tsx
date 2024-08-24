@@ -44,7 +44,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="!mt-32">
+                <div className="!mt-32 select-none">
                   <AnimatedModal icon={<ChevronRight />} href="/search">
                     Get started
                   </AnimatedModal>

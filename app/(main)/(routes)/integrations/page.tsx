@@ -50,7 +50,7 @@ const Page = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative select-none sm:mx-4 my-4 mx-0 overflow-y-auto max-h-[calc(100%-2rem)] flex md:flex-row flex-col bg-neutral-900 rounded-2xl ${inter.className}`}
+      className={`relative select-none sm:mx-4 my-4 mx-0 overflow-y-auto max-h-[calc(100%-2rem)] flex lg:flex-row flex-col  bg-neutral-900 rounded-2xl ${inter.className}`}
     >
       <Image
         src="/pattern.svg"
@@ -64,7 +64,7 @@ const Page = () => {
         <Security setHasPasskey={setHasPasskey} ref={securityRef} />
       )}
 
-      <div className="relative z-50 md:px-20 py-14 px-10 flex-1 flex flex-col gap-5 justify-evenly">
+      <div className="relative z-50 sm:pl-20 sm:pr-0 pl-5 pr-5 py-14 flex-1 flex flex-col gap-5 justify-evenly">
         <div className="space-y-6">
           <p className="uppercase text-neutral-500">integration</p>
           <h1
@@ -99,7 +99,7 @@ const Page = () => {
         </div>
       </div>
 
-      <div className="relative z-50 flex flex-col items-center py-10 md:overflow-auto gap-10 flex-1">
+      <div className="relative z-50 w-full flex flex-col items-center py-10 lg:overflow-auto gap-10 flex-1">
         {images.map(({ alt, desc, src, key }) => (
           <IntegrationCard alt={alt} src={src} desc={desc} key={key} />
         ))}
