@@ -4,8 +4,21 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTrigger,
+} from "../ui/drawer";
+import SidebaNav from "./sidebar-nav";
+import HamburgurIcon from "../ui/hamburger-icon";
+import useUser from "@/hooks/useUser";
 
 export default function Navbar() {
+  const pathname = usePathname();
+  const { user } = useUser();
+
   const handleMouseEnter = () => {
     (
       document.getElementById("productList") as HTMLDivElement
@@ -73,9 +86,32 @@ export default function Navbar() {
               </button>
             </SignInButton>
           </SignedOut>
-          <SignedIn>
-            <UserButton appearance={{ baseTheme: dark }} />
-          </SignedIn>
+          <div className="flex gap-4 items-center">
+            <SignedIn>
+              <UserButton appearance={{ baseTheme: dark }} />
+            </SignedIn>
+            {pathname !== "/" && (
+              <Drawer>
+                <DrawerTrigger>
+                  <HamburgurIcon />
+                </DrawerTrigger>
+                <DrawerContent
+                  direction="right"
+                  containerClassName="h-full mt-0 w-full"
+                  drawerClassName=""
+                  handleStyles={{ display: "none" }}
+                >
+                  <SidebaNav
+                    username={user.username}
+                    className="relative w-full"
+                  />
+                  <DrawerClose className="z-[9999] right-5 top-5 absolute">
+                    <HamburgurIcon />
+                  </DrawerClose>
+                </DrawerContent>
+              </Drawer>
+            )}
+          </div>
         </div>
       </nav>
     </header>

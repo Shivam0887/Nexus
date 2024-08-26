@@ -44,3 +44,43 @@ export type PasskeyState = {
   success: boolean;
   error: string;
 };
+
+export type DrawerDirection = "top" | "left" | "right" | "bottom";
+
+export type StateType = {
+  username: string;
+  email: string;
+  imageUrl: string;
+  coverImage: string;
+  hasPasskey: boolean;
+  isAISearch: boolean;
+  shouldRemember: boolean;
+  hasSubscription: boolean;
+  plan: PLAN["plan"];
+};
+
+export type ActionType =
+  | {
+      type: "COVER_IMAGE_CHANGE";
+      payload: string;
+    }
+  | {
+      type: "PASSKEY_CREATE";
+      payload: boolean;
+    }
+  | {
+      type: "PROFILE_IMAGE_CHANGE";
+      payload: string;
+    }
+  | {
+      type: "AI_SEARCH_CHANGE";
+      payload: boolean;
+    }
+  | {
+      type: "USERNAME_CHANGE";
+      payload: string;
+    }
+  | {
+      type: "PLAN_CHANGE";
+      payload: PLAN["plan"];
+    };

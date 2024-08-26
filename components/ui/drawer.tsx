@@ -2,6 +2,8 @@
 
 import useDrawer from "@/hooks/useDrawer";
 import { HeaderContext, useHeader } from "@/hooks/useHeader";
+import { DrawerDir } from "@/lib/constants";
+import { DrawerDirection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -12,10 +14,19 @@ type Props = {
   className?: string;
 };
 
+type DrawerContentProps = {
+  children: React.ReactNode;
+  direction?: DrawerDirection;
+  handleStyles?: React.CSSProperties;
+  drawerClassName?: string;
+  containerClassName?: string;
+};
+
 const DrawerPortal = ({ children }: Props) => {
   const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(
     null
   );
+  const { onPortalOpen } = useDrawer();
 
   useEffect(() => {
     const portal = document.getElementById("drawer-portal") as HTMLDivElement;
@@ -28,6 +39,8 @@ const DrawerPortal = ({ children }: Props) => {
     ) as HTMLDivElement;
 
     if (!drawerContainer) return;
+
+    onPortalOpen();
 
     // removing scroll
     document.body.style.overflow = "hidden";
@@ -69,36 +82,47 @@ const DrawerPortal = ({ children }: Props) => {
     }
 
     trapFocus(drawerContainer);
-  }, [portalContainer]);
+  }, [portalContainer, onPortalOpen]);
 
   if (!portalContainer) return null;
 
   return <>{createPortal(<>{children}</>, portalContainer)}</>;
 };
 
-export const DrawerContent = ({ children, className }: Props) => {
-  const { open, onClose } = useDrawer();
+export const DrawerContent = ({
+  children,
+  drawerClassName,
+  containerClassName,
+  direction = "bottom",
+  handleStyles = {},
+}: DrawerContentProps) => {
+  const { open, onClose, isPortalLoaded, onPortalClose } = useDrawer();
 
   const handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 
-    const drawerContainer = document.querySelector(
-      ".drawer-container"
-    ) as HTMLDivElement;
+    const item = document.querySelector(".drawer-item") as HTMLDivElement;
 
-    (drawerContainer.lastChild as HTMLDivElement).classList.remove(
-      "animate-drawer-open"
-    );
-    (drawerContainer.lastChild as HTMLDivElement).classList.add(
-      "animate-drawer-close"
-    );
+    item.style.transform = DrawerDir[direction].translateOut;
 
     if (onClose)
       setTimeout(() => {
         document.body.style.overflow = "auto";
         onClose();
-      }, 200);
+        onPortalClose();
+      }, 300);
   };
+
+  useEffect(() => {
+    if (isPortalLoaded && open) {
+      const item = document.querySelector(".drawer-item") as HTMLDivElement;
+
+      item.style.transform = DrawerDir[direction].translateIn;
+
+      item.style.height = DrawerDir[direction].dimen[0];
+      item.style.width = DrawerDir[direction].dimen[1];
+    }
+  }, [direction, open, isPortalLoaded]);
 
   return (
     <>
@@ -112,10 +136,23 @@ export const DrawerContent = ({ children, className }: Props) => {
             />
             <div
               tabIndex={1}
-              className="animate-drawer-open z-[9999] fixed inset-x-0 bottom-0 h-0 bg-neutral-950 border-t-2 border-t-neutral-800 focus:outline-none rounded-t-xl flex flex-col items-center"
+              className={cn(
+                "transition-transform duration-300 drawer-item z-[9999] fixed bg-neutral-950 focus:outline-none flex flex-col items-center",
+                drawerClassName
+              )}
+              style={{
+                transform: DrawerDir[direction].translateOut,
+                ...DrawerDir[direction].styles,
+              }}
             >
-              <div className="w-28 h-2 rounded-3xl bg-neutral-700 mt-6 mx-auto" />
-              <div className={cn("", className)}>{children}</div>
+              <div
+                className="absolute w-28 h-2 rounded-3xl bg-neutral-700"
+                style={{
+                  ...handleStyles,
+                  ...DrawerDir[direction].handleStyles,
+                }}
+              />
+              <div className={cn("mt-10", containerClassName)}>{children}</div>
             </div>
           </div>
         </DrawerPortal>
@@ -171,13 +208,15 @@ export const DrawerDescription = ({ children, className }: Props) => {
   );
 };
 
-export const DrawerClose = ({ children, className, onClose }: Props) => {
+export const DrawerClose = ({ children, className }: Props) => {
+  const { onClose, onPortalClose } = useDrawer();
   return (
     <button
       className={cn("", className)}
       onClick={(e) => {
         e.stopPropagation();
-        onClose?.();
+        onClose();
+        onPortalClose();
       }}
     >
       {children}
@@ -187,6 +226,7 @@ export const DrawerClose = ({ children, className, onClose }: Props) => {
 
 export const Drawer = ({ children }: Pick<Props, "children">) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPortalLoaded, setIsPortalLoaded] = useState(false);
 
   const { DrawerProvider } = useDrawer();
 
@@ -194,8 +234,10 @@ export const Drawer = ({ children }: Pick<Props, "children">) => {
     () => ({
       open: isOpen,
       onOpenChange: setIsOpen,
+      isPortalLoaded,
+      setIsPortalLoaded,
     }),
-    [isOpen]
+    [isOpen, isPortalLoaded]
   );
 
   return <DrawerProvider value={values}>{children}</DrawerProvider>;

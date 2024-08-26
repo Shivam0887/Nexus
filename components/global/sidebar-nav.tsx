@@ -5,16 +5,36 @@ import { icons } from "@/lib/constants";
 import { SignOutButton, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
+import useDrawer from "@/hooks/useDrawer";
 
-const SidebaNav = ({ username }: { username: string }) => {
+const SidebaNav = ({
+  username,
+  className,
+}: {
+  username: string;
+  className?: string;
+}) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { onClose, onPortalClose } = useDrawer();
+
+  const handleClick = (href: string) => {
+    onClose();
+    onPortalClose();
+    router.push(href);
+  };
 
   return (
-    <div className="sm:flex hidden py-10 md:hover:w-44 w-16 rounded-r-2xl select-none overflow-hidden transition-all duration-300 h-full pl-4 flex-col justify-between items-center bg-neutral-900/50">
+    <div
+      className={cn(
+        "flex py-10 md:hover:w-44 w-16 rounded-r-2xl select-none overflow-hidden transition-all duration-300 h-full pl-4 flex-col justify-between items-center bg-neutral-900/50",
+        className
+      )}
+    >
       <div className="w-full flex flex-col justify-center items-start gap-y-6">
         {icons.map(({ Icon, href, label }) => (
-          <button key={label} onClick={() => router.push(href)}>
+          <button key={label} onClick={() => handleClick(href)}>
             <Icon selected={href === pathname} label={label} />
           </button>
         ))}

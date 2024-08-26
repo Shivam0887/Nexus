@@ -1,41 +1,25 @@
 "use client";
 
+import useUser from "@/hooks/useUser";
 import { plans } from "@/lib/constants";
-import { useUser } from "@clerk/nextjs";
-import { Crown, Dot, KeyRound, Loader2, UserRound } from "lucide-react";
+import { Crown, Dot, KeyRound, UserRound } from "lucide-react";
 import Image from "next/image";
-import { notFound } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { useUser as useClerkUser } from "@clerk/nextjs";
+import { useEffect } from "react";
 
 const CurPlan: "Starter" | "Professional" = "Professional";
 
 const Page = () => {
-  const { isLoaded, user } = useUser();
-  const [data, setData] = useState({ username: "", email: "", imageUrl: "" });
+  const { user, dispatch } = useUser();
+  const { user: clerkUser, isLoaded } = useClerkUser();
 
   useEffect(() => {
-    if (user) {
-      setData({
-        email: user.emailAddresses[0].emailAddress,
-        imageUrl: user.imageUrl,
-        username: user.username!,
-      });
+    if (isLoaded && clerkUser) {
+      const { username, imageUrl } = clerkUser;
+      dispatch({ type: "USERNAME_CHANGE", payload: username! });
+      dispatch({ type: "PROFILE_IMAGE_CHANGE", payload: imageUrl });
     }
-  }, [user]);
-
-  if (!isLoaded) {
-    return (
-      <div className="h-[calc(100%-2rem)] flex items-center justify-center">
-        <div className="animate-spin">
-          <Loader2 className="w-5 h-5 text-btn-primary" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    notFound();
-  }
+  }, [dispatch, isLoaded, clerkUser]);
 
   return (
     <div className="sm:mx-4 mx-0 my-4 h-[calc(100%-2rem)] rounded-2xl [scrollbar-width:none] overflow-auto bg-neutral-900 select-none">
@@ -54,7 +38,7 @@ const Page = () => {
         <div className="relative -translate-y-3/4 flex gap-5 items-center mx-5">
           <div className="w-24 h-24 relative rounded-full shrink-0 border border-neutral-700">
             <Image
-              src={data.imageUrl}
+              src={user.imageUrl}
               fill
               quality={100}
               alt="profile image"
@@ -63,14 +47,14 @@ const Page = () => {
           </div>
           <div className="space-y-2">
             <h2 className="sm:text-3xl text-2xl text capitalize">
-              {data.username}
+              {user.username}
             </h2>
-            <p className="text-xs text-neutral-500">{data.email}</p>
+            <p className="text-xs text-neutral-500">{user.email}</p>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-8 mb-4 mt-12 mx-5">
+      <div className="flex flex-wrap gap-8 my-12 mx-5">
         {/* Subscription Plans */}
         <div className="space-y-4 h-[300px] md:w-96 w-full shrink-0 flex flex-col">
           <h1 className="text-xl font-bold whitespace-nowrap text-btn-secondary">

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { ConnectToDB } from "@/lib/utils";
 import { User, UserType } from "@/models/user.model";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
 
   const eventType = evt.type;
 
-  ConnectToDB();
+  await ConnectToDB();
   if (eventType === "user.created") {
     const data = evt.data;
 
@@ -90,5 +91,6 @@ export async function POST(req: Request) {
     );
   }
 
+  revalidatePath("/(main)", "layout");
   return new Response("User created successfully", { status: 200 });
 }

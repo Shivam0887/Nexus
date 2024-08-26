@@ -1,4 +1,10 @@
-import { COLOR_PALETTES, FAQ, PALETTE_NAME, PLAN } from "./types";
+import {
+  COLOR_PALETTES,
+  DrawerDirection,
+  FAQ,
+  PALETTE_NAME,
+  PLAN,
+} from "./types";
 import { Check, X } from "lucide-react";
 import Analytics from "@/components/icons/analytics";
 import Integration from "@/components/icons/integration";
@@ -345,16 +351,88 @@ export const icons = [
   { Icon: Settings, href: "/settings", label: "Settings" },
 ];
 
-const FILTER = {
-  Gmail: "gmail",
-  Notion: "notion",
-  Slack: "slack",
-  Discord: "discord",
-  Google_Drive: "google drive",
-  Teams: "teams",
-  GitHub: "github",
-  Google_Docs: "google docs",
-  One_Drive: "one drive",
+export const DrawerDir: Record<
+  DrawerDirection,
+  {
+    dimen: string[];
+    translateIn: string;
+    translateOut: string;
+    handleStyles: React.CSSProperties;
+    styles: React.CSSProperties;
+  }
+> = {
+  top: {
+    dimen: ["50vh", "100vw"],
+    translateIn: "translate(0%, 0%)",
+    translateOut: "translate(0%, -100%)",
+    handleStyles: {
+      bottom: 0,
+      left: "50%",
+      transform: "translateX(-50%)",
+      marginBottom: "1.5rem",
+    },
+    styles: {
+      top: 0,
+      insetInline: 0,
+      borderBottom: "2px solid #404040",
+      borderRadius: "0 0 1rem 1rem",
+    },
+  },
+  bottom: {
+    dimen: ["50vh", "100vw"],
+    translateIn: "translate(0%, 0%)",
+    translateOut: "translate(0%, 100%)",
+    handleStyles: {
+      top: 0,
+      left: "50%",
+      transform: "translateX(-50%)",
+      marginTop: "1.5rem",
+    },
+    styles: {
+      bottom: 0,
+      insetInline: 0,
+      borderTop: "2px solid #404040",
+      borderRadius: "1rem 1rem 0 0",
+    },
+  },
+  left: {
+    dimen: ["100vh", "75vw"],
+    translateIn: "translate(0%, 0%)",
+    translateOut: "translate(-100%, 0%)",
+    handleStyles: {
+      right: 0,
+      top: "50%",
+      transform: "translateY(-50%)",
+      height: "7rem",
+      width: "0.5rem",
+      marginRight: "1.5rem",
+    },
+    styles: {
+      left: 0,
+      insetBlock: 0,
+      borderRight: "2px solid #404040",
+      borderRadius: "0 1rem 1rem 0",
+    },
+  },
+  right: {
+    dimen: ["100vh", "75vw"],
+    translateIn: "translate(0%, 0%)",
+    translateOut: "translate(100%, 0%)",
+    handleStyles: {
+      left: 0,
+      top: "50%",
+      transform: "translateY(-50%)",
+      height: "7rem",
+      width: "0.5rem",
+      marginLeft: "1.5rem",
+    },
+    styles: {
+      right: 0,
+      insetBlock: 0,
+      borderLeft: "2px solid #404040",
+      borderRadius: "1rem 0 0 1rem",
+    },
+  },
 };
 
 export const filterData = [
@@ -370,3 +448,12 @@ export const filterData = [
 ];
 
 export const sortData = ["date", "last hour", "last day", "last week"];
+
+export const UserAction = {
+  COVER_IMAGE_CHANGE: "COVER_IMAGE_CHANGE",
+  PASSKEY_CREATE: "PASSKEY_CREATE",
+  PROFILE_IMAGE_CHANGE: "PROFILE_IMAGE_CHANGE",
+  AI_SEARCH_CHANGE: "AI_SEARCH_CHANGE",
+  USERNAME_CHANGE: "USERNAME_CHANGE",
+  PLAN_CHANGE: "PLAN_CHANGE",
+};

@@ -47,7 +47,7 @@ const Page = () => {
                 Filter
               </div>
             </DrawerTrigger>
-            <DrawerContent className="pt-10 px-2 flex items-center">
+            <DrawerContent containerClassName="pt-10 px-2 flex items-center">
               <Filter className="h-max" controlledHeight={true} />
             </DrawerContent>
           </Drawer>

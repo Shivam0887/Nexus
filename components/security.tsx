@@ -1,6 +1,7 @@
 "use client";
 
 import { createPasskey } from "@/actions/passkey.actions";
+import useUser from "@/hooks/useUser";
 import { PasskeyState } from "@/lib/types";
 import {
   CircleCheckBig,
@@ -113,20 +114,17 @@ const SecurityInputs = ({ error, success }: PasskeyState) => {
 };
 
 const Security = forwardRef(
-  (
-    {
-      setHasPasskey,
-    }: { setHasPasskey: React.Dispatch<React.SetStateAction<boolean>> },
-    ref: React.ForwardedRef<HTMLDivElement>
-  ) => {
+  (props, ref: React.ForwardedRef<HTMLDivElement>) => {
     const [state, formAction] = useFormState(createPasskey, {
       success: false,
       error: "",
     });
 
+    const { dispatch } = useUser();
+
     useEffect(() => {
-      setHasPasskey(state.success);
-    }, [setHasPasskey, state.success]);
+      dispatch({ type: "PASSKEY_CREATE", payload: state.success });
+    }, [state, dispatch]);
 
     return (
       <div

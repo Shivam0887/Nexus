@@ -6,7 +6,7 @@ import IntegrationCard from "@/components/integration-card";
 import Image from "next/image";
 import Security from "@/components/security";
 import { useEffect, useRef, useState } from "react";
-import { getUser } from "@/actions/user.actions";
+import useUser from "@/hooks/useUser";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,7 +15,7 @@ const Page = () => {
   const securityRef = useRef<HTMLDivElement | null>(null);
 
   const [isMediumScreen, setIsMediumScreen] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false);
+  const { user } = useUser();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -29,10 +29,6 @@ const Page = () => {
   }, [isMediumScreen]);
 
   useEffect(() => {
-    getUser()
-      .then(({ hasPasskey }) => setHasPasskey(hasPasskey))
-      .catch((e) => console.log(e));
-
     const container = containerRef.current;
 
     const handleResize = () => {
@@ -60,11 +56,9 @@ const Page = () => {
         className="object-cover md:inline hidden z-0 opacity-5"
       />
 
-      {!hasPasskey && (
-        <Security setHasPasskey={setHasPasskey} ref={securityRef} />
-      )}
+      {!user.hasPasskey && <Security ref={securityRef} />}
 
-      <div className="relative z-50 sm:pl-20 sm:pr-0 pl-5 pr-5 py-14 flex-1 flex flex-col gap-5 justify-evenly">
+      <div className="relative z-50 sm:pl-20 sm:px-5 px-10 pr-5 py-14 flex-1 flex flex-col gap-5 justify-evenly">
         <div className="space-y-6">
           <p className="uppercase text-neutral-500">integration</p>
           <h1
