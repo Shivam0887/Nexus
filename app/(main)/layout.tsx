@@ -1,10 +1,19 @@
-import { getUser } from "@/actions/user.actions";
 import SidebaNav from "@/components/global/sidebar-nav";
 import { UserProvider } from "@/hooks/useUser";
-import { StateType } from "@/lib/types";
+import { FilterKey, StateType } from "@/lib/types";
+import { ConnectToDB } from "@/lib/utils";
+import { User, UserType } from "@/models/user.model";
+import { auth } from "@clerk/nextjs/server";
 
 const MainLayout = async ({ children }: { children: React.ReactNode }) => {
-  const user = await getUser();
+  const { userId } = auth();
+
+  if (!userId) {
+    throw new Error("Unauthenticated user");
+  }
+
+  await ConnectToDB();
+  const user = await User.findOne<UserType>({ userId });
 
   if (!user) throw new Error("Please sign-in to continue...");
 
@@ -18,6 +27,18 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     plan: "Starter",
     shouldRemember: user.shouldRemember,
     username: user.username,
+    filter: user.filter as FilterKey[],
+    isFilterApplied: user.isFilterApplied,
+    isDiscordConnected: !!user?.discord?.accessToken,
+    isGitHubConnected: !!user?.gitHub?.accessToken,
+    isGmailConnected: !!user?.gmail?.accessToken,
+    isGoogleCalendarConnected: !!user?.google_calendar?.accessToken,
+    isGoogleDocsConnected: !!user?.google_docs?.accessToken,
+    isGoogleDriveConnected: !!user?.google_drive?.accessToken,
+    isNotionConnected: !!user?.notion?.accessToken,
+    isOneDriveConnected: !!user?.oneDrive?.accessToken,
+    isSlackConnected: !!user?.slack?.accessToken,
+    isTeamsConnected: !!user?.teams?.accessToken,
   };
 
   return (

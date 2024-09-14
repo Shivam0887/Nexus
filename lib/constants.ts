@@ -2,6 +2,8 @@ import {
   COLOR_PALETTES,
   DrawerDirection,
   FAQ,
+  FilterKey,
+  LogoType,
   PALETTE_NAME,
   PLAN,
 } from "./types";
@@ -45,7 +47,7 @@ export const features: {
   },
 ];
 
-export const images = [
+export const images: LogoType[] = [
   {
     src: "./Gmail.svg",
     alt: "Gmail",
@@ -449,11 +451,23 @@ export const filterData = [
 
 export const sortData = ["date", "last hour", "last day", "last week"];
 
-export const UserAction = {
-  COVER_IMAGE_CHANGE: "COVER_IMAGE_CHANGE",
-  PASSKEY_CREATE: "PASSKEY_CREATE",
-  PROFILE_IMAGE_CHANGE: "PROFILE_IMAGE_CHANGE",
-  AI_SEARCH_CHANGE: "AI_SEARCH_CHANGE",
-  USERNAME_CHANGE: "USERNAME_CHANGE",
-  PLAN_CHANGE: "PLAN_CHANGE",
+// export const UserAction = {
+//   COVER_IMAGE_CHANGE: "COVER_IMAGE_CHANGE",
+//   PASSKEY_CREATE: "PASSKEY_CREATE",
+//   PROFILE_IMAGE_CHANGE: "PROFILE_IMAGE_CHANGE",
+//   AI_SEARCH_CHANGE: "AI_SEARCH_CHANGE",
+//   USERNAME_CHANGE: "USERNAME_CHANGE",
+//   PLAN_CHANGE: "PLAN_CHANGE",
+// };
+
+export const Scopes: Record<FilterKey, string[]> = {
+  Gmail: ["https://www.googleapis.com/auth/gmail.readonly"],
+  "Google Docs": [],
+  "Google Drive": [],
+  "MS Teams": [],
+  Discord: [],
+  GitHub: [],
+  Notion: [],
+  OneDrive: [],
+  Slack: [],
 };

@@ -1,28 +1,29 @@
 "use client";
 
+import useUser from "@/hooks/useUser";
+import axios from "axios";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const IntegrationCard = ({
   src,
   alt,
   desc,
+  isConnected,
 }: {
   src: string;
   alt: string;
   desc: string;
+  isConnected: boolean;
 }) => {
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  const { dispatch } = useUser();
 
   useEffect(() => {
     const container = containerRef.current;
-    const width = window.innerWidth;
-
-    const isMobile = width < 386;
-    const isTablet = width < 640;
-
-    const isLaptop = width < 1024;
 
     if (container) {
       container.style.width = isClicked
@@ -31,6 +32,37 @@ const IntegrationCard = ({
       container.style.height = isClicked ? "14rem" : "7rem";
     }
   }, [isClicked]);
+
+  const handleDisconnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    try {
+      e.stopPropagation();
+      dispatch({
+        type: "CONNECTION",
+        payload: false,
+        connectionType: "isGmailConnected",
+      });
+
+      await axios.post("/api/oauth_callback/gmail");
+    } catch (error) {
+      dispatch({
+        type: "CONNECTION",
+        payload: true,
+        connectionType: "isGmailConnected",
+      });
+    }
+  };
+
+  const handleConnect = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    try {
+      e.stopPropagation();
+      const res = await axios("/api/auth/google");
+      if (res && res.data) {
+        router.push(res.data);
+      }
+    } catch (error: any) {
+      console.log(error?.message);
+    }
+  };
 
   return (
     <div
@@ -50,9 +82,21 @@ const IntegrationCard = ({
 
       <div className="w-[18rem] sm:w-[20rem] lg:w-[22rem] xl:w-[28rem] h-[14rem] shrink-0 flex flex-col justify-around">
         <div className="flex justify-end">
-          <button className=" w-max text-xs border border-btn-primary py-2 px-4 rounded-3xl text-btn-primary">
-            Connect
-          </button>
+          {isConnected ? (
+            <button
+              onClick={handleDisconnect}
+              className="w-max text-xs bg-btn-primary py-2 px-4 rounded-3xl text-black"
+            >
+              Connected
+            </button>
+          ) : (
+            <button
+              onClick={handleConnect}
+              className="w-max text-xs border border-btn-primary py-2 px-4 rounded-3xl text-btn-primary"
+            >
+              Connect
+            </button>
+          )}
         </div>
         <div className="">
           <p className="text-sm pb-4">{desc}</p>

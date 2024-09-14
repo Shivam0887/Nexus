@@ -55,8 +55,20 @@ export type StateType = {
   hasPasskey: boolean;
   isAISearch: boolean;
   shouldRemember: boolean;
+  isFilterApplied: boolean;
+  filter: FilterKey[];
   hasSubscription: boolean;
   plan: PLAN["plan"];
+  isGmailConnected: boolean;
+  isGoogleDriveConnected: boolean;
+  isGoogleDocsConnected: boolean;
+  isGoogleCalendarConnected: boolean;
+  isDiscordConnected: boolean;
+  isNotionConnected: boolean;
+  isSlackConnected: boolean;
+  isTeamsConnected: boolean;
+  isGitHubConnected: boolean;
+  isOneDriveConnected: boolean;
 };
 
 export type ActionType =
@@ -83,4 +95,54 @@ export type ActionType =
   | {
       type: "PLAN_CHANGE";
       payload: PLAN["plan"];
+    }
+  | {
+      type: "FILTER_SAVE";
+      payload: FilterKey[];
+    }
+  | {
+      type: "FILTER_RESET";
+    }
+  | {
+      type: "CONNECTION";
+      payload: boolean;
+      connectionType: string;
     };
+
+export type FilterKey =
+  | "Gmail"
+  | "Notion"
+  | "Slack"
+  | "Discord"
+  | "Google Drive"
+  | "MS Teams"
+  | "GitHub"
+  | "Google Docs"
+  | "OneDrive";
+
+export type LogoType = {
+  src: string;
+  alt: FilterKey;
+  desc: string;
+  key: string;
+  width: number;
+  height: number;
+};
+
+export type Credentials = {
+  access_token?: string | null;
+  refresh_token?: string | null;
+  expires_in?: number | null;
+  scope?: string;
+  token_type?: string | null;
+  id_token?: string | null;
+};
+
+export type DocumentType = {
+  logo: string;
+  title: string;
+  date: string;
+  author: string;
+  email: string;
+  href: string;
+};

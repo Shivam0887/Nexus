@@ -1,9 +1,13 @@
 "use client";
 
+import { saveFilters } from "@/actions/user.actions";
+import useUser from "@/hooks/useUser";
 import { images } from "@/lib/constants";
+import { FilterKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, RefreshCw, Save, X } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 
 const Filter = ({
@@ -13,7 +17,8 @@ const Filter = ({
   className?: string;
   controlledHeight?: boolean;
 }) => {
-  const [selected, setSelected] = useState(new Set<string>());
+  const { user, dispatch } = useUser();
+  const [selected, setSelected] = useState(new Set<FilterKey>(user.filter));
   const [filterKeys, setFilterKeys] = useState(images);
   const [isExpand, setIsExpand] = useState(false);
 
@@ -28,7 +33,7 @@ const Filter = ({
   }, [isExpand, controlledHeight]);
 
   return (
-    <div className="rounded-lg bg-neutral-800 grid gap-2 max-w-[672px] w-full py-2 px-4">
+    <div className="rounded-lg bg-neutral-800 grid gap-2 max-w-[756px] w-full py-2 px-4">
       <p className="text-[13px] text-text-primary tracking-wide">Filter by: </p>
 
       <div
@@ -84,11 +89,18 @@ const Filter = ({
             <ChevronDown className="size-4" />
           )}
         </button>
-        <button title="save filter" className="text-text-primary">
+        <button
+          title="save filter"
+          className="text-text-primary"
+          onClick={async () => {
+            await saveFilters(selected);
+            dispatch({ type: "FILTER_SAVE", payload: Array.from(selected) });
+          }}
+        >
           <Save className="size-4" />
         </button>
         <button
-          onClick={() => setSelected(new Set<string>())}
+          onClick={() => setSelected(new Set<FilterKey>())}
           title="reset filter"
           className="text-[13px] text-text-primary"
         >

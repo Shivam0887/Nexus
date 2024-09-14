@@ -28,6 +28,68 @@ const userSchema = new Schema(
       type: Boolean,
       default: () => false,
     },
+    isFilterApplied: {
+      type: Boolean,
+      default: () => false,
+    },
+    filter: {
+      type: [String],
+      default: () => [],
+    },
+    gmail: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+      authUser: String,
+    },
+    google_docs: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+      authUser: String,
+    },
+    google_drive: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+      authUser: String,
+    },
+    google_calendar: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+      authUser: String,
+    },
+    teams: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
+    discord: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
+    gitHub: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
+    notion: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
+    slack: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
+    oneDrive: {
+      accessToken: String,
+      refreshToken: String,
+      expiresAt: Number,
+    },
   },
   { timestamps: true }
 );

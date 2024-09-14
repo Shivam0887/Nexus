@@ -11,8 +11,20 @@ const InitialState: StateType = {
   imageUrl: "",
   isAISearch: false,
   shouldRemember: false,
+  isFilterApplied: false,
+  filter: [],
   username: "",
   plan: "Starter",
+  isGmailConnected: false,
+  isDiscordConnected: false,
+  isGitHubConnected: false,
+  isGoogleCalendarConnected: false,
+  isGoogleDocsConnected: false,
+  isGoogleDriveConnected: false,
+  isNotionConnected: false,
+  isOneDriveConnected: false,
+  isSlackConnected: false,
+  isTeamsConnected: false,
 };
 
 type UserContextType = {
@@ -56,10 +68,26 @@ const reducer = (state: StateType, action: ActionType): StateType => {
         username: action.payload,
       };
 
+    case "FILTER_SAVE":
+      return {
+        ...state,
+        filter: action.payload,
+      };
+
+    case "FILTER_RESET":
+      return {
+        ...state,
+        filter: [],
+      };
+    case "CONNECTION":
+      return {
+        ...state,
+        [action.connectionType]: action.payload,
+      };
+
     default:
       throw new Error("Invalid action");
   }
-  return state;
 };
 
 const UserContext = createContext<UserContextType>({

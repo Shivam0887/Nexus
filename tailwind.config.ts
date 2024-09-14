@@ -31,26 +31,11 @@ const config: Config = {
       animation: {
         "infinite-move":
           "move var(--_animation-speed, 10s) linear infinite var(--_animation-direction, forwards)",
-        "drawer-open": "drawer_open 0.2s ease-in forwards",
-        "drawer-close": "drawer_close 0.2s ease-in forwards",
       },
       keyframes: {
         move: {
           to: {
             transform: "translateX(calc(-50% - 1.25rem))",
-          },
-        },
-        drawer_open: {
-          to: {
-            height: "288px",
-          },
-        },
-        drawer_close: {
-          from: {
-            height: "288px",
-          },
-          to: {
-            height: "0",
           },
         },
       },

@@ -9,9 +9,13 @@ import "regenerator-runtime/runtime";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Mic, Paperclip } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 
-const Textarea = () => {
-  const [disabled, setDisabled] = useState(true);
+const Textarea = ({
+  setIsSearching,
+}: {
+  setIsSearching: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
   const {
     listening,
     transcript,
@@ -20,6 +24,7 @@ const Textarea = () => {
   } = useSpeechRecognition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { pending } = useFormStatus();
 
   const [query, setQuery] = useState("");
   const deboundedTranscript = useDebounce(transcript, 200);
@@ -28,8 +33,6 @@ const Textarea = () => {
     const textarea = textareaRef.current;
 
     if (textarea) {
-      setDisabled(textarea.value.length === 0);
-
       if (!listening) {
         setQuery(textarea.value);
       } else {
@@ -42,11 +45,7 @@ const Textarea = () => {
       // Set height to the scroll height, which adjusts to the content
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
-  }, [listening, deboundedTranscript]);
-
-  useEffect(() => {
-    handleChange();
-  }, [deboundedTranscript, handleChange]);
+  }, [listening, deboundedTranscript, setQuery]);
 
   const startListening = useCallback(() => {
     if (!isMicrophoneAvailable) {
@@ -73,12 +72,28 @@ const Textarea = () => {
     }
   }, [browserSupportsSpeechRecognition]);
 
+  useEffect(() => {
+    handleChange();
+  }, [deboundedTranscript, handleChange]);
+
+  useEffect(() => {
+    setIsSearching(pending);
+    if (pending) setQuery("");
+  }, [pending, setIsSearching]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" || e.key === "NumpadEnter") {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl relative flex items-end gap-3 rounded-2xl bg-neutral-800 px-5 py-3">
       {/* File upload */}
       <button
         title="upload image"
-        className="flex items-center sm:h-7 h-5 cursor-pointer"
+        className="flex items-center sm:h-7 h-6 cursor-pointer"
       >
         <Paperclip
           className="sm:size-6 size-5 text-neutral-500 -rotate-45"
@@ -87,16 +102,18 @@ const Textarea = () => {
       </button>
 
       {/* separator */}
-      <div className="sm:h-7 h-5 border-l-2 border-l-neutral-600 w-1" />
+      <div className="h-full border-l-2 border-l-neutral-600 w-1" />
 
       {/* query */}
       <textarea
         ref={textareaRef}
         onChange={handleChange}
+        onKeyDown={handleKeyDown}
         required
         rows={1}
         autoFocus
         value={query}
+        name="search"
         className="caret-btn-primary sm:text-lg text-base flex-1 resize-none focus:outline-none bg-transparent"
         placeholder="flight tickets"
         style={{ scrollbarWidth: "none" }}
@@ -107,14 +124,14 @@ const Textarea = () => {
         className="relative"
         onClick={listening ? stopListening : startListening}
       >
-        <Mic className="relative z-20 sm:size-7 size-5 text-neutral-500" />
+        <Mic className="relative z-20 sm:size-7 size-6 text-neutral-500" />
         {listening && (
           <div className="absolute sm:size-12 size-10 rounded-full bg-neutral-950 animate-pulse top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 z-0"></div>
         )}
       </button>
 
       {/* submit button */}
-      <button disabled={disabled} className="mx-2">
+      <button disabled={!pending} type="submit">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="2 2 20 20"
@@ -123,8 +140,8 @@ const Textarea = () => {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className={`lucide lucide-circle-arrow-up sm:size-7 size-5 stroke-neutral-800 ${
-            disabled ? "fill-neutral-500" : "fill-neutral-200"
+          className={`lucide lucide-circle-arrow-up sm:size-7 size-6 stroke-neutral-800 ${
+            !pending ? "fill-neutral-500" : "fill-neutral-200"
           }`}
         >
           <circle cx="12" cy="12" r="10" />

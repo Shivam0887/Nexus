@@ -91,6 +91,5 @@ export async function POST(req: Request) {
     );
   }
 
-  revalidatePath("/(main)", "layout");
   return new Response("User created successfully", { status: 200 });
 }

@@ -1,11 +1,9 @@
 "use client";
 
-import Filter from "@/components/ui/filter";
-import Textarea from "@/components/ui/textarea";
-import React, { useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { Inter } from "next/font/google";
 import { sortData } from "@/lib/constants";
-import { CirclePlus, Fullscreen, LayoutGrid, Menu } from "lucide-react";
+import { CirclePlus, Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,34 +11,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import Filter from "@/components/ui/filter";
 import Document from "@/components/document";
+import Textarea from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import DialogProvider from "@/hooks/useDialog";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+
+import { cn } from "@/lib/utils";
+import DialogProvider from "@/hooks/useDialog";
+import { searchAction } from "@/actions/user.actions";
+import { useFormState } from "react-dom";
+import Loading from "@/components/loading";
 
 const inter = Inter({ subsets: ["latin"] });
 
 const Page = () => {
   const [layout, setLayout] = useState<"grid" | "list">("list");
+  const [formState, formAction] = useFormState(searchAction, []);
+
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchCount, setSearchCount] = useState(0);
+
+  useEffect(() => {
+    if (isSearching) {
+      setSearchCount((prev) => prev + 1);
+    }
+  }, [isSearching]);
 
   return (
     <div
-      className={`relative md:p-10 p-5 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
+      className={`relative mb:p-10 p-5 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
     >
-      <form className="w-full flex flex-col items-center gap-10">
+      <form
+        action={(formData) => {
+          formAction(formData);
+        }}
+        className="w-full flex flex-col items-center gap-10"
+      >
         <h1 className="md:text-4xl sm:text-3xl text-2xl text font-extrabold tracking-wide">
           How can I help you Today?
         </h1>
-        <Textarea />
+        <Textarea setIsSearching={setIsSearching} />
       </form>
 
       <div className="flex items-start justify-between gap-2">
         {/* filtering */}
-        <div className="md:block hidden">
+        <div className="lg:block hidden">
           <Filter />
         </div>
-        <div className="md:hidden block">
+        <div className="lg:hidden block">
           <Drawer>
             <DrawerTrigger>
               <div className="text-[13px] text-text-primary bg-neutral-800 max-w-max py-2 px-4 flex items-center rounded-lg">
@@ -130,12 +150,53 @@ const Page = () => {
         </div>
       </div>
 
-      {/* documents */}
-      <div className="flex-1 overflow-auto flex flex-col items-center gap-4 sm:pr-0 xs:pr-2 pr-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Document key={i} />
-        ))}
-      </div>
+      <>
+        {isSearching ? (
+          <div className="space-y-10">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Loading key={`loading${i}`} />
+            ))}
+          </div>
+        ) : (
+          <>
+            {formState.length ? (
+              <div
+                className={cn(
+                  "overflow-auto w-full max-w-5xl mx-auto grid gap-4 pr-2",
+                  {
+                    "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
+                      layout === "grid",
+                  }
+                )}
+              >
+                {formState.map((document) => (
+                  <Document
+                    key={document.href}
+                    layout={layout}
+                    document={document}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-1 items-center justify-center">
+                {searchCount ? (
+                  <h1 className="text-lg flex gap-2">
+                    <Ghost />
+                    <span className="text">No data found</span>
+                  </h1>
+                ) : (
+                  <h1 className="text-lg">
+                    🤔{" "}
+                    <span className="text">
+                      Hmm, you haven&apos;t search anything, yet.
+                    </span>
+                  </h1>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </>
 
       {/* dialog box */}
       <div className="absolute lg:right-20 right-5 lg:bottom-20 bottom-5">
@@ -144,9 +205,13 @@ const Page = () => {
             <DialogTrigger>
               <Fullscreen />
             </DialogTrigger>
-            <DialogContent className="h-[468px]">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Document key={i} />
+            <DialogContent className="h-[468px] p-4">
+              {formState.map((document) => (
+                <Document
+                  key={document.href}
+                  layout={layout}
+                  document={document}
+                />
               ))}
             </DialogContent>
           </Dialog>
