@@ -5,7 +5,7 @@ import { HeaderContext, useHeader } from "@/hooks/useHeader";
 import { DrawerDir } from "@/lib/constants";
 import { DrawerDirection } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Props = {
@@ -93,46 +93,45 @@ export const DrawerContent = ({
   children,
   drawerClassName,
   containerClassName,
-  direction = "bottom",
   handleStyles = {},
 }: DrawerContentProps) => {
-  const { open, onClose, isPortalLoaded, onPortalClose } = useDrawer();
+  const { open, onClose, isPortalLoaded, drawerDirection } = useDrawer();
 
-  const handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
+  // const handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
+  //   e.stopPropagation();
 
-    const item = document.querySelector(".drawer-item") as HTMLDivElement;
+  //   const item = document.querySelector(".drawer-item") as HTMLDivElement;
 
-    item.style.transform = DrawerDir[direction].translateOut;
+  //   item.style.transform = DrawerDir[direction].translateOut;
 
-    if (onClose)
-      setTimeout(() => {
-        document.body.style.overflow = "auto";
-        onClose();
-        onPortalClose();
-      }, 300);
-  };
+  //   if (onClose)
+  //     setTimeout(() => {
+  //       document.body.style.overflow = "auto";
+  //       onClose();
+  //       onPortalClose();
+  //     }, 300);
+  // };
 
   useEffect(() => {
     if (isPortalLoaded && open) {
       const item = document.querySelector(".drawer-item") as HTMLDivElement;
 
-      item.style.transform = DrawerDir[direction].translateIn;
+      item.style.transform = DrawerDir[drawerDirection.current].translateIn;
 
-      item.style.height = DrawerDir[direction].dimen[0];
-      item.style.width = DrawerDir[direction].dimen[1];
+      item.style.height = DrawerDir[drawerDirection.current].dimen[0];
+      item.style.width = DrawerDir[drawerDirection.current].dimen[1];
     }
-  }, [direction, open, isPortalLoaded]);
+  }, [drawerDirection, open, isPortalLoaded]);
 
   return (
     <>
       {open && (
-        <DrawerPortal onClose={onClose}>
+        <DrawerPortal onClose={() => onClose(drawerDirection.current)}>
           <div className="drawer-container">
             {/* overlay */}
             <div
               className="z-[9999] fixed inset-0 bg-neutral-950/70"
-              onClick={handleClose}
+              onClick={() => onClose(drawerDirection.current)}
             />
             <div
               tabIndex={1}
@@ -141,15 +140,15 @@ export const DrawerContent = ({
                 drawerClassName
               )}
               style={{
-                transform: DrawerDir[direction].translateOut,
-                ...DrawerDir[direction].styles,
+                transform: DrawerDir[drawerDirection.current].translateOut,
+                ...DrawerDir[drawerDirection.current].styles,
               }}
             >
               <div
                 className="absolute w-28 h-2 rounded-3xl bg-neutral-700"
                 style={{
                   ...handleStyles,
-                  ...DrawerDir[direction].handleStyles,
+                  ...DrawerDir[drawerDirection.current].handleStyles,
                 }}
               />
               <div className={cn("mt-10", containerClassName)}>{children}</div>
@@ -209,24 +208,24 @@ export const DrawerDescription = ({ children, className }: Props) => {
 };
 
 export const DrawerClose = ({ children, className }: Props) => {
-  const { onClose, onPortalClose } = useDrawer();
+  const { onClose, drawerDirection } = useDrawer();
   return (
     <button
       className={cn("", className)}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClose();
-        onPortalClose();
-      }}
+      onClick={() => onClose(drawerDirection.current)}
     >
       {children}
     </button>
   );
 };
 
-export const Drawer = ({ children }: Pick<Props, "children">) => {
+export const Drawer = ({
+  children,
+  drawerDirection,
+}: { drawerDirection: DrawerDirection } & Pick<Props, "children">) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isPortalLoaded, setIsPortalLoaded] = useState(false);
+  const direction = useRef<DrawerDirection>(drawerDirection);
 
   const { DrawerProvider } = useDrawer();
 
@@ -236,8 +235,9 @@ export const Drawer = ({ children }: Pick<Props, "children">) => {
       onOpenChange: setIsOpen,
       isPortalLoaded,
       setIsPortalLoaded,
+      drawerDirection: direction,
     }),
-    [isOpen, isPortalLoaded]
+    [isOpen, isPortalLoaded, direction]
   );
 
   return <DrawerProvider value={values}>{children}</DrawerProvider>;

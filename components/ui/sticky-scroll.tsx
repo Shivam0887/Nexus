@@ -49,8 +49,8 @@ export const StickyScroll = ({
           container.scrollTop /
           (container.scrollHeight - container.clientHeight);
 
-        beam.style.top = `${scrollYProgress * 100}%`;
-        beam.style.height = `${scrollYProgress * 25}%`;
+        beam.style.top = `${Math.round(scrollYProgress * 100)}%`;
+        beam.style.height = `${Math.round(scrollYProgress * 25)}%`;
 
         let closestBreakpointIndex = 0;
 
@@ -90,7 +90,7 @@ export const StickyScroll = ({
 
   return (
     <div
-      className="h-[30rem] sm:w-[80%] w-[90%] mx-auto [scrollbar-width:none] overflow-y-auto flex relative px-3 rounded-lg transition duration-500 ease-linear"
+      className="h-[30rem] w-full mx-auto [scrollbar-width:none] overflow-y-auto flex relative px-3 rounded-lg transition duration-500 ease-linear"
       ref={ref}
       style={{
         backgroundColor: backgroundColors[activeCard],

@@ -1,12 +1,21 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { DrawerDir } from "@/lib/constants";
+import { DrawerDirection } from "@/lib/types";
+import {
+  createContext,
+  MutableRefObject,
+  useCallback,
+  useContext,
+  useMemo,
+} from "react";
 
 type DrawerContextType = {
   open: boolean;
   isPortalLoaded: boolean;
   setIsPortalLoaded: React.Dispatch<React.SetStateAction<boolean>>;
   onOpenChange: React.Dispatch<React.SetStateAction<boolean>>;
+  drawerDirection: MutableRefObject<DrawerDirection>;
 };
 
 const drawerContext = createContext<DrawerContextType>({
@@ -14,11 +23,19 @@ const drawerContext = createContext<DrawerContextType>({
   open: false,
   isPortalLoaded: false,
   setIsPortalLoaded: () => {},
+  drawerDirection: {
+    current: "bottom",
+  },
 });
 
 const useDrawer = () => {
-  const { onOpenChange, open, isPortalLoaded, setIsPortalLoaded } =
-    useContext(drawerContext);
+  const {
+    onOpenChange,
+    open,
+    isPortalLoaded,
+    setIsPortalLoaded,
+    drawerDirection,
+  } = useContext(drawerContext);
 
   const onPortalOpen = useCallback(
     () => setIsPortalLoaded(true),
@@ -29,9 +46,22 @@ const useDrawer = () => {
     [setIsPortalLoaded]
   );
 
-  const onClose = useCallback(() => {
-    onOpenChange(false);
-  }, [onOpenChange]);
+  const onClose = useCallback(
+    (direction: DrawerDirection) => {
+      const item = document.querySelector(".drawer-item");
+      if (item) {
+        (item as HTMLDivElement).style.transform =
+          DrawerDir[direction].translateOut;
+      }
+
+      setTimeout(() => {
+        document.body.style.overflow = "auto";
+        onOpenChange(false);
+        onPortalClose();
+      }, 300);
+    },
+    [onOpenChange, onPortalClose]
+  );
   const onOpen = useCallback(() => onOpenChange(true), [onOpenChange]);
 
   const values = useMemo(
@@ -43,9 +73,18 @@ const useDrawer = () => {
       onPortalOpen,
       onPortalClose,
       isPortalLoaded,
+      drawerDirection,
     }),
 
-    [onClose, onOpen, open, isPortalLoaded, onPortalOpen, onPortalClose]
+    [
+      onClose,
+      onOpen,
+      open,
+      isPortalLoaded,
+      onPortalOpen,
+      onPortalClose,
+      drawerDirection,
+    ]
   );
 
   return values;

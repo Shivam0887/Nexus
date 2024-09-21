@@ -7,20 +7,23 @@ import { dark } from "@clerk/themes";
 import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useDrawer from "@/hooks/useDrawer";
+import { DrawerDirection } from "@/lib/types";
 
-const SidebaNav = ({
+const SidebarNav = ({
   username,
   className,
+  direction,
 }: {
   username: string;
   className?: string;
+  direction: DrawerDirection;
 }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { onClose, onPortalClose } = useDrawer();
 
   const handleClick = (href: string) => {
-    onClose();
+    onClose(direction);
     onPortalClose();
     router.push(href);
   };
@@ -62,4 +65,4 @@ const SidebaNav = ({
   );
 };
 
-export default SidebaNav;
+export default SidebarNav;

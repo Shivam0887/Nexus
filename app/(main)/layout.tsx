@@ -23,7 +23,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     hasPasskey: user.hasPasskey,
     hasSubscription: false,
     imageUrl: user.imageUrl,
-    isAISearch: false,
+    isAISearch: user.isAISearch,
     plan: "Starter",
     shouldRemember: user.shouldRemember,
     username: user.username,
@@ -45,7 +45,7 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
     <UserProvider userData={userData}>
       <div className="flex h-[calc(100vh-4rem)]">
         <div className="h-full sm:block hidden">
-          <SidebaNav username={userData.username} />
+          <SidebaNav username={userData.username} direction="right" />
         </div>
         <div className="flex-1 h-full">{children}</div>
       </div>

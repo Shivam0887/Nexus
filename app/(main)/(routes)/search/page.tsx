@@ -19,10 +19,9 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 
 import { cn } from "@/lib/utils";
-import DialogProvider from "@/hooks/useDialog";
-import { searchAction } from "@/actions/user.actions";
 import { useFormState } from "react-dom";
 import Loading from "@/components/loading";
+import { searchAction } from "@/actions/search.actions";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -61,7 +60,7 @@ const Page = () => {
           <Filter />
         </div>
         <div className="lg:hidden block">
-          <Drawer>
+          <Drawer drawerDirection="bottom">
             <DrawerTrigger>
               <div className="text-[13px] text-text-primary bg-neutral-800 max-w-max py-2 px-4 flex items-center rounded-lg">
                 Filter
@@ -200,22 +199,20 @@ const Page = () => {
 
       {/* dialog box */}
       <div className="absolute lg:right-20 right-5 lg:bottom-20 bottom-5">
-        <DialogProvider>
-          <Dialog>
-            <DialogTrigger>
-              <Fullscreen />
-            </DialogTrigger>
-            <DialogContent className="h-[468px] p-4">
-              {formState.map((document) => (
-                <Document
-                  key={document.href}
-                  layout={layout}
-                  document={document}
-                />
-              ))}
-            </DialogContent>
-          </Dialog>
-        </DialogProvider>
+        <Dialog>
+          <DialogTrigger>
+            <Fullscreen />
+          </DialogTrigger>
+          <DialogContent className="h-[468px] p-4">
+            {formState.map((document) => (
+              <Document
+                key={document.href}
+                layout={layout}
+                document={document}
+              />
+            ))}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -21,11 +21,13 @@ const Textarea = ({
     transcript,
     browserSupportsSpeechRecognition,
     isMicrophoneAvailable,
+    resetTranscript,
   } = useSpeechRecognition();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { pending } = useFormStatus();
 
+  const [disabled, setDisabled] = useState(true);
   const [query, setQuery] = useState("");
   const deboundedTranscript = useDebounce(transcript, 200);
 
@@ -39,6 +41,10 @@ const Textarea = ({
         setQuery(deboundedTranscript);
       }
 
+      setDisabled(
+        textarea.value.length === 0 && deboundedTranscript.length === 0
+      );
+
       // Reset height to calculate the correct scroll height
       textarea.style.height = "auto";
 
@@ -47,30 +53,41 @@ const Textarea = ({
     }
   }, [listening, deboundedTranscript, setQuery]);
 
-  const startListening = useCallback(() => {
-    if (!isMicrophoneAvailable) {
-      alert("Please allow the permission for microphone");
-      return;
-    }
+  const startListening = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (!isMicrophoneAvailable) {
+        alert("Please allow the permission for microphone");
+        return;
+      }
 
-    if (browserSupportsSpeechRecognition) {
-      SpeechRecognition.startListening({ continuous: true });
-    } else {
-      alert(
-        "Your browser does not support Speech Recognition. Please try using Chrome or another supported browser."
-      );
-    }
-  }, [browserSupportsSpeechRecognition, isMicrophoneAvailable]);
+      if (browserSupportsSpeechRecognition) {
+        resetTranscript();
+        SpeechRecognition.startListening({ continuous: true });
+      } else {
+        alert(
+          "Your browser does not support Speech Recognition. Please try using Chrome or another supported browser."
+        );
+      }
+    },
+    [browserSupportsSpeechRecognition, isMicrophoneAvailable, resetTranscript]
+  );
 
-  const stopListening = useCallback(() => {
-    if (browserSupportsSpeechRecognition) {
-      SpeechRecognition.stopListening();
-    } else {
-      alert(
-        "Your browser does not support Speech Recognition. Please try using Chrome or another supported browser."
-      );
-    }
-  }, [browserSupportsSpeechRecognition]);
+  const stopListening = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      e.preventDefault();
+      if (browserSupportsSpeechRecognition) {
+        SpeechRecognition.stopListening();
+      } else {
+        alert(
+          "Your browser does not support Speech Recognition. Please try using Chrome or another supported browser."
+        );
+      }
+    },
+    [browserSupportsSpeechRecognition]
+  );
 
   useEffect(() => {
     handleChange();
@@ -78,11 +95,15 @@ const Textarea = ({
 
   useEffect(() => {
     setIsSearching(pending);
-    if (pending) setQuery("");
+    if (pending && textareaRef.current) {
+      setQuery("");
+      setDisabled(true);
+      textareaRef.current.style.height = "auto";
+    }
   }, [pending, setIsSearching]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" || e.key === "NumpadEnter") {
+    if (!e.shiftKey && (e.key === "Enter" || e.key === "NumpadEnter")) {
       e.preventDefault();
       e.currentTarget.form?.requestSubmit();
     }
@@ -131,7 +152,7 @@ const Textarea = ({
       </button>
 
       {/* submit button */}
-      <button disabled={!pending} type="submit">
+      <button disabled={pending || disabled} type="submit">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="2 2 20 20"
@@ -141,7 +162,7 @@ const Textarea = ({
           strokeLinecap="round"
           strokeLinejoin="round"
           className={`lucide lucide-circle-arrow-up sm:size-7 size-6 stroke-neutral-800 ${
-            !pending ? "fill-neutral-500" : "fill-neutral-200"
+            pending || disabled ? "fill-neutral-500" : "fill-neutral-200"
           }`}
         >
           <circle cx="12" cy="12" r="10" />

@@ -36,6 +36,14 @@ const userSchema = new Schema(
       type: [String],
       default: () => [],
     },
+    isAISearch: {
+      type: Boolean,
+      default: () => false,
+    },
+    hasSubscription: {
+      type: Boolean,
+      default: () => false,
+    },
     gmail: {
       accessToken: String,
       refreshToken: String,

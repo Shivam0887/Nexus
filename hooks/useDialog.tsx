@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 
 export type DialogContextType = {
   open: boolean;
@@ -18,31 +24,22 @@ const DialogContext = createContext<DialogContextType>({
 
 export const useDialog = () => {
   const { modal, onOpenChange, open, setModal } = useContext(DialogContext);
-  const Provider = DialogContext.Provider;
 
-  return {
-    modal,
-    onOpenChange,
-    open,
-    setModal,
-    Provider,
-  };
-};
-
-const DialogProvider = ({ children }: { children: React.ReactNode }) => {
-  const [open, onOpenChange] = useState(false);
-  const [modal, setModal] = useState(true);
+  const onClose = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   const contextValue = useMemo(
-    () => ({ open, onOpenChange, modal, setModal }),
-    [open, modal]
+    () => ({
+      open,
+      onOpenChange,
+      modal,
+      setModal,
+      DialogProvider: DialogContext.Provider,
+      onClose,
+    }),
+    [open, modal, onOpenChange, setModal, onClose]
   );
 
-  return (
-    <DialogContext.Provider value={contextValue}>
-      {children}
-    </DialogContext.Provider>
-  );
+  return contextValue;
 };
-
-export default DialogProvider;

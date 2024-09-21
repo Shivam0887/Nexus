@@ -116,17 +116,17 @@ export default function Home() {
 
           {/* working section */}
 
-          <section className="flex flex-col max-h-screen gap-20 items-center my-40">
+          <section className="relative flex flex-col h-[calc(100vh-4rem)] items-center my-40">
             <h1 className="sm:text-5xl text-4xl text">
               How Nexus Works<span className="text-btn-primary">?</span>
             </h1>
             <WavyBackground
-              className="w-full h-max flex justify-center"
+              className="w-full flex justify-center"
               backgroundFill="#101010"
               waveWidth={30}
-              containerClassName="[mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha] h-max relative"
+              containerClassName="[mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha] relative flex-1"
             >
-              <div className="relative sm:w-[90%] h-max w-full">
+              <div className="relative w-[90%]">
                 <StickyScroll content={content} />
               </div>
             </WavyBackground>

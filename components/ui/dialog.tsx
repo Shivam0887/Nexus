@@ -3,7 +3,13 @@
 import { useDialog } from "@/hooks/useDialog";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type DialogType = {
   children: React.ReactNode;
@@ -91,11 +97,7 @@ export const DialogContent = ({
   className?: string;
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
-  const { modal, onOpenChange, open } = useDialog();
-
-  const handleClose = useCallback(() => {
-    onOpenChange(false);
-  }, [onOpenChange]);
+  const { modal, open, onClose } = useDialog();
 
   const handleClick = useCallback(
     (e: MouseEvent) => {
@@ -108,24 +110,24 @@ export const DialogContent = ({
         e.clientY < dialogDim.top ||
         e.clientY > dialogDim.bottom
       ) {
-        handleClose();
+        onClose();
       }
     },
-    [handleClose]
+    [onClose]
   );
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
 
-    dialog.addEventListener("close", handleClose);
+    dialog.addEventListener("close", onClose);
     dialog.addEventListener("click", handleClick);
 
     return () => {
-      dialog.removeEventListener("close", handleClose);
+      dialog.removeEventListener("close", onClose);
       dialog.removeEventListener("click", handleClick);
     };
-  }, [handleClose, handleClick]);
+  }, [onClose, handleClick]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -154,7 +156,7 @@ export const DialogContent = ({
       )}
     >
       <button
-        onClick={handleClose}
+        onClick={onClose}
         className="absolute top-4 right-4 float-end"
         aria-label="close button"
       >
@@ -171,31 +173,26 @@ export const DialogContent = ({
 };
 
 export const Dialog = ({ children, open, onOpenChange, modal }: DialogType) => {
-  const {
-    open: contextOpen,
-    onOpenChange: contextOnOpenChange,
-    modal: contextModal,
-    setModal,
-  } = useDialog();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isModal, setIsModal] = useState(true);
 
-  const isControlled = useMemo(
-    () => open !== undefined && onOpenChange !== undefined,
-    [onOpenChange, open]
+  const { DialogProvider } = useDialog();
+
+  if (Number(open === undefined) ^ Number(onOpenChange === undefined)) {
+    throw new Error(
+      "You must specify both 'open' and 'onOpenChange', if you want controlled input."
+    );
+  }
+
+  const value = useMemo(
+    () => ({
+      modal: modal ?? isModal,
+      open: open ?? isOpen,
+      onOpenChange: onOpenChange ?? setIsOpen,
+      setModal: setIsModal,
+    }),
+    [isModal, isOpen, onOpenChange, open, modal]
   );
 
-  useEffect(() => {
-    contextOnOpenChange(isControlled ? open! : contextOpen);
-    setModal(modal ?? contextModal);
-  }, [
-    isControlled,
-    open,
-    onOpenChange,
-    contextOpen,
-    contextOnOpenChange,
-    modal,
-    contextModal,
-    setModal,
-  ]);
-
-  return <div>{children}</div>;
+  return <DialogProvider value={value}>{children}</DialogProvider>;
 };
