@@ -1,7 +1,12 @@
 "use client";
 
-import { ActionType, StateType } from "@/lib/types";
+import { Account, ActionType, StateType } from "@/lib/types";
 import React, { createContext, useContext, useMemo, useReducer } from "react";
+
+const accountDetails: Account = {
+  account: false,
+  dataCollection: false,
+};
 
 const InitialState: StateType = {
   coverImage: "",
@@ -15,16 +20,16 @@ const InitialState: StateType = {
   filter: [],
   username: "",
   plan: "Starter",
-  isGmailConnected: false,
-  isDiscordConnected: false,
-  isGitHubConnected: false,
   isGoogleCalendarConnected: false,
-  isGoogleDocsConnected: false,
-  isGoogleDriveConnected: false,
-  isNotionConnected: false,
-  isOneDriveConnected: false,
-  isSlackConnected: false,
-  isTeamsConnected: false,
+  "Google Docs": accountDetails,
+  "Google Drive": accountDetails,
+  "MS Teams": accountDetails,
+  Discord: accountDetails,
+  GitHub: accountDetails,
+  Gmail: accountDetails,
+  Notion: accountDetails,
+  OneDrive: accountDetails,
+  Slack: accountDetails,
 };
 
 type UserContextType = {

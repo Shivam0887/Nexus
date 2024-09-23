@@ -40,12 +40,10 @@ const Page = () => {
 
   return (
     <div
-      className={`relative mb:p-10 p-5 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
+      className={`relative mb:py-10 md:px-5 py-5 px-2 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
     >
       <form
-        action={(formData) => {
-          formAction(formData);
-        }}
+        action={formAction}
         className="w-full flex flex-col items-center gap-10"
       >
         <h1 className="md:text-4xl sm:text-3xl text-2xl text font-extrabold tracking-wide">

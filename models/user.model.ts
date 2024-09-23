@@ -49,18 +49,30 @@ const userSchema = new Schema(
       refreshToken: String,
       expiresAt: Number,
       authUser: String,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     google_docs: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
       authUser: String,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     google_drive: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
       authUser: String,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     google_calendar: {
       accessToken: String,
@@ -72,31 +84,55 @@ const userSchema = new Schema(
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     discord: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     gitHub: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     notion: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     slack: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
     oneDrive: {
       accessToken: String,
       refreshToken: String,
       expiresAt: Number,
+      dataCollection: {
+        type: Boolean,
+        default: () => false,
+      },
     },
   },
   { timestamps: true }

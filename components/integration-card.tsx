@@ -5,22 +5,21 @@ import axios from "axios";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Account, FilterKey } from "@/lib/types";
 
 const IntegrationCard = ({
   src,
   alt,
   desc,
-  isConnected,
 }: {
   src: string;
-  alt: string;
+  alt: FilterKey;
   desc: string;
-  isConnected: boolean;
 }) => {
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
-  const { dispatch } = useUser();
+  const { dispatch, user } = useUser();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -38,16 +37,16 @@ const IntegrationCard = ({
       e.stopPropagation();
       dispatch({
         type: "CONNECTION",
-        payload: false,
-        connectionType: "isGmailConnected",
+        payload: { account: false, dataCollection: user[alt].dataCollection },
+        connectionType: "Gmail",
       });
 
       await axios.post("/api/oauth_callback/gmail");
     } catch (error) {
       dispatch({
         type: "CONNECTION",
-        payload: true,
-        connectionType: "isGmailConnected",
+        payload: { account: true, dataCollection: user[alt].dataCollection },
+        connectionType: "Gmail",
       });
     }
   };
@@ -82,7 +81,7 @@ const IntegrationCard = ({
 
       <div className="w-[18rem] sm:w-[20rem] lg:w-[22rem] xl:w-[28rem] h-[14rem] shrink-0 flex flex-col justify-around">
         <div className="flex justify-end">
-          {isConnected ? (
+          {user[alt].account ? (
             <button
               onClick={handleDisconnect}
               className="w-max text-xs bg-btn-primary py-2 px-4 rounded-3xl text-black"

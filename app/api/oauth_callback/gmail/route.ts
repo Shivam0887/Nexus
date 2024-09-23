@@ -56,11 +56,11 @@ export async function GET(req: NextRequest) {
         await User.findOneAndUpdate(
           { userId },
           {
-            gmail: {
-              accessToken: tokens.access_token,
-              refreshToken: tokens.refresh_token,
-              expiresAt: Date.now() + tokens.expires_in * 1000,
-              authUser,
+            $set: {
+              "gmail.accessToken": tokens.access_token,
+              "gmail.refreshToken": tokens.refresh_token,
+              "gmail.expiresAt": Date.now() + tokens.expires_in * 1000,
+              "gmail.authUser": authUser,
             },
           }
         );
@@ -89,7 +89,10 @@ export async function POST() {
       { userId },
       {
         $set: {
-          gmail: {},
+          "gmail.accessToken": "",
+          "gmail.refreshToken": "",
+          "gmail.expiresAt": undefined,
+          "gmail.authUser": undefined,
         },
       }
     );

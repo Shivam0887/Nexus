@@ -66,12 +66,9 @@ const checkAndRefreshToken = async (userId: string) => {
         { userId },
         {
           $set: {
-            gmail: {
-              accessToken: credentials.access_token,
-              refreshToken,
-              expiresAt: credentials.expiry_date!,
-              authUser,
-            },
+            "gmail.accessToken": credentials.access_token,
+            "gmail.refreshToken": credentials.refresh_token,
+            "gmail.expiresAt": credentials.expiry_date,
           },
         }
       );
@@ -97,7 +94,8 @@ const searchEmails = async (
   searchQuery: string,
   userId: string,
   clerkId: string,
-  authUser: string
+  authUser: string,
+  isAISearch: boolean
 ): Promise<DocumentType[]> => {
   if (searchQuery.trim().length === 0) return [];
 
@@ -177,7 +175,10 @@ const searchEmails = async (
         const href = `https://mail.google.com/mail/u/${authUser}/#${label}/${id}`;
 
         // Process email content
-        // const content = await processEmailContent(payload?.parts);
+        let content = "";
+        if (isAISearch) {
+          content = await processEmailContent(payload?.parts);
+        }
 
         return {
           date: getHeader(headers, "Date"),
@@ -186,20 +187,23 @@ const searchEmails = async (
           href,
           email: userId,
           logo: "./Gmail.svg",
-          content: "",
+          content,
         };
       })
     );
 
     result.push(...emails);
     pageToken = data.nextPageToken ?? undefined;
-  } while (pageToken && result.length < 100); // Limit total results to 1000
+  } while (pageToken && result.length < 100); // Limit total results to 100
+
+  if (isAISearch) {
+  }
 
   return result;
 };
 
 export const searchAction = async (
-  state: DocumentType[],
+  state: DocumentType[] | string,
   formData: FormData
 ) => {
   const { userId } = auth();
@@ -215,19 +219,18 @@ export const searchAction = async (
     ]);
 
     await ConnectToDB();
-    const user = await User.findOne<UserType>(
-      { userId },
-      { email: 1, gmail: 1 }
-    );
-    if (!user) throw new Error("User not found");
+    const user = await User.findOne<
+      Pick<UserType, "email" | "userId" | "gmail" | "isAISearch">
+    >({ userId }, { email: 1, gmail: 1, isAISearch: 1 });
 
-    console.log(aiMsg.content);
+    if (!user) throw new Error("User not found");
 
     return await searchEmails(
       aiMsg.content.toString(),
       user.email,
       userId,
-      user.gmail!.authUser!
+      user.gmail!.authUser!,
+      user.isAISearch
     );
   } catch (error: any) {
     console.error("Search error:", error.message);

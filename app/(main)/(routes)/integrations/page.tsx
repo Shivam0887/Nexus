@@ -7,8 +7,6 @@ import Image from "next/image";
 import Security from "@/components/security";
 import { useEffect, useRef, useState } from "react";
 import useUser from "@/hooks/useUser";
-import { useAuth } from "@clerk/nextjs";
-import { FilterKey } from "@/lib/types";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +16,6 @@ const Page = () => {
 
   const [isMediumScreen, setIsMediumScreen] = useState(false);
   const { user } = useUser();
-  const { userId } = useAuth();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -45,18 +42,6 @@ const Page = () => {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const ConnectionStatus: Record<FilterKey, boolean> = {
-    "Google Docs": user.isGoogleDocsConnected,
-    "Google Drive": user.isGoogleDriveConnected,
-    "MS Teams": user.isTeamsConnected,
-    Discord: user.isDiscordConnected,
-    GitHub: user.isGitHubConnected,
-    Gmail: user.isGmailConnected,
-    Notion: user.isNotionConnected,
-    OneDrive: user.isOneDriveConnected,
-    Slack: user.isSlackConnected,
-  };
 
   return (
     <div
@@ -110,13 +95,7 @@ const Page = () => {
 
       <div className="relative z-50 w-full flex flex-col items-center py-10 lg:overflow-auto gap-10 flex-1">
         {images.map(({ alt, desc, src, key }) => (
-          <IntegrationCard
-            alt={alt}
-            src={src}
-            desc={desc}
-            key={key}
-            isConnected={ConnectionStatus[alt]}
-          />
+          <IntegrationCard alt={alt} src={src} desc={desc} key={key} />
         ))}
       </div>
     </div>

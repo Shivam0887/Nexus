@@ -47,7 +47,25 @@ export type PasskeyState = {
 
 export type DrawerDirection = "top" | "left" | "right" | "bottom";
 
-export type StateType = {
+export type FilterKey =
+  | "Gmail"
+  | "Notion"
+  | "Slack"
+  | "Discord"
+  | "Google Drive"
+  | "MS Teams"
+  | "GitHub"
+  | "Google Docs"
+  | "OneDrive";
+
+export type Account = {
+  account: boolean;
+  dataCollection: boolean;
+};
+
+export type Connection = { [key in FilterKey]: Account };
+
+export type StateType = Connection & {
   username: string;
   email: string;
   imageUrl: string;
@@ -59,16 +77,7 @@ export type StateType = {
   filter: FilterKey[];
   hasSubscription: boolean;
   plan: PLAN["plan"];
-  isGmailConnected: boolean;
-  isGoogleDriveConnected: boolean;
-  isGoogleDocsConnected: boolean;
   isGoogleCalendarConnected: boolean;
-  isDiscordConnected: boolean;
-  isNotionConnected: boolean;
-  isSlackConnected: boolean;
-  isTeamsConnected: boolean;
-  isGitHubConnected: boolean;
-  isOneDriveConnected: boolean;
 };
 
 export type ActionType =
@@ -105,20 +114,9 @@ export type ActionType =
     }
   | {
       type: "CONNECTION";
-      payload: boolean;
-      connectionType: string;
+      payload: Account;
+      connectionType: FilterKey;
     };
-
-export type FilterKey =
-  | "Gmail"
-  | "Notion"
-  | "Slack"
-  | "Discord"
-  | "Google Drive"
-  | "MS Teams"
-  | "GitHub"
-  | "Google Docs"
-  | "OneDrive";
 
 export type LogoType = {
   src: string;

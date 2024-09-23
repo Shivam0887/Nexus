@@ -12,6 +12,7 @@ export default function Page() {
               "bg-btn-primary !shadow-none transition hover:bg-yellow-400",
           },
         }}
+        fallbackRedirectUrl={"/search"}
       />
     </div>
   );

@@ -13,6 +13,8 @@
     "@clerk/themes": "^2.1.14",
     "@langchain/core": "^0.3.1",
     "@langchain/google-genai": "^0.1.0",
+    "@langchain/pinecone": "^0.1.0",
+    "@pinecone-database/pinecone": "^3.0.3",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-radio-group": "^1.2.0",
     "@radix-ui/react-select": "^2.1.1",

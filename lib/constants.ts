@@ -112,6 +112,14 @@ export const images: LogoType[] = [
     width: 64,
     height: 64,
   },
+  {
+    src: "./Slack.svg",
+    alt: "Slack",
+    desc: "Enhance your community interactions by integrating Slack with Nexus. Easily search through messages, media, and server content.",
+    key: "slack",
+    width: 64,
+    height: 64,
+  },
 ];
 
 export const temp = [
@@ -437,28 +445,31 @@ export const DrawerDir: Record<
   },
 };
 
-export const filterData = [
-  "Gmail",
-  "Notion",
-  "Slack",
+export const Platforms: FilterKey[] = [
   "Discord",
-  "Google Drive",
-  "Teams",
   "GitHub",
+  "Gmail",
   "Google Docs",
+  "Google Drive",
+  "MS Teams",
+  "Notion",
   "OneDrive",
+  "Slack",
 ];
 
 export const sortData = ["date", "last hour", "last day", "last week"];
 
-// export const UserAction = {
-//   COVER_IMAGE_CHANGE: "COVER_IMAGE_CHANGE",
-//   PASSKEY_CREATE: "PASSKEY_CREATE",
-//   PROFILE_IMAGE_CHANGE: "PROFILE_IMAGE_CHANGE",
-//   AI_SEARCH_CHANGE: "AI_SEARCH_CHANGE",
-//   USERNAME_CHANGE: "USERNAME_CHANGE",
-//   PLAN_CHANGE: "PLAN_CHANGE",
-// };
+export const LogoMap: Record<FilterKey, string> = {
+  "Google Docs": "./Google_Docs.svg",
+  "Google Drive": "./Google_Drive.svg",
+  "MS Teams": "./Teams.svg",
+  Discord: "./Discord.svg",
+  GitHub: "./Github.svg",
+  Gmail: "./Gmail.svg",
+  Notion: "./Notion.svg",
+  OneDrive: "./OneDrive.svg",
+  Slack: "./Slack.svg",
+};
 
 export const Scopes: Record<FilterKey, string[]> = {
   Gmail: ["https://www.googleapis.com/auth/gmail.readonly"],

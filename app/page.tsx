@@ -12,6 +12,7 @@ import { WavyBackground } from "@/components/ui/wavy-background";
 import Accordion from "@/components/ui/accordion";
 import AnimatedModal from "@/components/ui/animated-modal";
 import Price from "@/components/price";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export default function Home() {
   return (
@@ -45,9 +46,22 @@ export default function Home() {
                 </div>
 
                 <div className="!mt-32 select-none">
-                  <AnimatedModal icon={<ChevronRight />} href="/search">
-                    Get started
-                  </AnimatedModal>
+                  <SignedOut>
+                    <SignInButton
+                      mode="modal"
+                      signUpFallbackRedirectUrl={"/search"}
+                      fallbackRedirectUrl={"/search"}
+                    >
+                      <AnimatedModal icon={<ChevronRight />} href="/#">
+                        Get started
+                      </AnimatedModal>
+                    </SignInButton>
+                  </SignedOut>
+                  <SignedIn>
+                    <AnimatedModal icon={<ChevronRight />} href="/search">
+                      Get started
+                    </AnimatedModal>
+                  </SignedIn>
                 </div>
                 <span className="absolute right-32 -bottom-32 opacity-10 rounded-full w-28 h-28 bg-gradient-radial from-[#D9D9D9] to-[#737373]" />
               </section>

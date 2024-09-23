@@ -8,18 +8,18 @@ import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useDrawer from "@/hooks/useDrawer";
 import { DrawerDirection } from "@/lib/types";
+import useUser from "@/hooks/useUser";
 
 const SidebarNav = ({
-  username,
   className,
   direction,
 }: {
-  username: string;
   className?: string;
   direction: DrawerDirection;
 }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useUser();
   const { onClose, onPortalClose } = useDrawer();
 
   const handleClick = (href: string) => {
@@ -52,7 +52,7 @@ const SidebarNav = ({
               baseTheme: dark,
             }}
           />
-          <p className="text-sm capitalize">{username}</p>
+          <p className="text-sm capitalize">{user.username}</p>
         </div>
         <SignOutButton signOutOptions={{ redirectUrl: "/" }}>
           <button className="flex hover:text-btn-primary gap-x-5 items-center">

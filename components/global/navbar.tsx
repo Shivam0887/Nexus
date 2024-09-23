@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-  useUser as clerkUser,
-} from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +15,7 @@ import SidebarNav from "./sidebar-nav";
 import HamburgurIcon from "../ui/hamburger-icon";
 import { Inter } from "next/font/google";
 import Switch from "../ui/switch";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,30 +24,50 @@ import {
   DialogItem,
   DialogTitle,
 } from "../ui/dialog";
-import { AISearchPreference, getUser } from "@/actions/user.actions";
+import { AISearchPreference } from "@/actions/user.actions";
+import { ChevronDown, Sparkles } from "lucide-react";
+import { LogoMap, Platforms } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import useUser from "@/hooks/useUser";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user } = clerkUser();
-  const [isAISearch, setIsAISearch] = useState(false);
+  const { dispatch, user } = useUser();
+  const { isAISearch } = user;
+
+  const dataCollectionRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getUser({ isAISearch: true });
-        if (res) {
-          setIsAISearch(res.isAISearch);
-        }
-      } catch (error: any) {
-        console.log(error?.message);
-      }
-    })();
     setIsLoading(false);
+
+    const handleDropdownClose = (e: MouseEvent) => {
+      const collection = dataCollectionRef.current?.getBoundingClientRect();
+      const container = searchRef.current?.getBoundingClientRect();
+
+      if (container && collection) {
+        if (
+          e.clientX < container.left ||
+          e.clientX > collection.right ||
+          e.clientY < container.top ||
+          e.clientY > collection.bottom
+        ) {
+          setIsDropdownOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener("click", handleDropdownClose);
+
+    return () => {
+      window.removeEventListener("click", handleDropdownClose);
+    };
   }, []);
 
   const handleMouseEnter = () => {
@@ -81,7 +95,7 @@ export default function Navbar() {
     setIsLoading(true);
     let prevAISearchPreference = isAISearch;
     try {
-      setIsAISearch(isAllowed);
+      dispatch({ type: "AI_SEARCH_CHANGE", payload: isAllowed });
       await AISearchPreference(isAllowed);
 
       if (isAllowed) {
@@ -89,31 +103,33 @@ export default function Navbar() {
       }
     } catch (error: any) {
       console.error("Error updating AI search preference:", error?.message);
-      setIsAISearch(prevAISearchPreference);
+      dispatch({ type: "AI_SEARCH_CHANGE", payload: prevAISearchPreference });
     } finally {
       setIsLoading(false);
       setIsDialogOpen(false);
     }
   };
 
+  const handleDropdownChange = () => {
+    setIsDropdownOpen((prev) => !prev);
+  };
+
   return (
     <header className="h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
-      <nav className="flex py-4 sm:px-10 px-4 justify-between items-center">
-        <div>
-          <Link href="/" className="flex gap-1 items-center">
-            <span className="sm:hidden inline relative size-6">
-              <Image
-                src="/logo.jpeg"
-                alt="logo"
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              />
-            </span>
-            <span className="sm:inline hidden sm:text-2xl text-xl">Nexus</span>
-          </Link>
-        </div>
-        <div className="flex gap-6 items-center">
+      <nav className="flex py-4 sm:pl-10 pl-5 pr-5 justify-between items-center">
+        <Link href="/" className="flex gap-1 items-center">
+          <span className="sm:hidden inline relative size-6">
+            <Image
+              src="/logo.jpeg"
+              alt="logo"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </span>
+          <span className="sm:inline hidden sm:text-2xl text-xl">Nexus</span>
+        </Link>
+        <div className="flex gap-4 items-center">
           {pathname === "/" ? (
             <ul className="hidden relative lg:text-lg md:text-base text-sm md:flex justify-center sm:gap-4">
               <li
@@ -151,15 +167,75 @@ export default function Navbar() {
             </ul>
           ) : (
             <div className={`flex gap-4 items-center ${inter.className}`}>
-              {/* AI search button */}
-              <Switch
-                label={
-                  <p className="text-xs font-medium tracking-wide">AI Search</p>
-                }
-                value={isAISearch}
-                onValueChange={handleAISearchToggle}
-                disabled={isLoading}
-              />
+              <div ref={searchRef} className="relative w-max">
+                {/* AI search button */}
+                <Switch
+                  label={
+                    <div className="flex gap-2">
+                      <Sparkles className="size-4 fill-btn-primary stroke-btn-primary" />
+                      <p className="text-xs font-medium tracking-wide">
+                        AI Search
+                      </p>
+                    </div>
+                  }
+                  value={isAISearch}
+                  onValueChange={handleAISearchToggle}
+                  disabled={isLoading}
+                  icon={ChevronDown}
+                  onContainerClick={handleDropdownChange}
+                />
+
+                {/* Data collection platform-wise */}
+                <div
+                  ref={dataCollectionRef}
+                  className={`shadow-xl grid absolute top-[calc(100%+0.5rem)] bg-neutral-900 rounded-lg transition-all ${
+                    isDropdownOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div
+                    role="button"
+                    className={`overflow-hidden w-max ${
+                      isAISearch ? "" : "opacity-50 pointer-events-none"
+                    }`}
+                  >
+                    {Platforms.map((platform, i) => (
+                      <Switch
+                        key={platform}
+                        className={cn("rounded-none", {
+                          "rounded-t-lg": i === 0,
+                          "rounded-b-lg": i === Platforms.length - 1,
+                        })}
+                        value={user[platform].dataCollection}
+                        onValueChange={() =>
+                          dispatch({
+                            type: "CONNECTION",
+                            connectionType: platform,
+                            payload: {
+                              ...user[platform],
+                              dataCollection: !user[platform].dataCollection,
+                            },
+                          })
+                        }
+                        label={
+                          <div className="flex gap-2 items-center">
+                            <div className="relative size-5">
+                              <Image
+                                src={LogoMap[platform]}
+                                alt={platform}
+                                fill
+                                quality={100}
+                              />
+                            </div>
+                            <p className="text-xs font-medium tracking-wide">
+                              {platform}
+                            </p>
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               {/* Upgrade button */}
               <Link
@@ -172,8 +248,12 @@ export default function Navbar() {
           )}
 
           <SignedOut>
-            <SignInButton>
-              <button className="hidden sm:block text-black bg-btn-primary py-2 px-8 rounded-2xl font-medium">
+            <SignInButton
+              mode="modal"
+              signUpFallbackRedirectUrl={"/search"}
+              fallbackRedirectUrl={"/search"}
+            >
+              <button className="text-sm text-black bg-btn-primary py-2 px-4 rounded-2xl font-medium">
                 Sign up
               </button>
             </SignInButton>
@@ -181,8 +261,6 @@ export default function Navbar() {
           <div className="flex gap-4 items-center">
             <SignedIn>
               <UserButton appearance={{ baseTheme: dark }} />
-            </SignedIn>
-            {pathname !== "/" && (
               <Drawer drawerDirection="right">
                 <DrawerTrigger>
                   <HamburgurIcon />
@@ -193,39 +271,35 @@ export default function Navbar() {
                   drawerClassName="!w-[60vw]"
                   handleStyles={{ display: "none" }}
                 >
-                  <SidebarNav
-                    username={user?.username ?? ""}
-                    className="relative w-full"
-                    direction="right"
-                  />
+                  <SidebarNav className="relative w-full" direction="right" />
                   <DrawerClose className="z-[9999] right-5 top-5 absolute">
                     <HamburgurIcon />
                   </DrawerClose>
                 </DrawerContent>
               </Drawer>
-            )}
+            </SignedIn>
           </div>
         </div>
       </nav>
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
-          className={`flex items-center max-w-2xl h-max pb-5 ${
+          className={`flex items-center max-w-2xl h-max pb-5 px-4 ${
             inter.className
           } ${isDialogOpen ? "block" : "hidden"}`}
         >
           <DialogHeader>
             <DialogTitle className="w-max mx-auto">
-              <h2 className="text-xl">Disclaimer: Data Collection</h2>
+              <h2 className="text-xl text">Disclaimer: Data Collection</h2>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-text-secondary">
               <p className="text-justify">
                 If you want to use AI-based search for more granular search,
-                then you must <strong>allow</strong> for data collection. We
-                ensure you that your data only belongs to you, and won&apos;t be
-                shared to any third-party expect AI-models we use. Only
-                AI-models will use your data for improving their products and
-                services. If you want no one use your data expect you, upgrade
-                to <strong>Premium Plan</strong>.
+                then you must <strong>&quot;allow&quot;</strong> for data
+                collection. We ensure you that your data only belongs to you,
+                and won&apos;t be shared to any third-party expect AI-models we
+                use. Only AI-models will use your data for improving their
+                products and services. If you want no one use your data expect
+                you, upgrade to <strong>&quot;Premium Plan&quot;</strong>.
               </p>
             </DialogDescription>
           </DialogHeader>
