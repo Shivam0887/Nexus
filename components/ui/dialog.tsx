@@ -163,7 +163,7 @@ export const DialogContent = ({
         <X className="size-4 text-text-primary" />
       </button>
       <div
-        className="flex flex-col gap-4 h-full overflow-auto"
+        className="flex flex-col gap-4 h-full w-full overflow-auto"
         style={{ scrollbarWidth: "none" }}
       >
         {children}

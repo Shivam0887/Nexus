@@ -24,11 +24,12 @@ import {
   DialogItem,
   DialogTitle,
 } from "../ui/dialog";
-import { AISearchPreference } from "@/actions/user.actions";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { AISearchPreference, dataCollection } from "@/actions/user.actions";
+import { ChevronDown, Loader, Loader2, Sparkles } from "lucide-react";
 import { LogoMap, Platforms } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import useUser from "@/hooks/useUser";
+import { FilterKey } from "@/lib/types";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +44,9 @@ export default function Navbar() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDataCollected, setIsDataCollected] = useState<Set<FilterKey>>(
+    new Set()
+  );
 
   useEffect(() => {
     setIsLoading(false);
@@ -112,6 +116,30 @@ export default function Navbar() {
 
   const handleDropdownChange = () => {
     setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleDataCollection = async (platform: FilterKey) => {
+    try {
+      setIsDataCollected((prev) => new Set(prev).add(platform));
+      await dataCollection(platform);
+
+      dispatch({
+        type: "CONNECTION",
+        connectionType: platform,
+        payload: {
+          ...user[platform],
+          dataCollection: !user[platform].dataCollection,
+        },
+      });
+    } catch (error: any) {
+      console.log("Error while data collection");
+    } finally {
+      setIsDataCollected((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(platform);
+        return newSet;
+      });
+    }
   };
 
   return (
@@ -206,18 +234,12 @@ export default function Navbar() {
                           "rounded-b-lg": i === Platforms.length - 1,
                         })}
                         value={user[platform].dataCollection}
-                        onValueChange={() =>
-                          dispatch({
-                            type: "CONNECTION",
-                            connectionType: platform,
-                            payload: {
-                              ...user[platform],
-                              dataCollection: !user[platform].dataCollection,
-                            },
-                          })
-                        }
+                        onValueChange={() => handleDataCollection(platform)}
                         label={
                           <div className="flex gap-2 items-center">
+                            {isDataCollected.has(platform) && (
+                              <Loader2 className="size-4 animate-spin duration-1000" />
+                            )}
                             <div className="relative size-5">
                               <Image
                                 src={LogoMap[platform]}
@@ -247,6 +269,7 @@ export default function Navbar() {
             </div>
           )}
 
+          {/* If signed out */}
           <SignedOut>
             <SignInButton
               mode="modal"
@@ -258,9 +281,12 @@ export default function Navbar() {
               </button>
             </SignInButton>
           </SignedOut>
+
+          {/* If signed in */}
           <div className="flex gap-4 items-center">
             <SignedIn>
               <UserButton appearance={{ baseTheme: dark }} />
+              {/* Navigation for smaller devices */}
               <Drawer drawerDirection="right">
                 <DrawerTrigger>
                   <HamburgurIcon />
@@ -281,6 +307,8 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Data Collection disclaimer for user privacy */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
           className={`flex items-center max-w-2xl h-max pb-5 px-4 ${

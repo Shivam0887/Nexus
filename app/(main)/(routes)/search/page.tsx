@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Inter } from "next/font/google";
 import { sortData } from "@/lib/constants";
 import { CirclePlus, Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
@@ -19,18 +19,28 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 
 import { cn } from "@/lib/utils";
-import { useFormState } from "react-dom";
 import Loading from "@/components/loading";
 import { searchAction } from "@/actions/search.actions";
 
+import ReactMarkdown from "react-markdown";
+import useUser from "@/hooks/useUser";
+import { DocumentType } from "@/lib/types";
+import { readStreamableValue } from "ai/rsc";
+import Image from "next/image";
+
 const inter = Inter({ subsets: ["latin"] });
+const CHUNK_SIZE = 100;
 
 const Page = () => {
   const [layout, setLayout] = useState<"grid" | "list">("list");
-  const [formState, formAction] = useFormState(searchAction, []);
+  const [userQuery, setUserQuery] = useState("");
+  const [aiMessage, setAiMessage] = useState("");
+  const [document, setDocument] = useState<DocumentType[]>([]);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchCount, setSearchCount] = useState(0);
+
+  const { user } = useUser();
 
   useEffect(() => {
     if (isSearching) {
@@ -38,18 +48,44 @@ const Page = () => {
     }
   }, [isSearching]);
 
+  const handleAction = useCallback(
+    async (formData: FormData) => {
+      try {
+        const query = formData.get("search");
+        if (user.isAISearch && query) {
+          setAiMessage("");
+        }
+
+        const result = await searchAction(formData);
+        if (Array.isArray(result)) {
+          setDocument(result);
+        } else {
+          setIsSearching(false);
+          for await (const content of readStreamableValue(result)) {
+            if (content) {
+              setAiMessage(content);
+            }
+          }
+        }
+      } catch (error: any) {
+        console.log(error?.message);
+      }
+    },
+    [user.isAISearch]
+  );
+
   return (
     <div
       className={`relative mb:py-10 md:px-5 py-5 px-2 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
     >
       <form
-        action={formAction}
+        action={handleAction}
         className="w-full flex flex-col items-center gap-10"
       >
         <h1 className="md:text-4xl sm:text-3xl text-2xl text font-extrabold tracking-wide">
           How can I help you Today?
         </h1>
-        <Textarea setIsSearching={setIsSearching} />
+        <Textarea setIsSearching={setIsSearching} setUserQuery={setUserQuery} />
       </form>
 
       <div className="flex items-start justify-between gap-2">
@@ -156,24 +192,39 @@ const Page = () => {
           </div>
         ) : (
           <>
-            {formState.length ? (
-              <div
-                className={cn(
-                  "overflow-auto w-full max-w-5xl mx-auto grid gap-4 pr-2",
-                  {
-                    "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
-                      layout === "grid",
-                  }
+            {document.length || aiMessage.length ? (
+              <>
+                <div className="flex justify-end w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <span className="text-base bg-neutral-800 py-2 px-4 rounded-lg">
+                    {userQuery}
+                  </span>
+                </div>
+
+                {document.length ? (
+                  <div
+                    className={cn(
+                      "overflow-auto w-full max-w-5xl mx-auto grid gap-4 px-4 sm:px-6 lg:px-8",
+                      {
+                        "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
+                          layout === "grid",
+                      }
+                    )}
+                  >
+                    {document.map((doc) => (
+                      <Document key={doc.href} layout={layout} document={doc} />
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {/* If AI-Search enabled */}
+                    <div className="markdown overflow-auto space-y-5">
+                      <ReactMarkdown className="char">
+                        {aiMessage}
+                      </ReactMarkdown>
+                    </div>
+                  </>
                 )}
-              >
-                {formState.map((document) => (
-                  <Document
-                    key={document.href}
-                    layout={layout}
-                    document={document}
-                  />
-                ))}
-              </div>
+              </>
             ) : (
               <div className="flex flex-1 items-center justify-center">
                 {searchCount ? (
@@ -201,14 +252,19 @@ const Page = () => {
           <DialogTrigger>
             <Fullscreen />
           </DialogTrigger>
-          <DialogContent className="h-[468px] p-4">
-            {formState.map((document) => (
-              <Document
-                key={document.href}
-                layout={layout}
-                document={document}
-              />
-            ))}
+          <DialogContent className="!h-[80vh] max-w-screen-lg p-4">
+            <div
+              className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
+                "lg:grid-cols-3 md:grid-cols-2 grid-cols-1": layout === "grid",
+              })}
+            >
+              {document.map((doc) => (
+                <Document key={doc.href} layout={layout} document={doc} />
+              ))}
+            </div>
+            <div className="markdown overflow-auto space-y-5">
+              <ReactMarkdown className="char">{aiMessage}</ReactMarkdown>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

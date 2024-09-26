@@ -1,5 +1,20 @@
 import { Schema, model, models, InferSchemaType } from "mongoose";
 
+const platformSchema = new Schema({
+  accessToken: String,
+  refreshToken: String,
+  expiresAt: Number,
+  authUser: String,
+  dataCollection: {
+    type: Boolean,
+    default: () => false,
+  },
+  lastSync: {
+    type: Number,
+    default: () => 0,
+  },
+});
+
 const userSchema = new Schema(
   {
     userId: {
@@ -44,96 +59,16 @@ const userSchema = new Schema(
       type: Boolean,
       default: () => false,
     },
-    gmail: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      authUser: String,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    google_docs: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      authUser: String,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    google_drive: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      authUser: String,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    google_calendar: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      authUser: String,
-    },
-    teams: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    discord: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    gitHub: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    notion: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    slack: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
-    oneDrive: {
-      accessToken: String,
-      refreshToken: String,
-      expiresAt: Number,
-      dataCollection: {
-        type: Boolean,
-        default: () => false,
-      },
-    },
+    gmail: platformSchema,
+    google_docs: platformSchema,
+    google_drive: platformSchema,
+    google_calendar: platformSchema,
+    teams: platformSchema,
+    discord: platformSchema,
+    gitHub: platformSchema,
+    notion: platformSchema,
+    slack: platformSchema,
+    oneDrive: platformSchema,
   },
   { timestamps: true }
 );

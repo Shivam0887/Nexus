@@ -51,6 +51,226 @@ body {
   }
 }
 
+/* Base styles */
+.markdown {
+  @apply bg-neutral-900 text-neutral-300 leading-relaxed w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Headings */
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  @apply font-bold text-neutral-100 my-0 leading-tight;
+}
+
+.markdown h1 {
+  @apply text-2xl sm:text-3xl lg:text-4xl;
+}
+
+.markdown h2 {
+  @apply text-xl sm:text-2xl lg:text-3xl;
+}
+
+.markdown h3 {
+  @apply text-lg sm:text-xl lg:text-2xl;
+}
+
+.markdown h4 {
+  @apply text-base sm:text-lg lg:text-xl;
+}
+
+.markdown h5 {
+  @apply text-sm sm:text-base lg:text-lg;
+}
+
+.markdown h6 {
+  @apply text-xs sm:text-sm lg:text-base text-neutral-400;
+}
+
+/* Paragraphs and Text */
+.markdown p {
+  @apply my-3 text-sm sm:text-base leading-relaxed;
+}
+
+.markdown strong {
+  @apply font-semibold text-neutral-200;
+}
+
+.markdown em {
+  @apply italic text-neutral-400;
+}
+
+.markdown a {
+  @apply text-neutral-300 hover:text-neutral-100 transition-colors duration-200 underline;
+}
+
+.markdown small {
+  @apply text-xs text-neutral-500;
+}
+
+/* Blockquotes */
+.markdown blockquote {
+  @apply border-l-4 border-neutral-700 pl-4 py-2 my-4 text-neutral-400 italic bg-neutral-800 rounded-r;
+}
+
+/* Lists */
+.markdown ul,
+.markdown ol {
+  @apply my-3 pl-6 space-y-2;
+}
+
+.markdown ul {
+  @apply list-disc;
+}
+
+.markdown ol {
+  @apply list-decimal;
+}
+
+.markdown li {
+  @apply text-sm sm:text-base;
+}
+
+/* Nested lists */
+.markdown ul ul,
+.markdown ol ol,
+.markdown ul ol,
+.markdown ol ul {
+  @apply my-2 ml-4;
+}
+
+/* Table */
+.markdown table {
+  @apply w-full border-collapse my-4;
+}
+
+.markdown th,
+.markdown td {
+  @apply border border-neutral-700 px-3 py-2 text-xs sm:text-sm;
+}
+
+.markdown th {
+  @apply bg-neutral-800 font-semibold text-left text-neutral-200;
+}
+
+.markdown tr:nth-child(even) {
+  @apply bg-neutral-800;
+}
+
+/* Code and Preformatted Text */
+.markdown code {
+  @apply bg-neutral-800 px-1.5 py-0.5 rounded text-xs sm:text-sm font-mono text-neutral-300;
+}
+
+.markdown pre {
+  @apply bg-neutral-800 p-3 rounded overflow-x-auto my-4 text-xs sm:text-sm;
+}
+
+.markdown pre code {
+  @apply bg-transparent p-0;
+}
+
+/* Horizontal rule */
+.markdown hr {
+  @apply border-t border-neutral-700 my-6;
+}
+
+/* Additional elements */
+.markdown img {
+  @apply max-w-full h-auto rounded my-4;
+}
+
+.markdown figure {
+  @apply my-4;
+}
+
+.markdown figcaption {
+  @apply text-xs text-neutral-500 text-center mt-2 italic;
+}
+
+.markdown kbd {
+  @apply bg-neutral-700 text-neutral-300 px-1.5 py-0.5 text-xs font-mono rounded;
+}
+
+.markdown mark {
+  @apply bg-yellow-900 text-yellow-100 px-1 rounded;
+}
+
+.markdown sub,
+.markdown sup {
+  @apply text-xs;
+}
+
+.markdown dl {
+  @apply my-4;
+}
+
+.markdown dt {
+  @apply font-semibold text-neutral-200 text-sm mb-1;
+}
+
+.markdown dd {
+  @apply ml-4 text-neutral-400 text-xs sm:text-sm;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .markdown {
+    @apply text-sm;
+  }
+
+  .markdown h1 {
+    @apply text-xl;
+  }
+  .markdown h2 {
+    @apply text-lg;
+  }
+  .markdown h3 {
+    @apply text-base;
+  }
+  .markdown h4,
+  .markdown h5,
+  .markdown h6 {
+    @apply text-sm;
+  }
+}
+
+/* Animations for hover effects */
+.markdown a,
+.markdown button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+/* Accessibility improvements */
+.markdown :focus {
+  @apply outline-none ring-2 ring-neutral-500;
+}
+
+.markdown a:focus,
+.markdown button:focus {
+  @apply ring-2 ring-neutral-500 ring-offset-2 ring-offset-neutral-900;
+}
+
+/* Custom scrollbar for webkit browsers */
+.markdown pre::-webkit-scrollbar {
+  @apply h-1.5 w-1.5;
+}
+
+.markdown pre::-webkit-scrollbar-track {
+  @apply bg-neutral-800;
+}
+
+.markdown pre::-webkit-scrollbar-thumb {
+  @apply bg-neutral-600 rounded-full;
+}
+
+.markdown pre::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-500;
+}
+
 .bg-neutral {
   background-color: rgb(var(--background-dark));
   background-repeat: no-repeat;

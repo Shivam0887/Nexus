@@ -1,211 +1,57 @@
 "use server";
 
-import { Scopes } from "@/lib/constants";
 import { ConnectToDB } from "@/lib/utils";
 import { DocumentType } from "@/lib/types";
+import { gmailPrompt } from "@/lib/prompt";
 
+import axios from "axios";
+import { format } from "date-fns";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { User, UserType } from "@/models/user.model";
+import {
+  GoogleGenerativeAIEmbeddings,
+  GoogleGenerativeAIEmbeddingsParams,
+} from "@langchain/google-genai";
+import { PineconeStore } from "@langchain/pinecone";
+import { Pinecone } from "@pinecone-database/pinecone";
 
-import { gmail_v1, google } from "googleapis";
-import { CharacterTextSplitter } from "langchain/text_splitter";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import {
+  generateEmbeddings,
+  getPlatformClient,
+  searchEmails,
+} from "./utils.actions";
 
-import { JSDOM } from "jsdom";
-import { gmailPrompt } from "@/lib/prompt";
+import {
+  CoreMessage,
+  generateText,
+  ImagePart,
+  streamText,
+  TextPart,
+  ToolCallPart,
+} from "ai";
+import { createStreamableValue, StreamableValue } from "ai/rsc";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const clientId = process.env.GMAIL_CLIENT_ID!;
-const clientSecret = process.env.GMAIL_CLIENT_SECRET!;
-const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/gmail`;
+const pineconeIndex = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY!,
+}).Index(process.env.PINECONE_INDEX!);
 
-const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
-
-const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-1.5-flash",
+const googleGenAI = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  maxRetries: 2,
 });
 
-const oauth2Client = new google.auth.OAuth2({
-  clientId,
-  clientSecret,
-  redirectUri,
+const embeddings = new GoogleGenerativeAIEmbeddings({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  maxRetries: 1,
+  model: "text-embedding-004",
+  taskType:
+    "SEMANTIC_SIMILARITY" as GoogleGenerativeAIEmbeddingsParams["taskType"],
+  maxConcurrency: 5,
 });
 
-const checkAndRefreshToken = async (userId: string) => {
-  const user = await User.findOne<UserType>({ userId });
-  if (!user) {
-    throw new Error("User not found.");
-  }
-
-  const { gmail } = user;
-  if (!gmail?.accessToken)
-    throw new Error("Please connect you Gmail account...");
-
-  const { accessToken, expiresAt, refreshToken, authUser } = gmail;
-
-  // Check if the token has expired
-  const currentTime = Date.now();
-  if (expiresAt && currentTime < expiresAt - 60000) {
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-    });
-  } else {
-    try {
-      oauth2Client.setCredentials({ refresh_token: refreshToken! });
-      // Attempt to refresh the token
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      oauth2Client.setCredentials({
-        access_token: credentials.access_token,
-      });
-
-      // Store the new tokens in the database
-      await User.findOneAndUpdate(
-        { userId },
-        {
-          $set: {
-            "gmail.accessToken": credentials.access_token,
-            "gmail.refreshToken": credentials.refresh_token,
-            "gmail.expiresAt": credentials.expiry_date,
-          },
-        }
-      );
-
-      console.log("Access token refreshed.");
-    } catch (error: any) {
-      if (error?.response && error?.response?.data?.error === "invalid_grant") {
-        console.error(
-          "Refresh token is invalid or has expired. User needs to re-authenticate."
-        );
-
-        // Redirect the user to re-authenticate
-        throw new Error("RE_AUTHENTICATE");
-      } else {
-        console.error("Error refreshing access token:", error?.message);
-        throw error;
-      }
-    }
-  }
-};
-
-const searchEmails = async (
-  searchQuery: string,
-  userId: string,
-  clerkId: string,
-  authUser: string,
-  isAISearch: boolean
-): Promise<DocumentType[]> => {
-  if (searchQuery.trim().length === 0) return [];
-
-  await checkAndRefreshToken(clerkId);
-  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
-  const result: DocumentType[] = [];
-  let pageToken: string | undefined;
-
-  // Define email fetching parameters
-  const fetchParams = {
-    userId,
-    q: searchQuery,
-    maxResults: 50, // Limit results per page
-  };
-
-  // Helper function to extract header value
-  const getHeader = (
-    headers: gmail_v1.Schema$MessagePartHeader[],
-    name: string
-  ): string =>
-    headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ??
-    "";
-
-  // Helper function to process email content
-  const processEmailContent = async (
-    parts: gmail_v1.Schema$MessagePart[] | undefined
-  ): Promise<string> => {
-    if (!parts) return "";
-
-    const contentPromises = parts.map(async ({ body, mimeType }) => {
-      if (!body?.data) return "";
-
-      let content = Buffer.from(body.data, "base64").toString("utf8");
-
-      if (mimeType === "text/html") {
-        const htmlContent = await textSplitter.splitText(content);
-        content = htmlContent
-          .map((html) => {
-            const dom = new JSDOM(html.concat("</html>"));
-            return dom.window.document.querySelector("body")?.textContent ?? "";
-          })
-          .join(" ");
-      }
-
-      return content;
-    });
-
-    return (await Promise.all(contentPromises)).join(" ");
-  };
-
-  do {
-    // Fetch emails
-    const { data } = await gmail.users.messages.list({
-      ...fetchParams,
-      pageToken,
-    });
-
-    if (!data.messages) break;
-
-    // Process each email
-    const emails = await Promise.all(
-      data.messages.map(async ({ id }) => {
-        const message = await gmail.users.messages.get({
-          userId,
-          id: id!,
-        });
-
-        const { payload, labelIds } = message.data;
-        const headers = payload?.headers ?? [];
-
-        // Determine the label (inbox or first available label)
-        const label = labelIds?.includes("INBOX")
-          ? "inbox"
-          : labelIds?.[0]?.toLowerCase() ?? "inbox";
-
-        // Construct email URL
-        const href = `https://mail.google.com/mail/u/${authUser}/#${label}/${id}`;
-
-        // Process email content
-        let content = "";
-        if (isAISearch) {
-          content = await processEmailContent(payload?.parts);
-        }
-
-        return {
-          date: getHeader(headers, "Date"),
-          author: getHeader(headers, "From"),
-          title: getHeader(headers, "Subject"),
-          href,
-          email: userId,
-          logo: "./Gmail.svg",
-          content,
-        };
-      })
-    );
-
-    result.push(...emails);
-    pageToken = data.nextPageToken ?? undefined;
-  } while (pageToken && result.length < 100); // Limit total results to 100
-
-  if (isAISearch) {
-  }
-
-  return result;
-};
-
-export const searchAction = async (
-  state: DocumentType[] | string,
-  formData: FormData
-) => {
+export const searchAction = async (formData: FormData) => {
   const { userId } = auth();
   if (!userId) throw new Error("Unauthenticated user");
 
@@ -213,34 +59,85 @@ export const searchAction = async (
     const query = formData.get("search")?.toString().trim();
     if (!query) throw new Error("Please enter your query.");
 
-    const aiMsg = await llm.invoke([
-      ["assistant", `${gmailPrompt}\n\n Current date: ${new Date()}`],
-      ["user", query],
-    ]);
-
     await ConnectToDB();
-    const user = await User.findOne<
-      Pick<UserType, "email" | "userId" | "gmail" | "isAISearch">
-    >({ userId }, { email: 1, gmail: 1, isAISearch: 1 });
-
+    const user = await User.findOne<UserType>({ userId });
     if (!user) throw new Error("User not found");
 
-    return await searchEmails(
-      aiMsg.content.toString(),
-      user.email,
-      userId,
-      user.gmail!.authUser!,
-      user.isAISearch
-    );
+    const client = await getPlatformClient("Gmail", user);
+
+    if (user.isAISearch) {
+      await generateEmbeddings("Gmail", user, client);
+      const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
+        namespace: user.userId,
+        maxConcurrency: 5,
+        pineconeIndex,
+        maxRetries: 1,
+      });
+
+      const similarDocs = (await vectorStore.similaritySearch(query)).map(
+        ({ pageContent }): TextPart | ImagePart => {
+          return {
+            text: pageContent,
+            type: "text",
+          };
+        }
+      );
+
+      similarDocs.unshift({ text: `User query: ${query}`, type: "text" });
+
+      const coreMessages: CoreMessage[] = [
+        {
+          content: `Generate a detailed and well-structured Markdown response on the topic below. The output should be visually appealing, using proper Markdown elements such as:
+          Main headings (for major sections)
+          Subheadings (to organize subsections)
+          Bullet points or numbered lists (for listing features/benefits)
+          Code blocks (for any code examples)
+          Hyperlinks (for external references or documentation)
+          Bold or italicized text for emphasis
+          Blockquotes or notes (to highlight key points)`,
+          role: "system",
+        },
+        {
+          content: similarDocs,
+          role: "user",
+        },
+        {
+          content:
+            "Generate to the point and correct response to the users query using the metadata and context given by the user.",
+          role: "assistant",
+        },
+      ];
+
+      const streamResult = await streamText({
+        model: googleGenAI("gemini-1.5-flash"),
+        messages: coreMessages,
+        temperature: 1,
+      });
+
+      const stream = createStreamableValue(streamResult.textStream);
+      return stream.value;
+    } else {
+      const { text } = await generateText({
+        model: googleGenAI("gemini-1.5-flash"),
+        maxRetries: 1,
+        system: `Todays date, if user requires any date related query: ${format(
+          new Date(),
+          "yyyy/MM/dd"
+        )} \n\n ${gmailPrompt}`,
+        prompt: query,
+      });
+
+      const prompt = text.trim();
+
+      return await searchEmails(prompt, user, client);
+    }
   } catch (error: any) {
     console.error("Search error:", error.message);
     if (error.message === "RE_AUTHENTICATE") {
-      const url = oauth2Client.generateAuthUrl({
-        access_type: "offline",
-        scope: `openid ${Scopes["Gmail"]}`,
-        prompt: "consent select_account",
-        state: userId,
-      });
+      // WIP: Change url for production
+      const url = (
+        await axios("https://qflbv4c3-3000.inc1.devtunnels.ms/api/google")
+      ).data;
       redirect(url);
     }
     return [];

@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Pinecone } from "@pinecone-database/pinecone";
 
 import mongoose from "mongoose";
 
@@ -51,9 +50,3 @@ export async function ConnectToDB() {
     console.log("😎 Already connected to MongoDB!");
   }
 }
-
-// const pc = new Pinecone({
-//   apiKey: process.env.PINECONE_API_KEY!,
-// });
-
-// export const pcIndex = pc.Index("nexus");

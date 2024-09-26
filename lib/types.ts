@@ -137,10 +137,12 @@ export type Credentials = {
 };
 
 export type DocumentType = {
+  id: string;
   logo: string;
   title: string;
   date: string;
   author: string;
   email: string;
   href: string;
+  content: string;
 };

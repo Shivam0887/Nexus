@@ -13,8 +13,10 @@ import { useFormStatus } from "react-dom";
 
 const Textarea = ({
   setIsSearching,
+  setUserQuery,
 }: {
   setIsSearching: React.Dispatch<React.SetStateAction<boolean>>;
+  setUserQuery: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const {
     listening,
@@ -95,12 +97,13 @@ const Textarea = ({
 
   useEffect(() => {
     setIsSearching(pending);
-    if (pending && textareaRef.current) {
+    if (pending && textareaRef.current && query.length > 0) {
+      setUserQuery(query);
       setQuery("");
       setDisabled(true);
       textareaRef.current.style.height = "auto";
     }
-  }, [pending, setIsSearching]);
+  }, [pending, setIsSearching, setUserQuery, query]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!e.shiftKey && (e.key === "Enter" || e.key === "NumpadEnter")) {
