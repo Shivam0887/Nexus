@@ -1,41 +1,23 @@
 "use server";
 
+import { JSDOM } from "jsdom";
+import { ConnectToDB, redactText } from "@/lib/utils";
+import { gmail_v1, google } from "googleapis";
 import { User, UserType } from "@/models/user.model";
 import { DocumentType, FilterKey } from "@/lib/types";
-import { gmail_v1, google } from "googleapis";
-import { JSDOM } from "jsdom";
 import { CharacterTextSplitter } from "langchain/text_splitter";
-import { ConnectToDB } from "@/lib/utils";
-import { format } from "date-fns";
-import { PineconeStore } from "@langchain/pinecone";
-import { Document } from "langchain/document";
-import {
-  GoogleGenerativeAIEmbeddings,
-  GoogleGenerativeAIEmbeddingsParams,
-} from "@langchain/google-genai";
-import { Pinecone } from "@pinecone-database/pinecone";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
 
-const pineconeIndex = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-}).Index(process.env.PINECONE_INDEX!);
+export const checkAndRefreshToken = async (
+  user: UserType,
+  platform: FilterKey,
+  oauth2Client: any
+) => {
+  const { accessToken, refreshToken, expiresAt } = user[platform];
 
-const embeddings = new GoogleGenerativeAIEmbeddings({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  maxRetries: 2,
-  model: "text-embedding-004",
-  taskType:
-    "SEMANTIC_SIMILARITY" as GoogleGenerativeAIEmbeddingsParams["taskType"],
-  maxConcurrency: 5,
-});
-
-const checkAndRefreshToken = async (user: UserType, oauth2Client: any) => {
-  const { gmail } = user;
-  if (!gmail?.accessToken)
-    throw new Error("Please connect you Gmail account...");
-
-  const { accessToken, expiresAt, refreshToken } = gmail;
+  if (!accessToken)
+    throw new Error(`Please connect you ${platform.toLowerCase()} account...`);
 
   // Check if the token has expired
   const currentTime = Date.now();
@@ -58,8 +40,8 @@ const checkAndRefreshToken = async (user: UserType, oauth2Client: any) => {
         { userId: user.userId },
         {
           $set: {
-            "gmail.accessToken": credentials.access_token,
-            "gmail.expiresAt": credentials.expiry_date,
+            [`${platform}.accessToken`]: credentials.access_token,
+            [`${platform}.expiresAt`]: credentials.expiry_date,
           },
         }
       );
@@ -72,7 +54,7 @@ const checkAndRefreshToken = async (user: UserType, oauth2Client: any) => {
         );
 
         // Redirect the user to re-authenticate
-        throw new Error("RE_AUTHENTICATE");
+        throw new Error(`RE_AUTHENTICATE-${platform}`);
       } else {
         console.error("Error refreshing access token:", error?.message);
         throw error;
@@ -81,24 +63,20 @@ const checkAndRefreshToken = async (user: UserType, oauth2Client: any) => {
   }
 };
 
-export const getPlatformClient = async (
-  platform: FilterKey,
-  user: UserType | null
-) => {
+export const getPlatformClient = async (platform: FilterKey) => {
   try {
-    if (user) {
-      const oauth2Client = new google.auth.OAuth2({
-        clientId: process.env.GMAIL_CLIENT_ID!,
-        clientSecret: process.env.GMAIL_CLIENT_SECRET!,
-      });
+    const clientId = process.env[`${platform}_CLIENT_ID`]!;
+    const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
+    const redirectUri = `${process.env
+      .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
 
-      await checkAndRefreshToken(user, oauth2Client);
+    const oauth2Client = new google.auth.OAuth2({
+      clientId,
+      clientSecret,
+      redirectUri,
+    });
 
-      return google.gmail({
-        version: "v1",
-        auth: oauth2Client,
-      });
-    }
+    return oauth2Client;
   } catch (error) {
     throw error;
   }
@@ -142,22 +120,19 @@ const processEmailContent = async (
 export const searchEmails = async (
   searchQuery: string,
   user: UserType,
-  gmail: gmail_v1.Gmail | undefined
+  gmail: gmail_v1.Gmail
 ): Promise<DocumentType[]> => {
   if ((searchQuery.trim().length === 0 && !user.isAISearch) || !gmail)
     return [];
 
   const result: DocumentType[] = [];
   let pageToken: string | undefined;
-  let nextSync = user.gmail!.lastSync;
 
   // Define email fetching parameters
   const fetchParams = {
     userId: user.email,
-    q: user.isAISearch
-      ? `category:primary after:${format(user.gmail!.lastSync, "dd/MM/yyyy")}`
-      : searchQuery,
-    maxResults: 50, // Limit results per page
+    q: searchQuery,
+    maxResults: 25, // Limit results per page
   };
 
   do {
@@ -177,18 +152,6 @@ export const searchEmails = async (
           id: id!,
         });
 
-        // Checking for fresh emails
-        if (
-          user.isAISearch &&
-          message.data.internalDate &&
-          parseInt(message.data.internalDate) <= user.gmail!.lastSync
-        ) {
-          return undefined;
-        }
-
-        if (nextSync === user.gmail!.lastSync)
-          nextSync = parseInt(message.data.internalDate!);
-
         const { payload, labelIds } = message.data;
         const headers = payload?.headers ?? [];
 
@@ -199,13 +162,13 @@ export const searchEmails = async (
 
         // Construct email URL
         const href = `https://mail.google.com/mail/u/${
-          user.gmail!.authUser
+          user.GMAIL!.authUser
         }/#${label}/${id}`;
 
         // Process email content
         let content = "";
         if (user.isAISearch) {
-          content = await processEmailContent(payload?.parts);
+          content = redactText(await processEmailContent(payload?.parts));
         }
 
         return {
@@ -226,54 +189,7 @@ export const searchEmails = async (
     });
 
     pageToken = data.nextPageToken ?? undefined;
-  } while (pageToken && result.length < 100); // Limit total results to 100
-
-  if (user.gmail!.lastSync !== nextSync) {
-    await ConnectToDB();
-    await User.findOneAndUpdate(
-      { userId: user.userId },
-      {
-        $set: {
-          "gmail.lastSync": nextSync,
-        },
-      }
-    );
-  }
+  } while (pageToken && result.length < 50); // Limit total results to 50
 
   return result;
-};
-
-export const generateEmbeddings = async (
-  platform: FilterKey,
-  user: UserType,
-  client: any
-) => {
-  const data = await searchEmails("", user, client);
-  const pineconeRecord = data.map(
-    ({ content, href, id, logo, author, date, title }) => {
-      return new Document({
-        pageContent: `context: ${content} \n\n metadata: {resource_link: ${href}, sender: ${author}, received_date: ${format(
-          date,
-          "yyyy/MM/dd"
-        )}, subject: ${title}}`,
-        id,
-        metadata: {
-          logo,
-        },
-      });
-    }
-  );
-
-  await PineconeStore.fromDocuments(pineconeRecord, embeddings, {
-    pineconeIndex,
-    maxConcurrency: 5,
-    namespace: user.userId,
-    maxRetries: 2,
-    onFailedAttempt: (error) => {
-      console.log(
-        "Failed to insert documents into Pinecone database:",
-        error?.message
-      );
-    },
-  });
 };

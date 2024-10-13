@@ -164,7 +164,7 @@ export const DrawerTrigger = ({ children, className }: Props) => {
   const { onOpen } = useDrawer();
 
   return (
-    <button onClick={onOpen} className={cn("", className)}>
+    <button type="button" onClick={onOpen} className={cn("", className)}>
       {children}
     </button>
   );
@@ -211,6 +211,7 @@ export const DrawerClose = ({ children, className }: Props) => {
   const { onClose, drawerDirection } = useDrawer();
   return (
     <button
+      type="button"
       className={cn("", className)}
       onClick={() => onClose(drawerDirection.current)}
     >

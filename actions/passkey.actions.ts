@@ -58,7 +58,7 @@ export const createPasskey = async (
     const salt = await genSalt(10);
     const passkeyHash = await hash(passkey, salt);
 
-    ConnectToDB();
+    await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },
       {

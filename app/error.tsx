@@ -19,12 +19,11 @@ export default function Error({
       <h2 className="text-3xl text">Something went wrong!</h2>
       <h3 className="text-lg font-medium">{error.name}</h3>
       <button
+        type="button"
         className="py-2 px-4 rounded-lg bg-btn-primary text-black font-medium"
-        onClick={() => {
-          window.location.replace("/");
-        }}
+        onClick={reset}
       >
-        Go back
+        Please try again, later
       </button>
     </div>
   );

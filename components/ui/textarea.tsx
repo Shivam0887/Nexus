@@ -116,6 +116,7 @@ const Textarea = ({
     <div className="w-full max-w-2xl relative flex items-end gap-3 rounded-2xl bg-neutral-800 px-5 py-3">
       {/* File upload */}
       <button
+        type="button"
         title="upload image"
         className="flex items-center sm:h-7 h-6 cursor-pointer"
       >
@@ -145,6 +146,7 @@ const Textarea = ({
 
       {/* Voice search */}
       <button
+        type="button"
         className="relative"
         onClick={listening ? stopListening : startListening}
       >

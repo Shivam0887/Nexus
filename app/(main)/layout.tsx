@@ -1,4 +1,5 @@
 import SidebaNav from "@/components/global/sidebar-nav";
+import ModalManager from "@/providers/modal-provider";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -6,7 +7,10 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="h-full sm:block hidden">
         <SidebaNav direction="right" />
       </div>
-      <div className="flex-1 h-full">{children}</div>
+      <div className="flex-1 h-full">
+        <ModalManager />
+        {children}
+      </div>
     </div>
   );
 };

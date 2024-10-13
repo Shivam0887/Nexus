@@ -9,8 +9,9 @@ import { ConnectToDB } from "@/lib/utils";
 import { User, UserType } from "@/models/user.model";
 import { FilterKey, StateType } from "@/lib/types";
 import { UserProvider } from "@/hooks/useUser";
+import { ModalProvider } from "@/hooks/useModalSelection";
+import { Toaster } from "@/components/ui/sonner";
 
-// const inter = Inter({ subsets: ["latin"] });
 const noto = Noto_Serif({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -27,57 +28,31 @@ export default async function RootLayout({
   const { userId } = auth();
 
   await ConnectToDB();
-  const user = await User.findOne<UserType>({ userId });
+  const user = await User.findOne<UserType>({
+    userId,
+  });
 
   const userData: StateType = {
     coverImage: "",
     email: user?.email ?? "",
-    hasPasskey: !!user?.hasPasskey,
+    hasPasskey: Boolean(user?.hasPasskey),
     hasSubscription: false,
     imageUrl: user?.imageUrl ?? "",
-    isAISearch: !!user?.isAISearch,
+    isAISearch: Boolean(user?.isAISearch),
     plan: "Starter",
-    shouldRemember: !!user?.shouldRemember,
+    shouldRemember: Boolean(user?.shouldRemember),
     username: user?.username ?? "",
     filter: user?.filter ? (user.filter as FilterKey[]) : [],
-    isFilterApplied: !!user?.isFilterApplied,
-    isGoogleCalendarConnected: !!user?.google_calendar?.accessToken,
-    Discord: {
-      account: !!user?.discord?.accessToken,
-      dataCollection: !!user?.discord?.dataCollection,
-    },
-    GitHub: {
-      account: !!user?.gitHub?.accessToken,
-      dataCollection: !!user?.gitHub?.dataCollection,
-    },
-    Gmail: {
-      account: !!user?.gmail?.accessToken,
-      dataCollection: !!user?.gmail?.dataCollection,
-    },
-    "Google Docs": {
-      account: !!user?.google_docs?.accessToken,
-      dataCollection: !!user?.google_docs?.dataCollection,
-    },
-    "Google Drive": {
-      account: !!user?.google_drive?.accessToken,
-      dataCollection: !!user?.google_drive?.dataCollection,
-    },
-    Notion: {
-      account: !!user?.notion?.accessToken,
-      dataCollection: !!user?.notion?.dataCollection,
-    },
-    OneDrive: {
-      account: !!user?.oneDrive?.accessToken,
-      dataCollection: !!user?.oneDrive?.dataCollection,
-    },
-    Slack: {
-      account: !!user?.slack?.accessToken,
-      dataCollection: !!user?.slack?.dataCollection,
-    },
-    "MS Teams": {
-      account: !!user?.teams?.accessToken,
-      dataCollection: !!user?.teams?.dataCollection,
-    },
+    isFilterApplied: Boolean(user?.isFilterApplied),
+    GOOGLE_CALENDAR: Number(!!user?.GOOGLE_CALENDAR.accessToken),
+    DISCORD: Number(!!user?.DISCORD.accessToken),
+    GITHUB: Number(!!user?.GITHUB.accessToken),
+    GMAIL: Number(!!user?.GMAIL.accessToken),
+    GOOGLE_DOCS: Number(!!user?.GOOGLE_DOCS.accessToken),
+    GOOGLE_DRIVE: Number(!!user?.GOOGLE_DRIVE.accessToken),
+    NOTION: Number(!!user?.NOTION.accessToken),
+    SLACK: Number(!!user?.SLACK.accessToken),
+    MICROSOFT_TEAMS: Number(!!user?.MICROSOFT_TEAMS.accessToken),
   };
 
   return (
@@ -87,9 +62,12 @@ export default async function RootLayout({
       <html lang="en">
         <body className={`${noto.className} bg-neutral relative`}>
           <UserProvider userData={userData}>
-            <div id="drawer-portal"></div>
-            <Navbar />
-            {children}
+            <ModalProvider>
+              <div id="drawer-portal"></div>
+              <Navbar />
+              <Toaster />
+              {children}
+            </ModalProvider>
           </UserProvider>
         </body>
       </html>

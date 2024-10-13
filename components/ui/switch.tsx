@@ -5,10 +5,12 @@ import React, { useState } from "react";
 type SwitchProps = {
   label: React.ReactNode;
   value?: boolean;
-  onValueChange?: (value: boolean) => void;
+  onValueChange?: (
+    value: boolean,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => void;
   disabled?: boolean;
   onContainerClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
-  icon?: LucideIcon;
   className?: string;
 };
 
@@ -18,7 +20,6 @@ const Switch = ({
   value,
   disabled,
   onContainerClick,
-  icon: Icon,
   className,
 }: SwitchProps) => {
   const [isChecked, setIsChecked] = useState(false);
@@ -53,28 +54,22 @@ const Switch = ({
                 : "bg-neutral-400 left-0"
             } `}
           />
-          <input
-            type="checkbox"
-            checked={value ?? isChecked}
-            disabled={disabled}
-            onChange={(e) => {
-              const _value = e.currentTarget.checked;
-              if (onValueChange) {
-                onValueChange(_value);
-              } else {
-                setIsChecked(_value);
-              }
-            }}
-            className="w-full h-full rounded-lg absolute top-0 opacity-0 z-10 cursor-pointer"
-          />
         </div>
       </div>
-      {Icon && (
-        <Icon
-          className="absolute -bottom-[1px] text-neutral-500 size-3"
-          style={{ strokeWidth: "3" }}
-        />
-      )}
+      <input
+        type="checkbox"
+        checked={value ?? isChecked}
+        disabled={disabled}
+        onChange={(e) => {
+          const _value = e.currentTarget.checked;
+          if (onValueChange) {
+            onValueChange(_value, e);
+          } else {
+            setIsChecked(_value);
+          }
+        }}
+        className="w-full h-full rounded-lg absolute top-0 opacity-0 z-10 cursor-pointer"
+      />
     </div>
   );
 };

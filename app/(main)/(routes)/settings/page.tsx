@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import useUser from "@/hooks/useUser";
 import { plans } from "@/lib/constants";
 import { Crown, Dot, KeyRound, UserRound } from "lucide-react";
+
 import Image from "next/image";
 import { useUser as useClerkUser } from "@clerk/nextjs";
-import { useEffect } from "react";
 
 const CurPlan: "Starter" | "Professional" = "Professional";
 
@@ -72,7 +73,7 @@ const Page = () => {
               </span>
             </div>
 
-            <>
+            <div>
               {plans.map(({ features, plan, price }) => (
                 <div key={plan}>
                   {plan === CurPlan && (
@@ -95,7 +96,10 @@ const Page = () => {
 
                       <div className="flex flex-col items-center justify-between">
                         <p>${price} /month</p>
-                        <button className="py-2 px-6 rounded-3xl bg-btn-secondary font-extrabold text-xs text-black">
+                        <button
+                          type="button"
+                          className="py-2 px-6 rounded-3xl bg-btn-secondary font-extrabold text-xs text-black"
+                        >
                           {plan === "Professional" ? "Manage" : "Upgrade"}
                         </button>
                       </div>
@@ -103,7 +107,7 @@ const Page = () => {
                   )}
                 </div>
               ))}
-            </>
+            </div>
           </div>
         </div>
 
@@ -121,7 +125,10 @@ const Page = () => {
                 Enable AI-Search to perform context-based searching, allowing
                 for more accurate and relevant results.
               </p>
-              <button className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black"
+              >
                 Enable
               </button>
             </div>
@@ -134,7 +141,10 @@ const Page = () => {
                 Manage your search filter settings to customize and refine your
                 search results.
               </p>
-              <button className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black"
+              >
                 Reset filters
               </button>
             </div>
@@ -157,7 +167,10 @@ const Page = () => {
                 A Passkey is a security key that protects malicious users from
                 integrating your apps.
               </p>
-              <button className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black"
+              >
                 Reset passkey
               </button>
             </div>
@@ -170,7 +183,10 @@ const Page = () => {
                 Be careful, if you delete your account, you won&apos;t be able
                 to access anything.
               </p>
-              <button className="absolute bottom-0 right-0 rounded-3xl bg-red-700 px-4 py-2 text-xs font-bold">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 rounded-3xl bg-red-700 px-4 py-2 text-xs font-bold"
+              >
                 Delete account
               </button>
             </div>

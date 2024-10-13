@@ -113,45 +113,38 @@ const SecurityInputs = ({ error, success }: PasskeyState) => {
   );
 };
 
-const Security = forwardRef(
-  (props, ref: React.ForwardedRef<HTMLDivElement>) => {
-    const [state, formAction] = useFormState(createPasskey, {
-      success: false,
-      error: "",
-    });
+const Security = () => {
+  const [state, formAction] = useFormState(createPasskey, {
+    success: false,
+    error: "",
+  });
 
-    const { dispatch } = useUser();
+  const { dispatch } = useUser();
 
-    useEffect(() => {
-      dispatch({ type: "PASSKEY_CREATE", payload: state.success });
-    }, [state, dispatch]);
+  useEffect(() => {
+    dispatch({ type: "PASSKEY_CREATE", payload: state.success });
+  }, [state, dispatch]);
 
-    return (
-      <div
-        ref={ref}
-        className="z-[100] flex justify-center md:items-center absolute w-full h-full bg-neutral-950/10 backdrop-blur-sm rounded-2xl"
+  return (
+    <div className="z-[100] flex justify-center md:items-center absolute inset-0 bg-neutral-950/10 backdrop-blur-sm rounded-2xl">
+      <form
+        action={formAction}
+        className="sm:w-[448px] w-96 p-8 h-96 rounded-2xl sticky top-1/2 md:top-0 -translate-y-1/2 md:translate-y-0 bg-neutral-950 flex flex-col"
       >
-        <form
-          action={formAction}
-          className="sm:w-[448px] w-96 p-8 h-96 rounded-2xl sticky top-1/2 md:top-0 -translate-y-1/2 md:translate-y-0 bg-neutral-950 flex flex-col"
-        >
-          <div className="space-y-3">
-            <div className="flex gap-3 items-center">
-              <h3 className="md:text-2xl text-xl font-medium">Security</h3>
-              <KeyRound className="stroke-neutral-950 fill-btn-primary [transform:rotateY(180deg)]" />
-            </div>
-            <p className="sm:text-sm text-xs">
-              Set-up a passkey before you start integrating your apps.
-            </p>
+        <div className="space-y-3">
+          <div className="flex gap-3 items-center">
+            <h3 className="md:text-2xl text-xl font-medium">Security</h3>
+            <KeyRound className="stroke-neutral-950 fill-btn-primary [transform:rotateY(180deg)]" />
           </div>
+          <p className="sm:text-sm text-xs">
+            Set-up a passkey before you start integrating your apps.
+          </p>
+        </div>
 
-          <SecurityInputs error={state.error} success={state.success} />
-        </form>
-      </div>
-    );
-  }
-);
-
-Security.displayName = "Security";
+        <SecurityInputs error={state.error} success={state.success} />
+      </form>
+    </div>
+  );
+};
 
 export default Security;

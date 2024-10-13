@@ -48,22 +48,17 @@ export type PasskeyState = {
 export type DrawerDirection = "top" | "left" | "right" | "bottom";
 
 export type FilterKey =
-  | "Gmail"
-  | "Notion"
-  | "Slack"
-  | "Discord"
-  | "Google Drive"
-  | "MS Teams"
-  | "GitHub"
-  | "Google Docs"
-  | "OneDrive";
+  | "GMAIL"
+  | "NOTION"
+  | "SLACK"
+  | "DISCORD"
+  | "GOOGLE_DRIVE"
+  | "MICROSOFT_TEAMS"
+  | "GITHUB"
+  | "GOOGLE_DOCS"
+  | "GOOGLE_CALENDAR";
 
-export type Account = {
-  account: boolean;
-  dataCollection: boolean;
-};
-
-export type Connection = { [key in FilterKey]: Account };
+export type Connection = { [key in FilterKey]: number };
 
 export type StateType = Connection & {
   username: string;
@@ -77,7 +72,6 @@ export type StateType = Connection & {
   filter: FilterKey[];
   hasSubscription: boolean;
   plan: PLAN["plan"];
-  isGoogleCalendarConnected: boolean;
 };
 
 export type ActionType =
@@ -114,7 +108,7 @@ export type ActionType =
     }
   | {
       type: "CONNECTION";
-      payload: Account;
+      payload: 0 | 1 | 2;
       connectionType: FilterKey;
     };
 

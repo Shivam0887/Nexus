@@ -23,6 +23,7 @@ const Document = ({
 
   return (
     <main
+      draggable
       className={cn(
         "px-5 py-2 w-full h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6 mx-auto bg-neutral-800 rounded-lg",
         {

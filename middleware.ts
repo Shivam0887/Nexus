@@ -1,6 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 
 const isProtectedRoute = createRouteMatcher([
   "/search(.*)",
@@ -11,7 +9,6 @@ const isProtectedRoute = createRouteMatcher([
 
 export default clerkMiddleware((auth, req) => {
   if (isProtectedRoute(req)) auth().protect();
-  const a = headers();
   // const nonce = crypto.randomUUID().toString();
   // const cspHeader = `
   //   default-src 'self';

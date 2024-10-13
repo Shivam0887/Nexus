@@ -1,78 +1,41 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import Image from "next/image";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+
 import Link from "next/link";
+import Image from "next/image";
+import { Inter } from "next/font/google";
 import { usePathname } from "next/navigation";
+
+import SidebarNav from "./sidebar-nav";
+import { useRef } from "react";
+import { Sparkles } from "lucide-react";
+
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerTrigger,
-} from "../ui/drawer";
-import SidebarNav from "./sidebar-nav";
-import HamburgurIcon from "../ui/hamburger-icon";
-import { Inter } from "next/font/google";
-import Switch from "../ui/switch";
-import { useEffect, useRef, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogItem,
-  DialogTitle,
-} from "../ui/dialog";
-import { AISearchPreference, dataCollection } from "@/actions/user.actions";
-import { ChevronDown, Loader, Loader2, Sparkles } from "lucide-react";
-import { LogoMap, Platforms } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/drawer";
+import Switch from "@/components/ui/switch";
+import HamburgurIcon from "@/components/ui/hamburger-icon";
+
 import useUser from "@/hooks/useUser";
-import { FilterKey } from "@/lib/types";
+import { useModalSelection } from "@/hooks/useModalSelection";
+import useAISearch from "@/hooks/useAISearch";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { dispatch, user } = useUser();
+  const { user } = useUser();
   const { isAISearch } = user;
 
-  const dataCollectionRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDataCollected, setIsDataCollected] = useState<Set<FilterKey>>(
-    new Set()
-  );
-
-  useEffect(() => {
-    setIsLoading(false);
-
-    const handleDropdownClose = (e: MouseEvent) => {
-      const collection = dataCollectionRef.current?.getBoundingClientRect();
-      const container = searchRef.current?.getBoundingClientRect();
-
-      if (container && collection) {
-        if (
-          e.clientX < container.left ||
-          e.clientX > collection.right ||
-          e.clientY < container.top ||
-          e.clientY > collection.bottom
-        ) {
-          setIsDropdownOpen(false);
-        }
-      }
-    };
-
-    window.addEventListener("click", handleDropdownClose);
-
-    return () => {
-      window.removeEventListener("click", handleDropdownClose);
-    };
-  }, []);
+  const { modalDispatch } = useModalSelection();
+  const { updateAISearchPreference } = useAISearch();
 
   const handleMouseEnter = () => {
     (
@@ -86,59 +49,19 @@ export default function Navbar() {
     ).style.visibility = "hidden";
   };
 
-  const handleAISearchToggle = async (isChecked: boolean) => {
+  const handleAISearchToggle = async (
+    isChecked: boolean,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const userConsent = localStorage.getItem("isAISearch");
     if (!userConsent || userConsent === "false") {
-      setIsDialogOpen(true);
+      modalDispatch({
+        type: "onOpen",
+        payload: "DataCollectionModal",
+        data: { type: "DataCollectionModal", data: {} },
+      });
     } else {
       await updateAISearchPreference(isChecked);
-    }
-  };
-
-  const updateAISearchPreference = async (isAllowed: boolean) => {
-    setIsLoading(true);
-    let prevAISearchPreference = isAISearch;
-    try {
-      dispatch({ type: "AI_SEARCH_CHANGE", payload: isAllowed });
-      await AISearchPreference(isAllowed);
-
-      if (isAllowed) {
-        localStorage.setItem("isAISearch", isAllowed.toString());
-      }
-    } catch (error: any) {
-      console.error("Error updating AI search preference:", error?.message);
-      dispatch({ type: "AI_SEARCH_CHANGE", payload: prevAISearchPreference });
-    } finally {
-      setIsLoading(false);
-      setIsDialogOpen(false);
-    }
-  };
-
-  const handleDropdownChange = () => {
-    setIsDropdownOpen((prev) => !prev);
-  };
-
-  const handleDataCollection = async (platform: FilterKey) => {
-    try {
-      setIsDataCollected((prev) => new Set(prev).add(platform));
-      await dataCollection(platform);
-
-      dispatch({
-        type: "CONNECTION",
-        connectionType: platform,
-        payload: {
-          ...user[platform],
-          dataCollection: !user[platform].dataCollection,
-        },
-      });
-    } catch (error: any) {
-      console.log("Error while data collection");
-    } finally {
-      setIsDataCollected((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(platform);
-        return newSet;
-      });
     }
   };
 
@@ -208,55 +131,7 @@ export default function Navbar() {
                   }
                   value={isAISearch}
                   onValueChange={handleAISearchToggle}
-                  disabled={isLoading}
-                  icon={ChevronDown}
-                  onContainerClick={handleDropdownChange}
                 />
-
-                {/* Data collection platform-wise */}
-                <div
-                  ref={dataCollectionRef}
-                  className={`shadow-xl grid absolute top-[calc(100%+0.5rem)] bg-neutral-900 rounded-lg transition-all ${
-                    isDropdownOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  }`}
-                >
-                  <div
-                    role="button"
-                    className={`overflow-hidden w-max ${
-                      isAISearch ? "" : "opacity-50 pointer-events-none"
-                    }`}
-                  >
-                    {Platforms.map((platform, i) => (
-                      <Switch
-                        key={platform}
-                        className={cn("rounded-none", {
-                          "rounded-t-lg": i === 0,
-                          "rounded-b-lg": i === Platforms.length - 1,
-                        })}
-                        value={user[platform].dataCollection}
-                        onValueChange={() => handleDataCollection(platform)}
-                        label={
-                          <div className="flex gap-2 items-center">
-                            {isDataCollected.has(platform) && (
-                              <Loader2 className="size-4 animate-spin duration-1000" />
-                            )}
-                            <div className="relative size-5">
-                              <Image
-                                src={LogoMap[platform]}
-                                alt={platform}
-                                fill
-                                quality={100}
-                              />
-                            </div>
-                            <p className="text-xs font-medium tracking-wide">
-                              {platform}
-                            </p>
-                          </div>
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
               </div>
 
               {/* Upgrade button */}
@@ -276,7 +151,10 @@ export default function Navbar() {
               signUpFallbackRedirectUrl={"/search"}
               fallbackRedirectUrl={"/search"}
             >
-              <button className="text-sm text-black bg-btn-primary py-2 px-4 rounded-2xl font-medium">
+              <button
+                type="button"
+                className="text-sm text-black bg-btn-primary py-2 px-4 rounded-2xl font-medium"
+              >
                 Sign up
               </button>
             </SignInButton>
@@ -307,51 +185,6 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
-
-      {/* Data Collection disclaimer for user privacy */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent
-          className={`flex items-center max-w-2xl h-max pb-5 px-4 ${
-            inter.className
-          } ${isDialogOpen ? "block" : "hidden"}`}
-        >
-          <DialogHeader>
-            <DialogTitle className="w-max mx-auto">
-              <h2 className="text-xl text">Disclaimer: Data Collection</h2>
-            </DialogTitle>
-            <DialogDescription className="text-text-secondary">
-              <p className="text-justify">
-                If you want to use AI-based search for more granular search,
-                then you must <strong>&quot;allow&quot;</strong> for data
-                collection. We ensure you that your data only belongs to you,
-                and won&apos;t be shared to any third-party expect AI-models we
-                use. Only AI-models will use your data for improving their
-                products and services. If you want no one use your data expect
-                you, upgrade to <strong>&quot;Premium Plan&quot;</strong>.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogItem>
-            <div className="flex items-center justify-around mt-5">
-              <button
-                className="text-sm px-6 py-3 rounded-lg font-semibold text-white transition-colors bg-neutral-800 hover:bg-neutral-700"
-                onClick={() => updateAISearchPreference(false)}
-                disabled={isLoading}
-              >
-                Deny
-              </button>
-              <button
-                className="text-sm px-6 py-3 rounded-lg font-semibold text-white transition-colors bg-neutral-800 hover:bg-neutral-700"
-                onClick={() => updateAISearchPreference(true)}
-                disabled={isLoading}
-              >
-                Allow
-              </button>
-            </div>
-          </DialogItem>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }

@@ -1,9 +1,17 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
 import { sortData } from "@/lib/constants";
-import { CirclePlus, Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
+import { DocumentType, FilterKey } from "@/lib/types";
+
+import ReactMarkdown from "react-markdown";
+import { readStreamableValue } from "ai/rsc";
+import { searchAction } from "@/actions/search.actions";
+
+import useUser from "@/hooks/useUser";
+import { useCallback, useEffect, useState } from "react";
+import { Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,36 +19,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Loading from "@/components/loading";
 import Filter from "@/components/ui/filter";
+import Calendar from "@/components/calendar";
 import Document from "@/components/document";
 import Textarea from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { useModalSelection } from "@/hooks/useModalSelection";
+import { toast } from "sonner";
 
-import { cn } from "@/lib/utils";
-import Loading from "@/components/loading";
-import { searchAction } from "@/actions/search.actions";
-
-import ReactMarkdown from "react-markdown";
-import useUser from "@/hooks/useUser";
-import { DocumentType } from "@/lib/types";
-import { readStreamableValue } from "ai/rsc";
-import Image from "next/image";
+type LayoutType = "grid" | "list";
 
 const inter = Inter({ subsets: ["latin"] });
-const CHUNK_SIZE = 100;
 
 const Page = () => {
-  const [layout, setLayout] = useState<"grid" | "list">("list");
+  const [layout, setLayout] = useState<LayoutType>("list");
   const [userQuery, setUserQuery] = useState("");
   const [aiMessage, setAiMessage] = useState("");
-  const [document, setDocument] = useState<DocumentType[]>([]);
+  const [documents, setDocuments] = useState<DocumentType[]>([]);
 
+  const { user, dispatch } = useUser();
   const [isSearching, setIsSearching] = useState(false);
   const [searchCount, setSearchCount] = useState(0);
 
-  const { user } = useUser();
+  const { modalDispatch } = useModalSelection();
 
   useEffect(() => {
     if (isSearching) {
@@ -56,27 +59,40 @@ const Page = () => {
           setAiMessage("");
         }
 
-        const result = await searchAction(formData);
-        if (Array.isArray(result)) {
-          setDocument(result);
+        const response = await searchAction(formData);
+        if (!response.success) {
+          toast.error(response.error);
+          if (response.error.split("-")[0] === "RE_AUTHENTICATE") {
+            const platform = response.error.split("-")[1] as FilterKey;
+            dispatch({
+              type: "CONNECTION",
+              connectionType: platform,
+              payload: 2,
+            });
+          }
+          return;
+        }
+
+        if (Array.isArray(response.data)) {
+          setDocuments(response.data);
         } else {
           setIsSearching(false);
-          for await (const content of readStreamableValue(result)) {
+          for await (const content of readStreamableValue(response.data)) {
             if (content) {
               setAiMessage(content);
             }
           }
         }
       } catch (error: any) {
-        console.log(error?.message);
+        toast.error(error);
       }
     },
-    [user.isAISearch]
+    [user.isAISearch, dispatch]
   );
 
   return (
     <div
-      className={`relative mb:py-10 md:px-5 py-5 px-2 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 select-none ${inter.className} overflow-auto`}
+      className={`relative mb:py-10 md:px-5 py-5 px-2 my-4 sm:mx-4 mx-0 space-y-10 h-[calc(100%-2rem)] flex flex-col rounded-2xl bg-neutral-900 ${inter.className} overflow-auto`}
     >
       <form
         action={handleAction}
@@ -108,12 +124,7 @@ const Page = () => {
 
         <div className="flex items-center gap-3">
           {/* calendar */}
-          <div className="text-[13px] text-text-primary bg-neutral-800 max-w-max py-2 px-4 flex items-center gap-2 rounded-lg">
-            <span>
-              <CirclePlus className="size-4 stroke-neutral-800 fill-text-primary" />
-            </span>
-            <p>Calendar</p>
-          </div>
+          <Calendar />
 
           {/* sorting */}
           <Select>
@@ -152,55 +163,60 @@ const Page = () => {
 
           {/* layout buttons*/}
           <div className="px-4 flex gap-x-4 h-9 bg-neutral-800 rounded-lg">
-            {/* grid */}
-            <button onClick={() => setLayout("grid")} className="relative">
-              <LayoutGrid
-                className={`relative z-20 size-4 ${
-                  layout === "grid"
-                    ? "fill-neutral-800 stroke-neutral-800"
-                    : "fill-text-primary stroke-text-primary"
-                }`}
-              />
-              {layout === "grid" && (
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 rounded-full bg-text-primary pointer-events-none z-0"></span>
-              )}
-            </button>
+            {(["grid", "list"] as LayoutType[]).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setLayout(item)}
+                className="relative"
+              >
+                <span>
+                  {item === "grid" ? (
+                    <LayoutGrid
+                      className={`relative z-20 size-4 ${
+                        layout === "grid"
+                          ? "fill-neutral-800 stroke-neutral-800"
+                          : "fill-text-primary stroke-text-primary"
+                      }`}
+                    />
+                  ) : (
+                    <Menu
+                      className={`relative z-20 stroke-[3] size-4 ${
+                        layout === "list"
+                          ? "stroke-neutral-800"
+                          : "stroke-text-primary"
+                      }`}
+                    />
+                  )}
+                </span>
 
-            {/* list */}
-            <button onClick={() => setLayout("list")} className="relative">
-              <Menu
-                className={`relative z-20 stroke-[3] size-4 ${
-                  layout === "list"
-                    ? "stroke-neutral-800"
-                    : "stroke-text-primary"
-                }`}
-              />
-              {layout === "list" && (
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 rounded-full bg-text-primary pointer-events-none z-0"></span>
-              )}
-            </button>
+                {layout === item && (
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 rounded-full bg-text-primary pointer-events-none z-0"></span>
+                )}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <>
+      <div className="flex-1 flex items-center justify-center">
         {isSearching ? (
-          <div className="space-y-10">
+          <div className="space-y-10 w-full">
             {Array.from({ length: 2 }).map((_, i) => (
               <Loading key={`loading${i}`} />
             ))}
           </div>
         ) : (
           <>
-            {document.length || aiMessage.length ? (
-              <>
+            {documents.length || aiMessage.length ? (
+              <div className="space-y-4 self-start">
                 <div className="flex justify-end w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
                   <span className="text-base bg-neutral-800 py-2 px-4 rounded-lg">
                     {userQuery}
                   </span>
                 </div>
 
-                {document.length ? (
+                {documents.length ? (
                   <div
                     className={cn(
                       "overflow-auto w-full max-w-5xl mx-auto grid gap-4 px-4 sm:px-6 lg:px-8",
@@ -210,21 +226,21 @@ const Page = () => {
                       }
                     )}
                   >
-                    {document.map((doc) => (
+                    {documents.map((doc) => (
                       <Document key={doc.href} layout={layout} document={doc} />
                     ))}
                   </div>
                 ) : (
-                  <>
+                  <div>
                     {/* If AI-Search enabled */}
                     <div className="markdown overflow-auto space-y-5">
                       <ReactMarkdown className="char">
                         {aiMessage}
                       </ReactMarkdown>
                     </div>
-                  </>
+                  </div>
                 )}
-              </>
+              </div>
             ) : (
               <div className="flex flex-1 items-center justify-center">
                 {searchCount ? (
@@ -244,29 +260,24 @@ const Page = () => {
             )}
           </>
         )}
-      </>
+      </div>
 
-      {/* dialog box */}
-      <div className="absolute lg:right-20 right-5 lg:bottom-20 bottom-5">
-        <Dialog>
-          <DialogTrigger>
-            <Fullscreen />
-          </DialogTrigger>
-          <DialogContent className="!h-[80vh] max-w-screen-lg p-4">
-            <div
-              className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
-                "lg:grid-cols-3 md:grid-cols-2 grid-cols-1": layout === "grid",
-              })}
-            >
-              {document.map((doc) => (
-                <Document key={doc.href} layout={layout} document={doc} />
-              ))}
-            </div>
-            <div className="markdown overflow-auto space-y-5">
-              <ReactMarkdown className="char">{aiMessage}</ReactMarkdown>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="fixed right-[4vw] bottom-[5vh]">
+        <button
+          type="button"
+          onClick={() =>
+            modalDispatch({
+              type: "onOpen",
+              payload: "FullScreenModal",
+              data: {
+                type: "FullScreenModal",
+                data: { aiMessage, documents, layout },
+              },
+            })
+          }
+        >
+          <Fullscreen />
+        </button>
       </div>
     </div>
   );

@@ -1,19 +1,34 @@
 import { Schema, model, models, InferSchemaType } from "mongoose";
 
-const platformSchema = new Schema({
-  accessToken: String,
-  refreshToken: String,
-  expiresAt: Number,
-  authUser: String,
-  dataCollection: {
-    type: Boolean,
-    default: () => false,
+const defaultBooleanSchema = {
+  type: Number,
+  default: () => false,
+};
+
+const defaultStringSchema = {
+  type: String,
+  default: () => "",
+};
+
+const defaultNumberSchema = {
+  type: Number,
+  default: () => 0,
+};
+
+const platformSchmea = {
+  type: {
+    accessToken: defaultStringSchema,
+    refreshToken: defaultStringSchema,
+    authUser: defaultStringSchema,
+    expiresAt: defaultNumberSchema,
   },
-  lastSync: {
-    type: Number,
-    default: () => 0,
-  },
-});
+  default: () => ({
+    accessToken: "",
+    refreshToken: "",
+    expiresAt: 0,
+    authUser: "",
+  }),
+};
 
 const userSchema = new Schema(
   {
@@ -34,41 +49,25 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    passkey: String,
-    hasPasskey: {
-      type: Boolean,
-      default: () => false,
-    },
-    shouldRemember: {
-      type: Boolean,
-      default: () => false,
-    },
-    isFilterApplied: {
-      type: Boolean,
-      default: () => false,
-    },
+    passkey: defaultStringSchema,
+    hasPasskey: defaultBooleanSchema,
+    shouldRemember: defaultBooleanSchema,
+    isFilterApplied: defaultBooleanSchema,
     filter: {
       type: [String],
       default: () => [],
     },
-    isAISearch: {
-      type: Boolean,
-      default: () => false,
-    },
-    hasSubscription: {
-      type: Boolean,
-      default: () => false,
-    },
-    gmail: platformSchema,
-    google_docs: platformSchema,
-    google_drive: platformSchema,
-    google_calendar: platformSchema,
-    teams: platformSchema,
-    discord: platformSchema,
-    gitHub: platformSchema,
-    notion: platformSchema,
-    slack: platformSchema,
-    oneDrive: platformSchema,
+    isAISearch: defaultBooleanSchema,
+    hasSubscription: defaultBooleanSchema,
+    GMAIL: platformSchmea,
+    GOOGLE_DOCS: platformSchmea,
+    GOOGLE_DRIVE: platformSchmea,
+    GOOGLE_CALENDAR: platformSchmea,
+    MICROSOFT_TEAMS: platformSchmea,
+    DISCORD: platformSchmea,
+    GITHUB: platformSchmea,
+    NOTION: platformSchmea,
+    SLACK: platformSchmea,
   },
   { timestamps: true }
 );

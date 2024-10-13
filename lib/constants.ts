@@ -50,7 +50,7 @@ export const features: {
 export const images: LogoType[] = [
   {
     src: "./Gmail.svg",
-    alt: "Gmail",
+    alt: "GMAIL",
     desc: "Seamlessly integrate Gmail with Nexus to manage your emails efficiently. Quickly search and access emails, attachments, and conversation threads. ",
     key: "gmail",
     width: 64,
@@ -58,7 +58,7 @@ export const images: LogoType[] = [
   },
   {
     src: "./Google_Drive.svg",
-    alt: "Google Drive",
+    alt: "GOOGLE_DRIVE",
     desc: "Enhance your file management by connecting Google Drive to Nexus. Instantly locate documents, spreadsheets, and presentations. ",
     key: "drive",
     width: 64,
@@ -66,7 +66,7 @@ export const images: LogoType[] = [
   },
   {
     src: "./Teams.svg",
-    alt: "MS Teams",
+    alt: "MICROSOFT_TEAMS",
     desc: "Improve team collaboration by integrating MS Teams with Nexus. Effortlessly search and retrieve messages, files, and meeting notes from various channels. ",
     key: "teams",
     width: 64,
@@ -74,7 +74,7 @@ export const images: LogoType[] = [
   },
   {
     src: "./Discord.svg",
-    alt: "Discord",
+    alt: "DISCORD",
     desc: "Enhance your community interactions by integrating Discord with Nexus. Easily search through messages, media, and server content. ",
     key: "discord",
     width: 64,
@@ -82,7 +82,7 @@ export const images: LogoType[] = [
   },
   {
     src: "./Github.svg",
-    alt: "GitHub",
+    alt: "GITHUB",
     desc: "Streamline your development projects by integrating Github with Nexus. Search through repositories, pull requests, and issues effortlessly. ",
     key: "gitHub",
     width: 64,
@@ -90,7 +90,7 @@ export const images: LogoType[] = [
   },
   {
     src: "./Google_Docs.svg",
-    alt: "Google Docs",
+    alt: "GOOGLE_DOCS",
     desc: "Centralize your document management by linking Google Docs with Nexus. Instantly access and search for documents with ease. ",
     key: "docs",
     width: 64,
@@ -98,25 +98,25 @@ export const images: LogoType[] = [
   },
   {
     src: "./Notion.svg",
-    alt: "Notion",
+    alt: "NOTION",
     desc: "Optimize your workflow by integrating Notion with Nexus. Quickly search through notes, databases, and projects.",
     key: "notion",
     width: 64,
     height: 64,
   },
   {
-    src: "./OneDrive.svg",
-    alt: "OneDrive",
-    desc: "Simplify your file management by connecting OneDrive to Nexus. Effortlessly search for documents, photos, and videos.",
-    key: "oneDrive",
+    src: "./Slack.svg",
+    alt: "SLACK",
+    desc: "Enhance your community interactions by integrating Slack with Nexus. Easily search through messages, media, and server content.",
+    key: "slack",
     width: 64,
     height: 64,
   },
   {
-    src: "./Slack.svg",
-    alt: "Slack",
-    desc: "Enhance your community interactions by integrating Slack with Nexus. Easily search through messages, media, and server content.",
-    key: "slack",
+    src: "./Google_Calendar.svg",
+    alt: "GOOGLE_CALENDAR",
+    desc: "Create events and tasks into your calendar by integrating Google Calendar with Nexus.",
+    key: "calendar",
     width: 64,
     height: 64,
   },
@@ -445,40 +445,43 @@ export const DrawerDir: Record<
   },
 };
 
-export const Platforms: FilterKey[] = [
-  "Discord",
-  "GitHub",
-  "Gmail",
-  "Google Docs",
-  "Google Drive",
-  "MS Teams",
-  "Notion",
-  "OneDrive",
-  "Slack",
-];
+export const Platforms = [
+  "DISCORD",
+  "GITHUB",
+  "GMAIL",
+  "GOOGLE_CALENDAR",
+  "GOOGLE_DOCS",
+  "GOOGLE_DRIVE",
+  "MICROSOFT_TEAMS",
+  "NOTION",
+  "SLACK",
+] as const;
 
 export const sortData = ["date", "last hour", "last day", "last week"];
 
 export const LogoMap: Record<FilterKey, string> = {
-  "Google Docs": "./Google_Docs.svg",
-  "Google Drive": "./Google_Drive.svg",
-  "MS Teams": "./Teams.svg",
-  Discord: "./Discord.svg",
-  GitHub: "./Github.svg",
-  Gmail: "./Gmail.svg",
-  Notion: "./Notion.svg",
-  OneDrive: "./OneDrive.svg",
-  Slack: "./Slack.svg",
+  GOOGLE_DOCS: "./Google_Docs.svg",
+  GOOGLE_DRIVE: "./Google_Drive.svg",
+  MICROSOFT_TEAMS: "./Teams.svg",
+  DISCORD: "./Discord.svg",
+  GITHUB: "./Github.svg",
+  GMAIL: "./Gmail.svg",
+  NOTION: "./Notion.svg",
+  SLACK: "./Slack.svg",
+  GOOGLE_CALENDAR: "./Google_Calendar.svg",
 };
 
 export const Scopes: Record<FilterKey, string[]> = {
-  Gmail: ["https://www.googleapis.com/auth/gmail.readonly"],
-  "Google Docs": [],
-  "Google Drive": [],
-  "MS Teams": [],
-  Discord: [],
-  GitHub: [],
-  Notion: [],
-  OneDrive: [],
-  Slack: [],
+  GMAIL: ["https://www.googleapis.com/auth/gmail.readonly"],
+  GOOGLE_DOCS: [],
+  GOOGLE_DRIVE: [],
+  GOOGLE_CALENDAR: ["https://www.googleapis.com/auth/calendar.events"],
+  MICROSOFT_TEAMS: [],
+  DISCORD: [],
+  GITHUB: [],
+  NOTION: [],
+  SLACK: [],
 };
+
+export const CalendarDateFormat = "EEEE, dd MMMM yy";
+export const CalendarTimeFormat = "h:mmaaa";

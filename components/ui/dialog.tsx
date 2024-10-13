@@ -21,15 +21,19 @@ type DialogType = {
 export const DialogTrigger = ({
   children,
   className,
+  customOnOpenChange,
 }: {
   children: React.ReactNode;
   className?: string;
+  customOnOpenChange?: () => void;
 }) => {
   const { onOpenChange } = useDialog();
 
   return (
     <div
-      onClick={() => onOpenChange(true)}
+      onClick={() =>
+        customOnOpenChange ? customOnOpenChange() : onOpenChange(true)
+      }
       className={cn("size-4 text-text-primary cursor-pointer", className)}
     >
       {children}
@@ -86,7 +90,7 @@ export const DialogItem = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return <div className={cn("", className)}>{children}</div>;
+  return <div className={cn("w-full", className)}>{children}</div>;
 };
 
 export const DialogContent = ({
@@ -156,11 +160,15 @@ export const DialogContent = ({
       )}
     >
       <button
+        type="button"
         onClick={onClose}
         className="absolute top-4 right-4 float-end"
         aria-label="close button"
       >
-        <X className="size-4 text-text-primary" />
+        <X
+          className="size-4 mix-blend-exclusion text-text-primary"
+          style={{ strokeWidth: "3" }}
+        />
       </button>
       <div
         className="flex flex-col gap-4 h-full w-full overflow-auto"
@@ -180,7 +188,7 @@ export const Dialog = ({ children, open, onOpenChange, modal }: DialogType) => {
 
   if (Number(open === undefined) ^ Number(onOpenChange === undefined)) {
     throw new Error(
-      "You must specify both 'open' and 'onOpenChange', if you want controlled input."
+      "You must specify both 'open' and 'onOpenChange', if you want the controlled componenet."
     );
   }
 

@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 import mongoose from "mongoose";
+import { PATTERNS } from "./sensitive-regex";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -49,4 +50,12 @@ export async function ConnectToDB() {
   } else {
     console.log("😎 Already connected to MongoDB!");
   }
+}
+
+export function redactText(text: string) {
+  const patterns = Object.entries(PATTERNS);
+
+  return patterns.reduce((curMaskedText, [key, regex]) => {
+    return curMaskedText.replace(regex, `[${key}]`);
+  }, text);
 }

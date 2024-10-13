@@ -1,24 +1,14 @@
 "use server";
 
 import { ConnectToDB } from "@/lib/utils";
-import { DocumentType } from "@/lib/types";
 import { gmailPrompt } from "@/lib/prompt";
 
-import axios from "axios";
 import { format } from "date-fns";
 import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 
 import { User, UserType } from "@/models/user.model";
 import {
-  GoogleGenerativeAIEmbeddings,
-  GoogleGenerativeAIEmbeddingsParams,
-} from "@langchain/google-genai";
-import { PineconeStore } from "@langchain/pinecone";
-import { Pinecone } from "@pinecone-database/pinecone";
-
-import {
-  generateEmbeddings,
+  checkAndRefreshToken,
   getPlatformClient,
   searchEmails,
 } from "./utils.actions";
@@ -29,65 +19,108 @@ import {
   ImagePart,
   streamText,
   TextPart,
-  ToolCallPart,
+  cosineSimilarity,
+  embed,
 } from "ai";
 import { createStreamableValue, StreamableValue } from "ai/rsc";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-
-const pineconeIndex = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY!,
-}).Index(process.env.PINECONE_INDEX!);
+import { google } from "googleapis";
+import { DocumentType } from "@/lib/types";
 
 const googleGenAI = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
 });
 
-const embeddings = new GoogleGenerativeAIEmbeddings({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  maxRetries: 1,
-  model: "text-embedding-004",
-  taskType:
-    "SEMANTIC_SIMILARITY" as GoogleGenerativeAIEmbeddingsParams["taskType"],
-  maxConcurrency: 5,
-});
+type ResponseType =
+  | { success: true; data: DocumentType[] | StreamableValue<string, any> }
+  | { success: false; error: string };
 
-export const searchAction = async (formData: FormData) => {
-  const { userId } = auth();
-  if (!userId) throw new Error("Unauthenticated user");
-
+export const searchAction = async (
+  formData: FormData
+): Promise<ResponseType> => {
   try {
+    const { userId } = auth();
+    if (!userId) throw new Error("Unauthenticated user. Please login first.");
+
     const query = formData.get("search")?.toString().trim();
-    if (!query) throw new Error("Please enter your query.");
+    if (!query) throw new Error("Bad request. Please enter your query.");
 
     await ConnectToDB();
     const user = await User.findOne<UserType>({ userId });
     if (!user) throw new Error("User not found");
 
-    const client = await getPlatformClient("Gmail", user);
+    const oauth2Client = await getPlatformClient("GMAIL");
+    await checkAndRefreshToken(user, "GMAIL", oauth2Client);
 
-    if (user.isAISearch) {
-      await generateEmbeddings("Gmail", user, client);
-      const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
-        namespace: user.userId,
-        maxConcurrency: 5,
-        pineconeIndex,
-        maxRetries: 1,
-      });
+    const { text } = await generateText({
+      model: googleGenAI("gemini-1.5-flash"),
+      maxRetries: 1,
+      prompt: `${gmailPrompt} \n\n Todays date: ${format(
+        new Date(),
+        "yyyy/MM/dd"
+      )} \n\n query: ${query}`,
+    });
 
-      const similarDocs = (await vectorStore.similaritySearch(query)).map(
-        ({ pageContent }): TextPart | ImagePart => {
-          return {
-            text: pageContent,
-            type: "text",
-          };
-        }
-      );
+    const prompt = text.trim();
+    // Search the query against every platform the user is connected to.
+    const result = await searchEmails(
+      prompt,
+      user,
+      google.gmail({
+        version: "v1",
+        auth: oauth2Client,
+      })
+    );
 
-      similarDocs.unshift({ text: `User query: ${query}`, type: "text" });
+    // If no AI-Search, then just return the result.
+    if (!user.isAISearch) return { success: true, data: result };
 
-      const coreMessages: CoreMessage[] = [
-        {
-          content: `Generate a detailed and well-structured Markdown response on the topic below. The output should be visually appealing, using proper Markdown elements such as:
+    const { embedding: userEmbedding } = await embed({
+      model: googleGenAI.textEmbeddingModel("text-embedding-004"),
+      value: prompt,
+    });
+
+    const similarDocs = await Promise.all(
+      result.map(async (item) => {
+        const { embedding } = await embed({
+          model: googleGenAI.textEmbeddingModel("text-embedding-004"),
+          value: item.content,
+        });
+
+        return {
+          ...item,
+          similarity: cosineSimilarity(userEmbedding, embedding),
+        };
+      })
+    );
+
+    similarDocs.sort((a, b) => a.similarity - b.similarity);
+
+    const messages = similarDocs.map(
+      ({ author, content, date, email, href, title }): TextPart | ImagePart => {
+        const pageContent = `Sender: ${author}\n\n Body: ${content}\n\n Message_Date: ${format(
+          date,
+          "yyyy/MM/dd"
+        )}\n\n Email_Address: ${email}\n\n Link: ${href}\n\n Subject: ${title}`;
+
+        return {
+          text: content,
+          type: "text",
+        };
+      }
+    );
+
+    messages.unshift({
+      text: `User query: ${query} \n Following messages contain the context from which you have to answer. \nTodays date, if user requires any date related query: ${format(
+        new Date(),
+        "yyyy/MM/dd"
+      )}`,
+      type: "text",
+    });
+
+    const coreMessages: CoreMessage[] = [
+      {
+        content: `Generate a detailed and well-structured Markdown response on the topic below. The output should be visually appealing, using proper Markdown elements such as:
           Main headings (for major sections)
           Subheadings (to organize subsections)
           Bullet points or numbered lists (for listing features/benefits)
@@ -95,52 +128,33 @@ export const searchAction = async (formData: FormData) => {
           Hyperlinks (for external references or documentation)
           Bold or italicized text for emphasis
           Blockquotes or notes (to highlight key points)`,
-          role: "system",
-        },
-        {
-          content: similarDocs,
-          role: "user",
-        },
-        {
-          content:
-            "Generate to the point and correct response to the users query using the metadata and context given by the user.",
-          role: "assistant",
-        },
-      ];
+        role: "system",
+      },
+      {
+        content: messages,
+        role: "user",
+      },
+      {
+        content: `Generate to the point response to the users query using the context given by the user.`,
+        role: "assistant",
+      },
+    ];
 
-      const streamResult = await streamText({
-        model: googleGenAI("gemini-1.5-flash"),
-        messages: coreMessages,
-        temperature: 1,
-      });
+    const streamResult = await streamText({
+      model: googleGenAI("gemini-1.5-flash"),
+      messages: coreMessages,
+      temperature: 1,
+    });
 
-      const stream = createStreamableValue(streamResult.textStream);
-      return stream.value;
-    } else {
-      const { text } = await generateText({
-        model: googleGenAI("gemini-1.5-flash"),
-        maxRetries: 1,
-        system: `Todays date, if user requires any date related query: ${format(
-          new Date(),
-          "yyyy/MM/dd"
-        )} \n\n ${gmailPrompt}`,
-        prompt: query,
-      });
-
-      const prompt = text.trim();
-
-      return await searchEmails(prompt, user, client);
-    }
+    const stream = createStreamableValue(streamResult.textStream);
+    return { success: true, data: stream.value };
   } catch (error: any) {
     console.error("Search error:", error.message);
-    if (error.message === "RE_AUTHENTICATE") {
-      // WIP: Change url for production
-      const url = (
-        await axios("https://qflbv4c3-3000.inc1.devtunnels.ms/api/google")
-      ).data;
-      redirect(url);
-    }
-    return [];
+
+    return {
+      success: false,
+      error: error.message,
+    };
   }
 };
 

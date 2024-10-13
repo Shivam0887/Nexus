@@ -16,7 +16,7 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export default function Home() {
   return (
-    <>
+    <div>
       <MaxWidthWrapper>
         <main className="relative">
           {/* Hero section */}
@@ -180,6 +180,6 @@ export default function Home() {
           </section>
         </main>
       </MaxWidthWrapper>
-    </>
+    </div>
   );
 }

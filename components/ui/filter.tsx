@@ -7,7 +7,6 @@ import { FilterKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, RefreshCw, Save, X } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 
 const Filter = ({
@@ -45,6 +44,7 @@ const Filter = ({
       >
         {filterKeys.map((image) => (
           <button
+            type="button"
             key={image.key}
             onClick={() => {
               const newSet = new Set(selected);
@@ -69,7 +69,9 @@ const Filter = ({
               <div className="relative h-5 w-5">
                 <Image src={image.src} alt={image.alt} fill />
               </div>
-              <p className="line-clamp-1 text-left">{image.alt}</p>
+              <p className="line-clamp-1 text-left capitalize">
+                {image.alt.replace("_", " ").toLowerCase()}
+              </p>
             </div>
 
             {selected.has(image.alt) && <X className="size-3" />}
@@ -80,6 +82,7 @@ const Filter = ({
       {/* expand, save, and reset buttons */}
       <div className="flex space-x-4 py-1 [grid-row:1/1] [grid-column:2/span1] justify-self-end self-start">
         <button
+          type="button"
           className="md:inline hidden"
           onClick={() => setIsExpand((prev) => !prev)}
         >
@@ -90,6 +93,7 @@ const Filter = ({
           )}
         </button>
         <button
+          type="button"
           title="save filter"
           className="text-text-primary"
           onClick={async () => {
@@ -100,6 +104,7 @@ const Filter = ({
           <Save className="size-4" />
         </button>
         <button
+          type="button"
           onClick={() => setSelected(new Set<FilterKey>())}
           title="reset filter"
           className="text-[13px] text-text-primary"

@@ -37,7 +37,7 @@ const SidebarNav = ({
     >
       <div className="w-full flex flex-col justify-center items-start gap-y-6">
         {icons.map(({ Icon, href, label }) => (
-          <button key={label} onClick={() => handleClick(href)}>
+          <button type="button" key={label} onClick={() => handleClick(href)}>
             <Icon selected={href === pathname} label={label} />
           </button>
         ))}
@@ -55,7 +55,10 @@ const SidebarNav = ({
           <p className="text-sm capitalize">{user.username}</p>
         </div>
         <SignOutButton signOutOptions={{ redirectUrl: "/" }}>
-          <button className="flex hover:text-btn-primary gap-x-5 items-center">
+          <button
+            type="button"
+            className="flex hover:text-btn-primary gap-x-5 items-center"
+          >
             <LogOut className="w-[30px] h-[30px]" />
             <p className="text-sm whitespace-nowrap">Sign out</p>
           </button>
