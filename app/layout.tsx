@@ -42,8 +42,6 @@ export default async function RootLayout({
     plan: "Starter",
     shouldRemember: Boolean(user?.shouldRemember),
     username: user?.username ?? "",
-    filter: user?.filter ? (user.filter as FilterKey[]) : [],
-    isFilterApplied: Boolean(user?.isFilterApplied),
     GOOGLE_CALENDAR: Number(!!user?.GOOGLE_CALENDAR.accessToken),
     DISCORD: Number(!!user?.DISCORD.accessToken),
     GITHUB: Number(!!user?.GITHUB.accessToken),

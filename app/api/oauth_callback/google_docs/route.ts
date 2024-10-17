@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
       return new NextResponse("Bad request", { status: 400 });
     }
 
-    const clientId = process.env.GMAIL_CLIENT_ID!;
-    const clientSecret = process.env.GMAIL_CLIENT_SECRET!;
-    const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/gmail`;
+    const clientId = process.env.GOOGLE_DOCS_CLIENT_ID!;
+    const clientSecret = process.env.GOOGLE_DOCS_CLIENT_SECRET!;
+    const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/google_docs`;
 
     const authUser = new URL(
       req.headers.get("x-clerk-clerk-url")!
@@ -56,10 +56,10 @@ export async function GET(req: NextRequest) {
           { userId },
           {
             $set: {
-              "GMAIL.accessToken": tokens.access_token,
-              "GMAIL.refreshToken": tokens.refresh_token,
-              "GMAIL.expiresAt": Date.now() + tokens.expires_in * 1000,
-              "GMAIL.authUser": authUser,
+              "GOOGLE_DOCS.accessToken": tokens.access_token,
+              "GOOGLE_DOCS.refreshToken": tokens.refresh_token,
+              "GOOGLE_DOCS.expiresAt": Date.now() + tokens.expires_in * 1000,
+              "GOOGLE_DOCS.authUser": authUser,
             },
           }
         );
@@ -67,12 +67,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=true&platform=GMAIL"
+      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=true&platform=GOOGLE_DOCS"
     );
   } catch (error: any) {
     console.log(error.message);
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=false&platform=GMAIL"
+      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=false&platform=GOOGLE_DOCS"
     );
   }
 }

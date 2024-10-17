@@ -8,27 +8,6 @@ import { auth } from "@clerk/nextjs/server";
 import { User, UserType } from "@/models/user.model";
 import { ProjectionType } from "mongoose";
 
-export const saveFilters = async (data: Set<FilterKey>) => {
-  const { userId } = auth();
-
-  if (!userId) {
-    throw new Error("Unauthenticated user");
-  }
-
-  const filter = Array.from(data);
-
-  await ConnectToDB();
-  await User.findOneAndUpdate(
-    { userId },
-    {
-      $set: {
-        filter,
-        isFilterApplied: !!filter.length,
-      },
-    }
-  );
-};
-
 export const AISearchPreference = async (isAISearch: boolean) => {
   const { userId } = auth();
 

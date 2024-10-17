@@ -68,8 +68,6 @@ export type StateType = Connection & {
   hasPasskey: boolean;
   isAISearch: boolean;
   shouldRemember: boolean;
-  isFilterApplied: boolean;
-  filter: FilterKey[];
   hasSubscription: boolean;
   plan: PLAN["plan"];
 };
@@ -98,13 +96,6 @@ export type ActionType =
   | {
       type: "PLAN_CHANGE";
       payload: PLAN["plan"];
-    }
-  | {
-      type: "FILTER_SAVE";
-      payload: FilterKey[];
-    }
-  | {
-      type: "FILTER_RESET";
     }
   | {
       type: "CONNECTION";
@@ -139,4 +130,7 @@ export type DocumentType = {
   email: string;
   href: string;
   content: string;
+  key: Omit<FilterKey, "GOOGLE_CALENDAR">;
 };
+
+export type TSortBy = "" | "date" | "last hour" | "last day" | "last week";

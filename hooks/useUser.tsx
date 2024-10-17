@@ -11,8 +11,6 @@ const InitialState: StateType = {
   imageUrl: "",
   isAISearch: false,
   shouldRemember: false,
-  isFilterApplied: false,
-  filter: [],
   username: "",
   plan: "Starter",
   GOOGLE_DOCS: 0,
@@ -65,18 +63,6 @@ const reducer = (state: StateType, action: ActionType): StateType => {
       return {
         ...state,
         username: action.payload,
-      };
-
-    case "FILTER_SAVE":
-      return {
-        ...state,
-        filter: action.payload,
-      };
-
-    case "FILTER_RESET":
-      return {
-        ...state,
-        filter: [],
       };
     case "CONNECTION":
       return {

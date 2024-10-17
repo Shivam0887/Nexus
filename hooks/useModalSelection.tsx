@@ -6,7 +6,12 @@ import { createContext, useContext, useMemo, useReducer } from "react";
 type ModalType = "CalendarModal" | "FullScreenModal" | "DataCollectionModal";
 
 type ActionData =
-  | { type: "CalendarModal"; data: {} }
+  | {
+      type: "CalendarModal";
+      data: {
+        title?: string;
+      };
+    }
   | { type: "DataCollectionModal"; data: {} }
   | {
       type: "FullScreenModal";

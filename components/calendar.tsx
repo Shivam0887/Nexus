@@ -10,9 +10,21 @@ const Calendar = () => {
   const { modalDispatch } = useModalSelection();
   const { user } = useUser();
 
+  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    const title = e.dataTransfer.getData("text");
+    modalDispatch({
+      type: "onOpen",
+      payload: "CalendarModal",
+      data: { data: { title }, type: "CalendarModal" },
+    });
+  };
+
   return (
     <button
       type="button"
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
       onClick={() => {
         if (user.GOOGLE_CALENDAR === 1) {
           modalDispatch({
@@ -26,7 +38,7 @@ const Calendar = () => {
               Please connect to your Google Calendar account
               <Link
                 className="p-2 rounded-md bg-primary max-w-fit"
-                href="https://qflbv4c3-3000.inc1.devtunnels.ms/integrations#google_calendar"
+                href="https://qflbv4c3-3001.inc1.devtunnels.ms/integrations#google_calendar"
               >
                 Go to integrations
               </Link>

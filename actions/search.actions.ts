@@ -9,7 +9,9 @@ import { auth } from "@clerk/nextjs/server";
 import { User, UserType } from "@/models/user.model";
 import {
   checkAndRefreshToken,
+  generateSearchQuery,
   getPlatformClient,
+  searchDocs,
   searchEmails,
 } from "./utils.actions";
 
@@ -49,39 +51,24 @@ export const searchAction = async (
     const user = await User.findOne<UserType>({ userId });
     if (!user) throw new Error("User not found");
 
-    const oauth2Client = await getPlatformClient("GMAIL");
-    await checkAndRefreshToken(user, "GMAIL", oauth2Client);
+    const { docsQuery, emailQuery } = await generateSearchQuery(query);
 
-    const { text } = await generateText({
-      model: googleGenAI("gemini-1.5-flash"),
-      maxRetries: 1,
-      prompt: `${gmailPrompt} \n\n Todays date: ${format(
-        new Date(),
-        "yyyy/MM/dd"
-      )} \n\n query: ${query}`,
-    });
-
-    const prompt = text.trim();
     // Search the query against every platform the user is connected to.
-    const result = await searchEmails(
-      prompt,
-      user,
-      google.gmail({
-        version: "v1",
-        auth: oauth2Client,
-      })
-    );
+    const emailResult = await searchEmails(emailQuery, user);
 
+    const docsResult = await searchDocs(docsQuery, user);
+
+    const result = [...emailResult, ...docsResult];
     // If no AI-Search, then just return the result.
     if (!user.isAISearch) return { success: true, data: result };
 
     const { embedding: userEmbedding } = await embed({
       model: googleGenAI.textEmbeddingModel("text-embedding-004"),
-      value: prompt,
+      value: query,
     });
 
     const similarDocs = await Promise.all(
-      result.map(async (item) => {
+      emailResult.map(async (item) => {
         const { embedding } = await embed({
           model: googleGenAI.textEmbeddingModel("text-embedding-004"),
           value: item.content,
@@ -98,11 +85,6 @@ export const searchAction = async (
 
     const messages = similarDocs.map(
       ({ author, content, date, email, href, title }): TextPart | ImagePart => {
-        const pageContent = `Sender: ${author}\n\n Body: ${content}\n\n Message_Date: ${format(
-          date,
-          "yyyy/MM/dd"
-        )}\n\n Email_Address: ${email}\n\n Link: ${href}\n\n Subject: ${title}`;
-
         return {
           text: content,
           type: "text",

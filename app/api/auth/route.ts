@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent select_account",
-      scope: `openid ${Scopes[platform]}`,
+      scope: `openid ${Scopes[platform].join(" ")}`,
       state: userId,
     });
 

@@ -6,6 +6,7 @@ import {
   LogoType,
   PALETTE_NAME,
   PLAN,
+  TSortBy,
 } from "./types";
 import { Check, X } from "lucide-react";
 import Analytics from "@/components/icons/analytics";
@@ -457,7 +458,7 @@ export const Platforms = [
   "SLACK",
 ] as const;
 
-export const sortData = ["date", "last hour", "last day", "last week"];
+export const SortBy: TSortBy[] = ["date", "last hour", "last day", "last week"];
 
 export const LogoMap: Record<FilterKey, string> = {
   GOOGLE_DOCS: "./Google_Docs.svg",
@@ -473,8 +474,11 @@ export const LogoMap: Record<FilterKey, string> = {
 
 export const Scopes: Record<FilterKey, string[]> = {
   GMAIL: ["https://www.googleapis.com/auth/gmail.readonly"],
-  GOOGLE_DOCS: [],
-  GOOGLE_DRIVE: [],
+  GOOGLE_DOCS: [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/documents.readonly",
+  ],
+  GOOGLE_DRIVE: ["https://www.googleapis.com/auth/documents.readonly"],
   GOOGLE_CALENDAR: ["https://www.googleapis.com/auth/calendar.events"],
   MICROSOFT_TEAMS: [],
   DISCORD: [],

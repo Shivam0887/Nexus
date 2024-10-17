@@ -2,7 +2,7 @@
 
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { sortData } from "@/lib/constants";
+
 import { DocumentType, FilterKey } from "@/lib/types";
 
 import ReactMarkdown from "react-markdown";
@@ -11,25 +11,27 @@ import { searchAction } from "@/actions/search.actions";
 
 import useUser from "@/hooks/useUser";
 import { useCallback, useEffect, useState } from "react";
-import { Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Check, Copy, Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
+
 import Loading from "@/components/loading";
 import Filter from "@/components/ui/filter";
 import Calendar from "@/components/calendar";
 import Document from "@/components/document";
 import Textarea from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { useModalSelection } from "@/hooks/useModalSelection";
 import { toast } from "sonner";
+import Image from "next/image";
+import Sorting from "@/components/sorting";
 
 type LayoutType = "grid" | "list";
+
+type TFilter = {
+  key: Omit<FilterKey, "GOOGLE_CALENDAR">;
+  logo: string;
+  isSelected: boolean;
+};
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,19 +39,31 @@ const Page = () => {
   const [layout, setLayout] = useState<LayoutType>("list");
   const [userQuery, setUserQuery] = useState("");
   const [aiMessage, setAiMessage] = useState("");
+  const [filter, setFilter] = useState<TFilter[]>([]);
   const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>(
+    []
+  );
 
   const { user, dispatch } = useUser();
-  const [isSearching, setIsSearching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const [searchCount, setSearchCount] = useState(0);
 
   const { modalDispatch } = useModalSelection();
 
   useEffect(() => {
-    if (isSearching) {
-      setSearchCount((prev) => prev + 1);
-    }
-  }, [isSearching]);
+    const uniqueKey = new Set<Omit<FilterKey, "GOOGLE_CALENDAR">>();
+    const result: TFilter[] = [];
+
+    documents.forEach(({ key, logo }) => {
+      if (!uniqueKey.has(key)) {
+        result.push({ key, logo, isSelected: false });
+      }
+    });
+
+    setFilter(result);
+  }, [documents]);
 
   const handleAction = useCallback(
     async (formData: FormData) => {
@@ -75,14 +89,17 @@ const Page = () => {
 
         if (Array.isArray(response.data)) {
           setDocuments(response.data);
+          setFilteredDocuments(response.data);
         } else {
-          setIsSearching(false);
+          setIsLoading(false);
           for await (const content of readStreamableValue(response.data)) {
             if (content) {
               setAiMessage(content);
             }
           }
         }
+
+        setSearchCount((prev) => prev + 1);
       } catch (error: any) {
         toast.error(error);
       }
@@ -101,13 +118,20 @@ const Page = () => {
         <h1 className="md:text-4xl sm:text-3xl text-2xl text font-extrabold tracking-wide">
           How can I help you Today?
         </h1>
-        <Textarea setIsSearching={setIsSearching} setUserQuery={setUserQuery} />
+        <Textarea setIsSearching={setIsLoading} setUserQuery={setUserQuery} />
       </form>
 
       <div className="flex items-start justify-between gap-2">
         {/* filtering */}
         <div className="lg:block hidden">
-          <Filter />
+          <Filter
+            documents={documents}
+            setFilteredDocuments={setFilteredDocuments}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+            filter={filter}
+            setFilter={setFilter}
+          />
         </div>
         <div className="lg:hidden block">
           <Drawer drawerDirection="bottom">
@@ -117,7 +141,16 @@ const Page = () => {
               </div>
             </DrawerTrigger>
             <DrawerContent containerClassName="pt-10 px-2 flex items-center">
-              <Filter className="h-max" controlledHeight={true} />
+              <Filter
+                className="h-max"
+                controlledHeight={true}
+                documents={documents}
+                setFilteredDocuments={setFilteredDocuments}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+                filter={filter}
+                setFilter={setFilter}
+              />
             </DrawerContent>
           </Drawer>
         </div>
@@ -127,39 +160,12 @@ const Page = () => {
           <Calendar />
 
           {/* sorting */}
-          <Select>
-            <SelectTrigger className="focus:ring-offset-0 focus:ring-0 text-sm border-none bg-neutral-800">
-              <SelectValue className="text-xs" placeholder="sort by" />
-            </SelectTrigger>
-            <SelectContent className="text-xs bg-neutral-950 text-text-primary border-none">
-              {sortData.map((item) => (
-                <SelectItem
-                  key={item}
-                  value={item}
-                  className="text-[13px] cursor-pointer"
-                >
-                  {item}
-                </SelectItem>
-              ))}
-
-              <div className="mt-1">
-                <RadioGroup defaultValue="ascending" className="ml-2">
-                  {["ascending", "descending"].map((item) => (
-                    <div key={item} className="flex items-center space-x-2.5">
-                      <RadioGroupItem
-                        value={item}
-                        id={item}
-                        className="fill-white stroke-neutral-500"
-                      />
-                      <label htmlFor={item} className="text-[13px]">
-                        {item}
-                      </label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            </SelectContent>
-          </Select>
+          <Sorting
+            filteredDocuments={filteredDocuments}
+            setFilteredDocuments={setFilteredDocuments}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+          />
 
           {/* layout buttons*/}
           <div className="px-4 flex gap-x-4 h-9 bg-neutral-800 rounded-lg">
@@ -200,7 +206,7 @@ const Page = () => {
       </div>
 
       <div className="flex-1 flex items-center justify-center">
-        {isSearching ? (
+        {isLoading ? (
           <div className="space-y-10 w-full">
             {Array.from({ length: 2 }).map((_, i) => (
               <Loading key={`loading${i}`} />
@@ -208,25 +214,50 @@ const Page = () => {
           </div>
         ) : (
           <>
-            {documents.length || aiMessage.length ? (
+            {filteredDocuments.length || aiMessage.length ? (
               <div className="space-y-4 self-start">
-                <div className="flex justify-end w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <span className="text-base bg-neutral-800 py-2 px-4 rounded-lg">
+                <div className="flex gap-2 justify-end items-center w-full max-w-5xl px-4 sm:px-6 lg:px-8 ">
+                  <div className="relative size-7">
+                    <Image
+                      src={user.imageUrl}
+                      alt="user profile photo"
+                      fill
+                      className="rounded-full"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 bg-neutral-900 p-2 rounded-lg">
                     {userQuery}
-                  </span>
+
+                    <button
+                      onClick={() => {
+                        setIsCopied(true);
+                        window.navigator.clipboard.writeText(userQuery);
+
+                        setTimeout(() => {
+                          setIsCopied(false);
+                        }, 3000);
+                      }}
+                    >
+                      {isCopied ? (
+                        <Check className="size-4" />
+                      ) : (
+                        <Copy className="size-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                {documents.length ? (
+                {filteredDocuments.length ? (
                   <div
                     className={cn(
-                      "overflow-auto w-full max-w-5xl mx-auto grid gap-4 px-4 sm:px-6 lg:px-8",
+                      "overflow-auto w-full md:w-[576px] lg:w-[896px] mx-auto grid gap-4 px-4 sm:px-6 lg:px-8",
                       {
                         "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
                           layout === "grid",
                       }
                     )}
                   >
-                    {documents.map((doc) => (
+                    {filteredDocuments.map((doc) => (
                       <Document key={doc.href} layout={layout} document={doc} />
                     ))}
                   </div>

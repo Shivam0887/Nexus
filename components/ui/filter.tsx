@@ -1,24 +1,38 @@
 "use client";
 
-import { saveFilters } from "@/actions/user.actions";
-import useUser from "@/hooks/useUser";
-import { images } from "@/lib/constants";
-import { FilterKey } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronUp, RefreshCw, Save, X } from "lucide-react";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { DocumentType, FilterKey } from "@/lib/types";
 import React, { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, RefreshCw, X } from "lucide-react";
+
+type TFilter = {
+  key: Omit<FilterKey, "GOOGLE_CALENDAR">;
+  logo: string;
+  isSelected: boolean;
+};
+
+type TFilterProps = {
+  className?: string;
+  controlledHeight?: boolean;
+  documents: DocumentType[];
+  isLoading: boolean;
+  filter: TFilter[];
+  setFilter: React.Dispatch<React.SetStateAction<TFilter[]>>;
+  setFilteredDocuments: React.Dispatch<React.SetStateAction<DocumentType[]>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+};
 
 const Filter = ({
   className,
   controlledHeight = false,
-}: {
-  className?: string;
-  controlledHeight?: boolean;
-}) => {
-  const { user, dispatch } = useUser();
-  const [selected, setSelected] = useState(new Set<FilterKey>(user.filter));
-  const [filterKeys, setFilterKeys] = useState(images);
+  documents,
+  isLoading,
+  filter,
+  setFilter,
+  setFilteredDocuments,
+  setIsLoading,
+}: TFilterProps) => {
   const [isExpand, setIsExpand] = useState(false);
 
   const filterKeyRef = useRef<HTMLDivElement>(null);
@@ -31,8 +45,34 @@ const Filter = ({
     }
   }, [isExpand, controlledHeight]);
 
+  const handleClick = (key: Omit<FilterKey, "GOOGLE_CALENDAR">) => {
+    setIsLoading(true);
+
+    setTimeout(() => {
+      for (let i = 0; i < filter.length; i++) {
+        if (filter[i].key === key) {
+          filter[i].isSelected = !filter[i].isSelected;
+        }
+      }
+
+      const uniqueKey = new Map(
+        filter.map(({ key, isSelected }) => [key, isSelected])
+      );
+
+      const filteredDocuments = documents.filter((doc) =>
+        uniqueKey.get(doc.key)
+      );
+
+      setFilteredDocuments(
+        filteredDocuments.length === 0 ? documents : filteredDocuments
+      );
+      setFilter([...filter]);
+      setIsLoading(false);
+    }, 0);
+  };
+
   return (
-    <div className="rounded-lg bg-neutral-800 grid gap-2 max-w-[756px] w-full py-2 px-4">
+    <div className="rounded-lg bg-neutral-800 grid gap-3 items-center grid-cols-[auto_1fr_auto] max-w-[756px] w-full py-2 px-4">
       <p className="text-[13px] text-text-primary tracking-wide">Filter by: </p>
 
       <div
@@ -42,45 +82,30 @@ const Filter = ({
           className
         )}
       >
-        {filterKeys.map((image) => (
+        {filter.map(({ key, logo, isSelected }, i) => (
           <button
+            disabled={isLoading}
             type="button"
-            key={image.key}
-            onClick={() => {
-              const newSet = new Set(selected);
-              const filteredKeys = filterKeys.filter(
-                ({ alt: a }) => a != image.alt
-              );
-
-              if (newSet.has(image.alt)) {
-                newSet.delete(image.alt);
-                filteredKeys.push(image);
-              } else {
-                newSet.add(image.alt);
-                filteredKeys.unshift(image);
-              }
-
-              setFilterKeys(filteredKeys);
-              setSelected(newSet);
-            }}
+            key={`${key.toString()}_key`}
+            onClick={() => handleClick(key)}
             className="flex items-center gap-2 text-xs bg-neutral-900 text-text-primary text-black py-1 px-4 rounded-lg font-semibold"
           >
             <div className="flex items-center gap-2">
               <div className="relative h-5 w-5">
-                <Image src={image.src} alt={image.alt} fill />
+                <Image src={logo} alt={`${key.toString()}_logo`} fill />
               </div>
               <p className="line-clamp-1 text-left capitalize">
-                {image.alt.replace("_", " ").toLowerCase()}
+                {key.replace("_", " ").toLowerCase()}
               </p>
             </div>
 
-            {selected.has(image.alt) && <X className="size-3" />}
+            {isSelected && <X className="size-3" />}
           </button>
         ))}
       </div>
 
-      {/* expand, save, and reset buttons */}
-      <div className="flex space-x-4 py-1 [grid-row:1/1] [grid-column:2/span1] justify-self-end self-start">
+      {/* expand, save */}
+      <div className="flex gap-4 items-center [grid-row:1/1] md:[grid-column:3/span1] [grid-column:2/span1]">
         <button
           type="button"
           className="md:inline hidden"
@@ -94,18 +119,15 @@ const Filter = ({
         </button>
         <button
           type="button"
-          title="save filter"
-          className="text-text-primary"
-          onClick={async () => {
-            await saveFilters(selected);
-            dispatch({ type: "FILTER_SAVE", payload: Array.from(selected) });
+          onClick={() => {
+            const resetFilter = filter.map(({ isSelected, ...rest }) => ({
+              ...rest,
+              isSelected: false,
+            }));
+
+            setFilteredDocuments(documents);
+            setFilter(resetFilter);
           }}
-        >
-          <Save className="size-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setSelected(new Set<FilterKey>())}
           title="reset filter"
           className="text-[13px] text-text-primary"
         >

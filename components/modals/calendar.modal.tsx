@@ -1,7 +1,7 @@
 "use client";
 
 import { useModalSelection } from "@/hooks/useModalSelection";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Inter } from "next/font/google";
 import { CirclePlus, Clock4, Loader2, Text, Users } from "lucide-react";
 
@@ -21,6 +21,7 @@ const CalendarModal = () => {
   const { modalDispatch, modalState } = useModalSelection();
   const [emails, setEmails] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState("");
   const { dispatch } = useUser();
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,6 +53,13 @@ const CalendarModal = () => {
     modalDispatch({ type: "onClose" });
   };
 
+  useEffect(() => {
+    if (modalState.isOpen && modalState.type === "CalendarModal") {
+      if (modalState.data?.type === "CalendarModal")
+        setTitle(modalState.data.data.title ?? "");
+    }
+  }, [modalState]);
+
   return (
     <Dialog
       open={isModalOpen}
@@ -78,6 +86,8 @@ const CalendarModal = () => {
                 autoFocus
                 onKeyDown={validate}
                 disabled={isSubmitting}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
               />
 

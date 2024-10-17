@@ -11,7 +11,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ["localhost:3000", "qflbv4c3-3000.inc1.devtunnels.ms"],
+      allowedOrigins: ["localhost:3001", "qflbv4c3-3001.inc1.devtunnels.ms"],
     },
   },
   async headers() {

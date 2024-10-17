@@ -52,11 +52,6 @@ const userSchema = new Schema(
     passkey: defaultStringSchema,
     hasPasskey: defaultBooleanSchema,
     shouldRemember: defaultBooleanSchema,
-    isFilterApplied: defaultBooleanSchema,
-    filter: {
-      type: [String],
-      default: () => [],
-    },
     isAISearch: defaultBooleanSchema,
     hasSubscription: defaultBooleanSchema,
     GMAIL: platformSchmea,

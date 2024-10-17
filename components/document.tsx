@@ -21,9 +21,14 @@ const Document = ({
 }) => {
   const [openSideWindow, setOpenSideWindow] = useState(false);
 
+  const handleDragStart = (e: React.DragEvent<HTMLElement>) => {
+    e.dataTransfer.setData("text", document.title);
+  };
+
   return (
     <main
       draggable
+      onDragStart={handleDragStart}
       className={cn(
         "px-5 py-2 w-full h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6 mx-auto bg-neutral-800 rounded-lg",
         {

@@ -68,12 +68,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      "https://qflbv4c3-3000.inc1.devtunnels.ms/integrations?success=true&platform=GOOGLE_CALENDAR"
+      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=true&platform=GOOGLE_CALENDAR"
     );
   } catch (error: any) {
     console.log(error.message);
     return NextResponse.redirect(
-      "https://qflbv4c3-3000.inc1.devtunnels.ms/integrations?success=false&platform=GOOGLE_CALENDAR"
+      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=false&platform=GOOGLE_CALENDAR"
     );
   }
 }
