@@ -1,3 +1,4 @@
+import { Auth } from "googleapis";
 import { LucideIcon } from "lucide-react";
 
 export type PALETTE_NAME =
@@ -40,11 +41,6 @@ export type FAQ = {
   desc: string;
 };
 
-export type PasskeyState = {
-  success: boolean;
-  error: string;
-};
-
 export type DrawerDirection = "top" | "left" | "right" | "bottom";
 
 export type FilterKey =
@@ -55,10 +51,28 @@ export type FilterKey =
   | "GOOGLE_DRIVE"
   | "MICROSOFT_TEAMS"
   | "GITHUB"
-  | "GOOGLE_DOCS"
   | "GOOGLE_CALENDAR";
 
-export type Connection = { [key in FilterKey]: number };
+export type AdditionalFilterKey =
+  | "GOOGLE_DOCS"
+  | "GOOGLE_SHEETS"
+  | "GOOGLE_SLIDES";
+
+export type CombinedFilterKey = FilterKey | AdditionalFilterKey;
+
+export type Connection = {
+  GOOGLE_DRIVE: {
+    connectionStatus: number;
+    GoogleDocsConnectionStatus: boolean;
+    GoogleSheetsConnectionStatus: boolean;
+    GoogleSlidesConnectionStatus: boolean;
+  };
+} & Record<
+  Exclude<FilterKey, "GOOGLE_DRIVE">,
+  {
+    connectionStatus: number;
+  }
+>;
 
 export type StateType = Connection & {
   username: string;
@@ -99,8 +113,8 @@ export type ActionType =
     }
   | {
       type: "CONNECTION";
-      payload: 0 | 1 | 2;
-      connectionType: FilterKey;
+      payload: Connection[keyof Connection];
+      connectionType: keyof Connection;
     };
 
 export type LogoType = {
@@ -111,6 +125,8 @@ export type LogoType = {
   width: number;
   height: number;
 };
+
+export type OAuth2Client = Auth.OAuth2Client;
 
 export type Credentials = {
   access_token?: string | null;
@@ -134,3 +150,40 @@ export type DocumentType = {
 };
 
 export type TSortBy = "" | "date" | "last hour" | "last day" | "last week";
+
+export type TMonth =
+  | "January"
+  | "February"
+  | "March"
+  | "April"
+  | "May"
+  | "June"
+  | "July"
+  | "August"
+  | "September"
+  | "October"
+  | "November"
+  | "December";
+
+export type TSearchCount = {
+  "Total Search": number;
+  "AI Search": number;
+  "Keyword Search": number;
+};
+
+export type TActionResponse<T = string> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+export type TSearchHistory = {
+  id: string;
+  searchItem: string;
+  createdAt: Date;
+};
+
+export type TSearchResult = {
+  [key in Exclude<
+    CombinedFilterKey,
+    "GOOGLE_CALENDAR" | "GOOGLE_DRIVE"
+  >]: number;
+};

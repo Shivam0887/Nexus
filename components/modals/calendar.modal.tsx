@@ -45,7 +45,11 @@ const CalendarModal = () => {
       toast.error(response.error);
       if (response.error.split("-")[0] === "RE_AUTHENTICATE") {
         const platform = response.error.split("-")[1] as FilterKey;
-        dispatch({ type: "CONNECTION", connectionType: platform, payload: 2 });
+        dispatch({
+          type: "CONNECTION",
+          connectionType: platform,
+          payload: { connectionStatus: 2 },
+        });
       }
     }
 

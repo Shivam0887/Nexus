@@ -1,23 +1,18 @@
 "use server";
 
 import { ConnectToDB } from "@/lib/utils";
-import { gmailPrompt } from "@/lib/prompt";
 
-import { format } from "date-fns";
 import { auth } from "@clerk/nextjs/server";
 
 import { User, UserType } from "@/models/user.model";
 import {
-  checkAndRefreshToken,
   generateSearchQuery,
-  getPlatformClient,
-  searchDocs,
-  searchEmails,
+  searchNotion,
+  searchSlack,
 } from "./utils.actions";
 
 import {
   CoreMessage,
-  generateText,
   ImagePart,
   streamText,
   TextPart,
@@ -26,22 +21,18 @@ import {
 } from "ai";
 import { createStreamableValue, StreamableValue } from "ai/rsc";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { google } from "googleapis";
-import { DocumentType } from "@/lib/types";
+import { DocumentType, TActionResponse } from "@/lib/types";
+import { createSearchHistoryInstance } from "./user.actions";
 
 const googleGenAI = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
 });
 
-type ResponseType =
-  | { success: true; data: DocumentType[] | StreamableValue<string, any> }
-  | { success: false; error: string };
-
 export const searchAction = async (
   formData: FormData
-): Promise<ResponseType> => {
+): Promise<TActionResponse<DocumentType[] | StreamableValue<string, any>>> => {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated user. Please login first.");
 
     const query = formData.get("search")?.toString().trim();
@@ -51,14 +42,19 @@ export const searchAction = async (
     const user = await User.findOne<UserType>({ userId });
     if (!user) throw new Error("User not found");
 
-    const { docsQuery, emailQuery } = await generateSearchQuery(query);
+    await createSearchHistoryInstance(query, user.searchCount, user.isAISearch);
+
+    // const { slackQuery } = await generateSearchQuery(query);
 
     // Search the query against every platform the user is connected to.
-    const emailResult = await searchEmails(emailQuery, user);
+    // const emailResult = await searchEmails(emailQuery, user);
+    // const docsResult = await searchDocs(docsQuery, user);
+    // const driveResult = await searchSheets(sheetsQuery, user);
+    // const slackResult = await searchSlack(slackQuery, user);
+    const notionResult = await searchNotion(query, user);
 
-    const docsResult = await searchDocs(docsQuery, user);
+    const result = [...notionResult];
 
-    const result = [...emailResult, ...docsResult];
     // If no AI-Search, then just return the result.
     if (!user.isAISearch) return { success: true, data: result };
 
@@ -68,7 +64,7 @@ export const searchAction = async (
     });
 
     const similarDocs = await Promise.all(
-      emailResult.map(async (item) => {
+      result.map(async (item) => {
         const { embedding } = await embed({
           model: googleGenAI.textEmbeddingModel("text-embedding-004"),
           value: item.content,
@@ -83,20 +79,15 @@ export const searchAction = async (
 
     similarDocs.sort((a, b) => a.similarity - b.similarity);
 
-    const messages = similarDocs.map(
-      ({ author, content, date, email, href, title }): TextPart | ImagePart => {
-        return {
-          text: content,
-          type: "text",
-        };
-      }
-    );
+    const messages = similarDocs.map(({ content }): TextPart | ImagePart => {
+      return {
+        text: content,
+        type: "text",
+      };
+    });
 
     messages.unshift({
-      text: `User query: ${query} \n Following messages contain the context from which you have to answer. \nTodays date, if user requires any date related query: ${format(
-        new Date(),
-        "yyyy/MM/dd"
-      )}`,
+      text: `User query: ${query} \n Following messages contain the context from which you have to answer.`,
       type: "text",
     });
 

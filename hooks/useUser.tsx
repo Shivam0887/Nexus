@@ -13,15 +13,33 @@ const InitialState: StateType = {
   shouldRemember: false,
   username: "",
   plan: "Starter",
-  GOOGLE_DOCS: 0,
-  GOOGLE_DRIVE: 0,
-  MICROSOFT_TEAMS: 0,
-  DISCORD: 0,
-  GITHUB: 0,
-  GMAIL: 0,
-  NOTION: 0,
-  SLACK: 0,
-  GOOGLE_CALENDAR: 0,
+  GOOGLE_DRIVE: {
+    connectionStatus: 0,
+    GoogleDocsConnectionStatus: false,
+    GoogleSheetsConnectionStatus: false,
+    GoogleSlidesConnectionStatus: false,
+  },
+  MICROSOFT_TEAMS: {
+    connectionStatus: 0,
+  },
+  DISCORD: {
+    connectionStatus: 0,
+  },
+  GITHUB: {
+    connectionStatus: 0,
+  },
+  GMAIL: {
+    connectionStatus: 0,
+  },
+  NOTION: {
+    connectionStatus: 0,
+  },
+  SLACK: {
+    connectionStatus: 0,
+  },
+  GOOGLE_CALENDAR: {
+    connectionStatus: 0,
+  },
 };
 
 type UserContextType = {
@@ -67,7 +85,10 @@ const reducer = (state: StateType, action: ActionType): StateType => {
     case "CONNECTION":
       return {
         ...state,
-        [action.connectionType]: action.payload,
+        [action.connectionType]: {
+          ...state[action.connectionType],
+          ...action.payload,
+        },
       };
 
     default:

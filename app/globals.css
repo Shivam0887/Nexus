@@ -14,6 +14,26 @@
   --sidenav-btn-primary: 246, 237, 153;
   --sidenav-btn-secondary: 255, 155, 0;
   --text-primary: 248, 248, 248;
+
+  /* Color themes for charts */
+  --chart1-line1: #8ecae6;
+  --chart1-line2: #219ebc;
+  --chart1-line3: #023047;
+
+  --chart2-bar1: #4cc9f0;
+  --chart2-bar2: #4895ef;
+  --chart2-bar3: #4361ee;
+  --chart2-bar4: #3f37c9;
+  --chart2-bar5: #3a0ca3;
+  --chart2-bar6: #480ca8;
+  --chart2-bar7: #560bad;
+  --chart2-bar8: #7209b7;
+
+  --chart3: #87a2ff;
+
+  --chart4-curve1: #ddffe7;
+  --chart4-curve2: #98d7c2;
+  --chart4-curve3: #167d7f;
 }
 
 @media (prefers-color-scheme: dark) {

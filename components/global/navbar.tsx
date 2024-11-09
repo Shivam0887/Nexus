@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 import Link from "next/link";
 import Image from "next/image";
-import { Inter } from "next/font/google";
+import { Inter, Noto_Sans } from "next/font/google";
 import { usePathname } from "next/navigation";
 
 import SidebarNav from "./sidebar-nav";
@@ -22,20 +22,23 @@ import Switch from "@/components/ui/switch";
 import HamburgurIcon from "@/components/ui/hamburger-icon";
 
 import useUser from "@/hooks/useUser";
-import { useModalSelection } from "@/hooks/useModalSelection";
-import useAISearch from "@/hooks/useAISearch";
+import { AISearchPreference } from "@/actions/user.actions";
+import { toast } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
+const notoSans = Noto_Sans({ subsets: ["latin"] });
+
+const interClassName = inter.className;
+const notoSansClassName = notoSans.className;
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, dispatch: userDispatch } = useUser();
   const { isAISearch } = user;
 
-  const searchRef = useRef<HTMLDivElement>(null);
+  const prevAISearchPreference = useRef(false);
 
-  const { modalDispatch } = useModalSelection();
-  const { updateAISearchPreference } = useAISearch();
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
     (
@@ -49,24 +52,24 @@ export default function Navbar() {
     ).style.visibility = "hidden";
   };
 
-  const handleAISearchToggle = async (
-    isChecked: boolean,
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const userConsent = localStorage.getItem("isAISearch");
-    if (!userConsent || userConsent === "false") {
-      modalDispatch({
-        type: "onOpen",
-        payload: "DataCollectionModal",
-        data: { type: "DataCollectionModal", data: {} },
+  const handleAISearchToggle = async (isChecked: boolean) => {
+    prevAISearchPreference.current = isAISearch;
+    userDispatch({ type: "AI_SEARCH_CHANGE", payload: isChecked });
+
+    const response = await AISearchPreference(isChecked);
+    if (!response.success) {
+      toast.error(response.error);
+      userDispatch({
+        type: "AI_SEARCH_CHANGE",
+        payload: prevAISearchPreference.current,
       });
-    } else {
-      await updateAISearchPreference(isChecked);
     }
   };
 
   return (
-    <header className="h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
+    <header
+      className={`h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0 ${interClassName}`}
+    >
       <nav className="flex py-4 sm:pl-10 pl-5 pr-5 justify-between items-center">
         <Link href="/" className="flex gap-1 items-center">
           <span className="sm:hidden inline relative size-6">
@@ -117,7 +120,7 @@ export default function Navbar() {
               </li>
             </ul>
           ) : (
-            <div className={`flex gap-4 items-center ${inter.className}`}>
+            <div className={`flex gap-4 items-center ${notoSansClassName}`}>
               <div ref={searchRef} className="relative w-max">
                 {/* AI search button */}
                 <Switch

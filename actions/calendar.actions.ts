@@ -16,6 +16,7 @@ import { CalendarDateFormat, CalendarTimeFormat } from "@/lib/constants";
 import { auth } from "@clerk/nextjs/server";
 import { User, UserType } from "@/models/user.model";
 import { checkAndRefreshToken, getPlatformClient } from "./utils.actions";
+import { OAuth2Client } from "@/lib/types";
 
 type CalenderResponse =
   | {
@@ -25,7 +26,7 @@ type CalenderResponse =
   | { success: false; error: string };
 
 const oauth2Client = await (async () =>
-  await getPlatformClient("GOOGLE_CALENDAR"))();
+  (await getPlatformClient("GOOGLE_CALENDAR")) as OAuth2Client)();
 
 const timeZones = Intl.supportedValuesOf("timeZone");
 
@@ -110,7 +111,7 @@ const getMinutes = (time: string) => {
 export const createCalender = async (
   formData: FormData
 ): Promise<CalenderResponse> => {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   await ConnectToDB();
   const user = await User.findOne<UserType>({ userId });
@@ -207,7 +208,8 @@ export const createCalender = async (
   };
 
   try {
-    await checkAndRefreshToken(user, "GOOGLE_CALENDAR", oauth2Client);
+    const response = await checkAndRefreshToken(user, "GOOGLE_CALENDAR", oauth2Client);
+    if(!response.success) return response;
 
     const calendar = google.calendar({
       version: "v3",

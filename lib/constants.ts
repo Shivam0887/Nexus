@@ -66,18 +66,18 @@ export const images: LogoType[] = [
     height: 64,
   },
   {
-    src: "./Teams.svg",
-    alt: "MICROSOFT_TEAMS",
-    desc: "Improve team collaboration by integrating MS Teams with Nexus. Effortlessly search and retrieve messages, files, and meeting notes from various channels. ",
-    key: "teams",
+    src: "./Google_Calendar.svg",
+    alt: "GOOGLE_CALENDAR",
+    desc: "Create events and tasks into your calendar by integrating Google Calendar with Nexus.",
+    key: "calendar",
     width: 64,
     height: 64,
   },
   {
-    src: "./Discord.svg",
-    alt: "DISCORD",
-    desc: "Enhance your community interactions by integrating Discord with Nexus. Easily search through messages, media, and server content. ",
-    key: "discord",
+    src: "./Teams.svg",
+    alt: "MICROSOFT_TEAMS",
+    desc: "Improve team collaboration by integrating MS Teams with Nexus. Effortlessly search and retrieve messages, files, and meeting notes from various channels. ",
+    key: "teams",
     width: 64,
     height: 64,
   },
@@ -90,18 +90,10 @@ export const images: LogoType[] = [
     height: 64,
   },
   {
-    src: "./Google_Docs.svg",
-    alt: "GOOGLE_DOCS",
-    desc: "Centralize your document management by linking Google Docs with Nexus. Instantly access and search for documents with ease. ",
-    key: "docs",
-    width: 64,
-    height: 64,
-  },
-  {
-    src: "./Notion.svg",
-    alt: "NOTION",
-    desc: "Optimize your workflow by integrating Notion with Nexus. Quickly search through notes, databases, and projects.",
-    key: "notion",
+    src: "./Discord.svg",
+    alt: "DISCORD",
+    desc: "Enhance your community interactions by integrating Discord with Nexus. Easily search through messages, media, and server content. ",
+    key: "discord",
     width: 64,
     height: 64,
   },
@@ -114,10 +106,10 @@ export const images: LogoType[] = [
     height: 64,
   },
   {
-    src: "./Google_Calendar.svg",
-    alt: "GOOGLE_CALENDAR",
-    desc: "Create events and tasks into your calendar by integrating Google Calendar with Nexus.",
-    key: "calendar",
+    src: "./Notion.svg",
+    alt: "NOTION",
+    desc: "Optimize your workflow by integrating Notion with Nexus. Quickly search through notes, databases, and projects.",
+    key: "notion",
     width: 64,
     height: 64,
   },
@@ -451,7 +443,6 @@ export const Platforms = [
   "GITHUB",
   "GMAIL",
   "GOOGLE_CALENDAR",
-  "GOOGLE_DOCS",
   "GOOGLE_DRIVE",
   "MICROSOFT_TEAMS",
   "NOTION",
@@ -460,9 +451,16 @@ export const Platforms = [
 
 export const SortBy: TSortBy[] = ["date", "last hour", "last day", "last week"];
 
-export const LogoMap: Record<FilterKey, string> = {
+export const LogoMap: {
+  [key in
+    | Exclude<FilterKey, "GOOGLE_DRIVE">
+    | "GOOGLE_DOCS"
+    | "GOOGLE_SHEETS"
+    | "GOOGLE_SLIDES"]: string;
+} = {
   GOOGLE_DOCS: "./Google_Docs.svg",
-  GOOGLE_DRIVE: "./Google_Drive.svg",
+  GOOGLE_SHEETS: "./Google_Sheets.svg",
+  GOOGLE_SLIDES: "./Google_Slides.svg",
   MICROSOFT_TEAMS: "./Teams.svg",
   DISCORD: "./Discord.svg",
   GITHUB: "./Github.svg",
@@ -474,17 +472,13 @@ export const LogoMap: Record<FilterKey, string> = {
 
 export const Scopes: Record<FilterKey, string[]> = {
   GMAIL: ["https://www.googleapis.com/auth/gmail.readonly"],
-  GOOGLE_DOCS: [
-    "https://www.googleapis.com/auth/drive.readonly",
-    "https://www.googleapis.com/auth/documents.readonly",
-  ],
-  GOOGLE_DRIVE: ["https://www.googleapis.com/auth/documents.readonly"],
+  GOOGLE_DRIVE: ["https://www.googleapis.com/auth/drive.readonly"],
   GOOGLE_CALENDAR: ["https://www.googleapis.com/auth/calendar.events"],
   MICROSOFT_TEAMS: [],
   DISCORD: [],
   GITHUB: [],
   NOTION: [],
-  SLACK: [],
+  SLACK: ["search:read", "users:read.email", "users:read"],
 };
 
 export const CalendarDateFormat = "EEEE, dd MMMM yy";

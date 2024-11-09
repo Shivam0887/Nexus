@@ -59,3 +59,9 @@ export function redactText(text: string) {
     return curMaskedText.replace(regex, `[${key}]`);
   }, text);
 }
+
+export const typedEntries = <T extends Object>(
+  entries: T
+): [keyof T, T[keyof T]][] => {
+  return Object.entries(entries) as [keyof T, T[keyof T]][];
+};

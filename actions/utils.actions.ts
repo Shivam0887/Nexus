@@ -4,31 +4,58 @@ import { JSDOM } from "jsdom";
 import { ConnectToDB, redactText } from "@/lib/utils";
 import { docs_v1, gmail_v1, google } from "googleapis";
 import { User, UserType } from "@/models/user.model";
-import { DocumentType, FilterKey } from "@/lib/types";
+import {
+  DocumentType,
+  FilterKey,
+  OAuth2Client,
+  TActionResponse,
+} from "@/lib/types";
 import { CharacterTextSplitter } from "langchain/text_splitter";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { updateSearchResultCount } from "./user.actions";
+import { WebClient } from "@slack/web-api";
+import {
+  isFullDatabase,
+  isFullPage,
+  isFullPageOrDatabase,
+  Client as NotionClient,
+} from "@notionhq/client";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/gmailquery-ztw3ralzaba7",
+  model: "tunedModels/gmailquery-ham7ian0yejt",
 });
 
-const tunedModel_Docs_Drive = new ChatGoogleGenerativeAI({
+const tunedModel_Docs = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/docsdrivequery-gki6d0sd0ze0",
+  model: "tunedModels/google-docs-data-5u6szrdsitel",
+});
+
+const tunedModel_Sheets = new ChatGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  model: "tunedModels/google-sheets-data-rsvd22fipb8n",
+});
+
+const tunedModel_Slack = new ChatGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  model: "tunedModels/slack-data-oglib9jwnvqj",
 });
 
 export const checkAndRefreshToken = async (
   user: UserType,
   platform: FilterKey,
-  oauth2Client: any
-) => {
+  oauth2Client: OAuth2Client
+): Promise<TActionResponse> => {
   const { accessToken, refreshToken, expiresAt } = user[platform];
 
-  if (!accessToken)
-    throw new Error(`Please connect you ${platform.toLowerCase()} account...`);
+  if (!accessToken) {
+    return {
+      success: false,
+      error: `Please connect your ${platform.toLowerCase()} account...`,
+    };
+  }
 
   // Check if the token has expired
   const currentTime = Date.now();
@@ -36,6 +63,11 @@ export const checkAndRefreshToken = async (
     oauth2Client.setCredentials({
       access_token: accessToken,
     });
+
+    return {
+      success: true,
+      data: "",
+    };
   } else {
     try {
       oauth2Client.setCredentials({ refresh_token: refreshToken! });
@@ -58,36 +90,42 @@ export const checkAndRefreshToken = async (
       );
 
       console.log("Access token refreshed.");
+      return {
+        success: true,
+        data: "",
+      };
     } catch (error: any) {
-      if (error?.response && error?.response?.data?.error === "invalid_grant") {
-        console.error(
-          "Refresh token is invalid or has expired. User needs to re-authenticate."
-        );
-
-        // Redirect the user to re-authenticate
-        throw new Error(`RE_AUTHENTICATE-${platform}`);
-      } else {
-        console.error("Error refreshing access token:", error?.message);
-        throw error;
-      }
+      const errorMessage =
+        error?.response && error?.response?.data?.error === "invalid_grant"
+          ? `RE_AUTHENTICATE-${platform}`
+          : error.message;
+      return {
+        success: false,
+        error: errorMessage,
+      };
     }
   }
 };
 
-export const getPlatformClient = async (platform: FilterKey) => {
+export const getPlatformClient = async <T extends FilterKey>(platform: T) => {
   try {
-    const clientId = process.env[`${platform}_CLIENT_ID`]!;
-    const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
-    const redirectUri = `${process.env
-      .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
+    switch (platform) {
+      case "SLACK":
+        return new WebClient();
+      case "NOTION":
+        return new NotionClient();
+      default:
+        const clientId = process.env[`${platform}_CLIENT_ID`]!;
+        const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
+        const redirectUri = `${process.env
+          .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
 
-    const oauth2Client = new google.auth.OAuth2({
-      clientId,
-      clientSecret,
-      redirectUri,
-    });
-
-    return oauth2Client;
+        return new google.auth.OAuth2({
+          clientId,
+          clientSecret,
+          redirectUri,
+        });
+    }
   } catch (error) {
     throw error;
   }
@@ -149,10 +187,11 @@ export const searchEmails = async (
   searchQuery: string,
   user: UserType
 ): Promise<DocumentType[]> => {
-  if (searchQuery.trim().length === 0 && !user.isAISearch) return [];
+  if (searchQuery.trim().length === 0) return [];
 
-  const oauth2Client = await getPlatformClient("GMAIL");
-  await checkAndRefreshToken(user, "GMAIL", oauth2Client);
+  const oauth2Client = (await getPlatformClient("GMAIL")) as OAuth2Client;
+  const response = await checkAndRefreshToken(user, "GMAIL", oauth2Client);
+  if (!response.success) return [];
 
   const gmail = google.gmail({
     version: "v1",
@@ -229,12 +268,20 @@ export const searchEmails = async (
     pageToken = data.nextPageToken ?? undefined;
   } while (pageToken && result.length < 50); // Limit total results to 50
 
+  await updateSearchResultCount("GMAIL", result.length);
   return result;
 };
 
 export const searchDocs = async (searchQuery: string, user: UserType) => {
-  const oauth2Client = await getPlatformClient("GOOGLE_DOCS");
-  await checkAndRefreshToken(user, "GOOGLE_DOCS", oauth2Client);
+  const oauth2Client = (await getPlatformClient(
+    "GOOGLE_DRIVE"
+  )) as OAuth2Client;
+  const response = await checkAndRefreshToken(
+    user,
+    "GOOGLE_DRIVE",
+    oauth2Client
+  );
+  if (!response.success) return [];
 
   // Google Drive client that fetches the list of documents matching the search query
   const drive = google.drive({
@@ -253,12 +300,12 @@ export const searchDocs = async (searchQuery: string, user: UserType) => {
     corpus: "user",
   });
 
-  const result = docsIds.data.files?.map(
+  const resultWithPromise = docsIds.data.files?.map(
     async ({ id, createdTime, owners }): Promise<DocumentType> => {
       const document = await docs.documents.get({
         documentId: id!,
         fields:
-          "title,body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))",
+          "title,tabs(documentTab(body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))))",
       });
 
       let content = "";
@@ -286,51 +333,215 @@ export const searchDocs = async (searchQuery: string, user: UserType) => {
     }
   );
 
-  return await Promise.all(result ?? []);
+  const result = await Promise.all(resultWithPromise ?? []);
+
+  await updateSearchResultCount("GOOGLE_DOCS", result.length);
+
+  return result;
+};
+
+export const searchSheets = async (
+  searchQuery: string,
+  user: UserType
+): Promise<DocumentType[]> => {
+  const oauth2Client = (await getPlatformClient(
+    "GOOGLE_DRIVE"
+  )) as OAuth2Client;
+  const resp = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
+  if (!resp.success) return [];
+
+  const [q, ...ranges] = searchQuery.split("_");
+
+  const drive = google.drive({
+    version: "v3",
+    auth: oauth2Client,
+  });
+
+  const sheets = google.sheets({
+    version: "v4",
+    auth: oauth2Client,
+  });
+
+  const response = await drive.files.list({
+    q,
+    fields: "files(id,createdTime,owners(emailAddress))",
+    corpus: "user",
+  });
+
+  const files = response.data.files || [];
+
+  const resultWithPromise = files.map(
+    async ({ id, createdTime, owners }): Promise<DocumentType> => {
+      const sheet = await sheets.spreadsheets.get({
+        spreadsheetId: id!,
+        ranges,
+        fields:
+          "properties(title),sheets(properties(sheetId,sheetType,hidden),data(rowData(values(formattedValue)))),spreadsheetUrl",
+      });
+
+      const { data, properties } = sheet.data.sheets![0];
+
+      let content = "";
+      let title = sheet.data.properties!.title!;
+      let href =
+        sheet.data.spreadsheetUrl! +
+        `?gid=${properties!.sheetId!}#gid=${properties!.sheetId!}`;
+
+      if (
+        properties!.sheetType === "GRID" &&
+        !properties!.hidden &&
+        user.isAISearch
+      ) {
+        data?.forEach(({ rowData }) => {
+          rowData?.forEach(({ values }) => {
+            values?.forEach(({ formattedValue }) => {
+              content += formattedValue!;
+            });
+          });
+        });
+      }
+
+      return {
+        date: createdTime!,
+        author: owners ? owners[0].emailAddress! : "",
+        email: user.email,
+        content: redactText(content),
+        href,
+        id: id!,
+        key: "GOOGLE_SHEETS",
+        logo: "./google_sheets.svg",
+        title,
+      };
+    }
+  );
+
+  const result = await Promise.all(resultWithPromise ?? []);
+
+  await updateSearchResultCount("GOOGLE_SHEETS", result.length);
+
+  return result;
+};
+
+export const searchSlack = async (
+  searchQuery: string,
+  user: UserType
+): Promise<DocumentType[]> => {
+  const slackClient = (await getPlatformClient("SLACK")) as WebClient;
+
+  const response = await slackClient.search.messages({
+    token: user.SLACK.accessToken,
+    query: searchQuery,
+  });
+
+  if (!response.ok) return [];
+
+  const matches = response.messages?.matches ?? [];
+
+  const resultWithPromise = matches.map(
+    async ({
+      channel,
+      team,
+      text,
+      username,
+      files,
+      iid,
+      ts,
+      user: userId,
+    }): Promise<DocumentType> => {
+      const date = new Date(
+        parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))
+      ).toISOString();
+
+      const content = redactText(files ? files[0].title! : text!);
+
+      return {
+        id: iid ?? "",
+        author: username ?? "",
+        content,
+        date,
+        href: `https://app.slack.com/client/${team!}/${channel!.id}`,
+        email:
+          (
+            await slackClient.users.info({
+              user: userId!,
+              token: user.SLACK.accessToken,
+            })
+          ).user?.profile?.email ?? "",
+        key: "SLACK",
+        logo: "./Slack.svg",
+        title: content,
+      };
+    }
+  );
+
+  const result = await Promise.all(resultWithPromise);
+
+  await updateSearchResultCount("SLACK", result.length);
+  return result;
+};
+
+export const searchNotion = async (searchQuery: string, user: UserType) => {
+  const notionClient = (await getPlatformClient("NOTION")) as NotionClient;
+  const response = await notionClient.search({
+    auth: user.NOTION.accessToken,
+    query: searchQuery,
+  });
+
+  const resultWithPromise = response.results.map(
+    async (item): Promise<DocumentType> => {
+      const document: DocumentType = {
+        author: "",
+        content: "",
+        date: "",
+        email: "",
+        href: "",
+        id: "",
+        key: "NOTION",
+        logo: "./Notion.svg",
+        title: "",
+      };
+
+      if (isFullPageOrDatabase(item)) {
+        const notionUser = await notionClient.users.retrieve({
+          user_id: item.created_by.id,
+          auth: user.NOTION.accessToken,
+        });
+
+        document.author = notionUser.name ?? "";
+        document.email =
+          notionUser.type === "person" ? notionUser.person.email! : "";
+        document.href = item.url;
+        document.id = item.id;
+        document.date = item.created_time;
+
+        if (isFullPage(item)) {
+          document.title =
+            item.properties.title.type === "title"
+              ? item.properties.title.title[0].plain_text
+              : "";
+        } else {
+          document.title = item.title[0].plain_text;
+        }
+      }
+
+      return document;
+    }
+  );
+
+  const result = await Promise.all(resultWithPromise);
+
+  await updateSearchResultCount("NOTION", result.length);
+
+  return result;
 };
 
 export const generateSearchQuery = async (input: string) => {
-  const emailQuery = (
-    await tunedModel_Gmail.invoke([
-      {
-        role: "assistant",
-        content: "Don't manipulate the user input",
-      },
-      {
-        role: "user",
-        content: input,
-      },
-    ])
-  ).content.toString();
+  // const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
+  // const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
+  // const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
 
-  const docsQuery = (
-    await tunedModel_Docs_Drive.invoke([
-      {
-        role: "assistant",
-        content:
-          "Append mime = application/vnd.google-apps.document at the end",
-      },
-      {
-        role: "user",
-        content: input,
-      },
-    ])
-  ).content.toString();
+  const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
+  console.log({ slackQuery });
 
-  // const driveQuery = (
-  //   await tunedModel_Docs_Drive.invoke([
-  //     {
-  //       role: "assistant",
-  //       content:
-  //         "Don't manipulate the user input, and use mime type either application/vnd.google-apps.file	or application/vnd.google-apps.folder as appropriate",
-  //     },
-  //     {
-  //       role: "user",
-  //       content: input,
-  //     },
-  //   ])
-  // ).content.toString();
-
-  // console.log({ emailQuery, docsQuery });
-  return { emailQuery, docsQuery };
+  return { slackQuery };
 };

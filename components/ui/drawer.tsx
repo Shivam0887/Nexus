@@ -97,21 +97,6 @@ export const DrawerContent = ({
 }: DrawerContentProps) => {
   const { open, onClose, isPortalLoaded, drawerDirection } = useDrawer();
 
-  // const handleClose = (e: React.MouseEvent<HTMLDivElement>) => {
-  //   e.stopPropagation();
-
-  //   const item = document.querySelector(".drawer-item") as HTMLDivElement;
-
-  //   item.style.transform = DrawerDir[direction].translateOut;
-
-  //   if (onClose)
-  //     setTimeout(() => {
-  //       document.body.style.overflow = "auto";
-  //       onClose();
-  //       onPortalClose();
-  //     }, 300);
-  // };
-
   useEffect(() => {
     if (isPortalLoaded && open) {
       const item = document.querySelector(".drawer-item") as HTMLDivElement;

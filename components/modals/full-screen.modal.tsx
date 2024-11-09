@@ -1,4 +1,4 @@
-import React from "react";
+"use client";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Document from "@/components/document";
@@ -6,7 +6,6 @@ import Document from "@/components/document";
 import ReactMarkdown from "react-markdown";
 
 import { cn } from "@/lib/utils";
-import { DocumentType } from "@/lib/types";
 import { useModalSelection } from "@/hooks/useModalSelection";
 
 const FullScreenModal = () => {

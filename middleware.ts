@@ -7,8 +7,11 @@ const isProtectedRoute = createRouteMatcher([
   "/settings(.*)",
 ]);
 
-export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect();
+export default clerkMiddleware(async (auth, req) => {
+  const { userId, redirectToSignIn } = await auth();
+  if (!userId && isProtectedRoute(req)) {
+    return redirectToSignIn();
+  }
   // const nonce = crypto.randomUUID().toString();
   // const cspHeader = `
   //   default-src 'self';

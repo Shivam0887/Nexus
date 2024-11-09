@@ -1,11 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import { genSalt, hash } from "bcrypt";
+import { genSalt, hash, compare } from "bcrypt";
 import { auth } from "@clerk/nextjs/server";
-import { User } from "@/models/user.model";
+import { User, UserType } from "@/models/user.model";
 import { ConnectToDB } from "@/lib/utils";
-import { PasskeyState } from "@/lib/types";
+import { TActionResponse } from "@/lib/types";
 
 const isDigit = (key: string) => key.length === 1 && key >= "0" && key <= "9";
 
@@ -22,10 +22,9 @@ const dataSchema = z.object({
 });
 
 export const createPasskey = async (
-  prevState: PasskeyState,
-  data: FormData
-): Promise<PasskeyState> => {
-  const { userId } = auth();
+  formData: FormData
+): Promise<TActionResponse> => {
+  const { userId } = await auth();
 
   if (!userId) {
     return {
@@ -34,17 +33,8 @@ export const createPasskey = async (
     };
   }
 
-  const pattern = /^.ACTION/;
-
-  const result = Array.from(data).filter((item) => {
-    const key = item[0];
-    if (!pattern.test(key)) {
-      return item;
-    }
-  });
-
   const { success, data: safeData } = dataSchema.safeParse(
-    Object.fromEntries(result)
+    Object.fromEntries(formData)
   );
 
   if (success) {
@@ -71,7 +61,78 @@ export const createPasskey = async (
     );
 
     return {
-      error: "",
+      data: "created successfully",
+      success: true,
+    };
+  } else {
+    return {
+      error: "Invalid Passkey",
+      success: false,
+    };
+  }
+};
+
+export const validatePasskey = async (
+  formData: FormData
+): Promise<TActionResponse> => {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return {
+      error: "Unauthenticated user",
+      success: false,
+    };
+  }
+
+  const { success, data: safeData } = dataSchema.safeParse(
+    Object.fromEntries(formData)
+  );
+
+  if (success) {
+    const shouldRemember = safeData.remember ? true : false;
+
+    const passkey = Object.entries(safeData).reduce((prev, [key, val]) => {
+      if (key != "remember") prev += val;
+      return prev;
+    }, "");
+
+    const salt = await genSalt(10);
+    const passkeyHash = await hash(passkey, salt);
+
+    await ConnectToDB();
+
+    const user = await User.findOne<Pick<UserType, "passkey">>(
+      { userId },
+      { passkey: 1, _id: 0 }
+    );
+
+    if (!user) {
+      return {
+        error: "User not found",
+        success: false,
+      };
+    }
+
+    const match = await compare(passkey, user.passkey);
+
+    if (!match) {
+      return {
+        error: "Invalid Passkey",
+        success: false,
+      };
+    }
+
+    await User.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          shouldRemember,
+        },
+      }
+    );
+
+    return {
+      data: "verified successfully",
       success: true,
     };
   } else {

@@ -3,7 +3,11 @@
 import { DocumentType } from "@/lib/types";
 import { createContext, useContext, useMemo, useReducer } from "react";
 
-type ModalType = "CalendarModal" | "FullScreenModal" | "DataCollectionModal";
+type ModalType =
+  | "CalendarModal"
+  | "FullScreenModal"
+  | "DataCollectionModal"
+  | "SecurityModal";
 
 type ActionData =
   | {
@@ -13,6 +17,7 @@ type ActionData =
       };
     }
   | { type: "DataCollectionModal"; data: {} }
+  | { type: "SecurityModal"; data: { url?: string } }
   | {
       type: "FullScreenModal";
       data: {

@@ -140,7 +140,7 @@ const Textarea = ({
         value={query}
         name="search"
         className="caret-btn-primary sm:text-lg text-base flex-1 resize-none focus:outline-none bg-transparent"
-        placeholder="flight tickets"
+        placeholder="Message Nexus"
         style={{ scrollbarWidth: "none" }}
       />
 

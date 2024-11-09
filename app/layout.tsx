@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/global/navbar";
 
@@ -7,12 +7,12 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { ConnectToDB } from "@/lib/utils";
 import { User, UserType } from "@/models/user.model";
-import { FilterKey, StateType } from "@/lib/types";
+import { StateType } from "@/lib/types";
 import { UserProvider } from "@/hooks/useUser";
 import { ModalProvider } from "@/hooks/useModalSelection";
 import { Toaster } from "@/components/ui/sonner";
 
-const noto = Noto_Serif({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Nexus: AI-Search Assistant",
@@ -25,7 +25,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   await ConnectToDB();
   const user = await User.findOne<UserType>({
@@ -42,15 +42,36 @@ export default async function RootLayout({
     plan: "Starter",
     shouldRemember: Boolean(user?.shouldRemember),
     username: user?.username ?? "",
-    GOOGLE_CALENDAR: Number(!!user?.GOOGLE_CALENDAR.accessToken),
-    DISCORD: Number(!!user?.DISCORD.accessToken),
-    GITHUB: Number(!!user?.GITHUB.accessToken),
-    GMAIL: Number(!!user?.GMAIL.accessToken),
-    GOOGLE_DOCS: Number(!!user?.GOOGLE_DOCS.accessToken),
-    GOOGLE_DRIVE: Number(!!user?.GOOGLE_DRIVE.accessToken),
-    NOTION: Number(!!user?.NOTION.accessToken),
-    SLACK: Number(!!user?.SLACK.accessToken),
-    MICROSOFT_TEAMS: Number(!!user?.MICROSOFT_TEAMS.accessToken),
+    GOOGLE_CALENDAR: {
+      connectionStatus: Number(!!user?.GOOGLE_CALENDAR.accessToken),
+    },
+    DISCORD: {
+      connectionStatus: Number(!!user?.DISCORD.accessToken),
+    },
+    GITHUB: {
+      connectionStatus: Number(!!user?.GITHUB.accessToken),
+    },
+    GMAIL: {
+      connectionStatus: Number(!!user?.GMAIL.accessToken),
+    },
+    NOTION: {
+      connectionStatus: Number(!!user?.NOTION.accessToken),
+    },
+    SLACK: {
+      connectionStatus: Number(!!user?.SLACK.accessToken),
+    },
+    MICROSOFT_TEAMS: {
+      connectionStatus: Number(!!user?.MICROSOFT_TEAMS.accessToken),
+    },
+    GOOGLE_DRIVE: {
+      connectionStatus: Number(!!user?.GOOGLE_DRIVE.accessToken),
+      GoogleDocsConnectionStatus:
+        !!user?.GOOGLE_DRIVE.GOOGLE_DOCS.connectionStatus,
+      GoogleSheetsConnectionStatus:
+        !!user?.GOOGLE_DRIVE.GOOGLE_SHEETS.connectionStatus,
+      GoogleSlidesConnectionStatus:
+        !!user?.GOOGLE_DRIVE.GOOGLE_SLIDES.connectionStatus,
+    },
   };
 
   return (
@@ -58,7 +79,7 @@ export default async function RootLayout({
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!}
     >
       <html lang="en">
-        <body className={`${noto.className} bg-neutral relative`}>
+        <body className={`${inter.className} bg-neutral-950 relative`}>
           <UserProvider userData={userData}>
             <ModalProvider>
               <div id="drawer-portal"></div>

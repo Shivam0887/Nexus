@@ -7,8 +7,8 @@ export const PATTERNS = {
     AMERICAN_EXPRESS: /\b3[47]\d{2}(-|\s)?\d{6}\1\d{5}\b/g,
     DATE_FORMAT1: /\b(?:0?[1-9]|[1-2][0-9]|3[0-1])(\/|-)(?:0?[1-9]|1[0-2])\1\d{2,4}\b/g, // dd/mm/yyyy or dd-mm-yyyy
     DATE_FORMAT2: /\b\d{2,4}(\/|-)(?:0?[1-9]|1[0-2])\1(?:0?[1-9]|[1-2][0-9]|3[0-1])\b/g, // yyyy/mm/dd or yyyy-mm-dd
-    DATE_FORMAT3: /\b(?:\d{1,2}(?:st|nd|rd|th)?)\s*(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[,\s]+\d{4}\b/g, // 5th Oct, 2020
-    DATE_FORMAT4: /\b(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(?:\d{1,2}(?:st|nd|rd|th)?)[,\s]+\d{4}\b/g, // Oct 5th, 2020
+    DATE_FORMAT3: /\b(?:\d{1,2}(?:st|nd|rd|th)?)\s*(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[,\s]+(?:\d{4})?\b/g, // 5th Oct, 2020
+    DATE_FORMAT4: /\b(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s*(?:\d{1,2}(?:st|nd|rd|th)?)[,\s]+(?:\d{4})?\b/g, // Oct 5th, 2020
     TIME: /\b([01]?[0-9]|2[0-3]):([0-5][0-9])\s?(AM|PM|am|pm)?\b/g,
     EMAIL_ADDRESS: /\b[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,125}[a-zA-Z]{2,63}\b/g,
     URL: /\bhttps?:\/\/[a-zA-Z0-9-\.]+\.[a-zA-Z]{2,6}\/?[^\s]*\b/g,

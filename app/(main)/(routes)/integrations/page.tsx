@@ -1,21 +1,30 @@
 "use client";
 
-import { Inter } from "next/font/google";
-import { images } from "@/lib/constants";
-import IntegrationCard from "@/components/integration-card";
 import Image from "next/image";
-import Security from "@/components/security";
-import useUser from "@/hooks/useUser";
+import { useEffect } from "react";
+import { images } from "@/lib/constants";
 
-const inter = Inter({ subsets: ["latin"] });
+import useUser from "@/hooks/useUser";
+import { useModalSelection } from "@/hooks/useModalSelection";
+
+import IntegrationCard from "@/components/integration-card";
 
 const Page = () => {
   const { user } = useUser();
+  const { modalDispatch } = useModalSelection();
+
+  useEffect(() => {
+    if (!user.hasPasskey) {
+      modalDispatch({
+        type: "onOpen",
+        payload: "SecurityModal",
+        data: { type: "SecurityModal", data: {} },
+      });
+    }
+  }, [modalDispatch, user.hasPasskey]);
 
   return (
-    <div
-      className={`relative select-none sm:mx-4 my-4 mx-0 h-[calc(100%-2rem)] flex lg:flex-row flex-col overflow-y-auto bg-neutral-900 rounded-2xl ${inter.className}`}
-    >
+    <div className="relative select-none sm:mx-4 my-4 mx-0 h-[calc(100%-2rem)] flex lg:flex-row flex-col overflow-y-auto bg-neutral-900 rounded-2xl">
       <Image
         src="/pattern.svg"
         alt="pattern"
@@ -23,8 +32,6 @@ const Page = () => {
         priority
         className="object-cover md:inline hidden z-0 opacity-5"
       />
-
-      {!user.hasPasskey && <Security />}
 
       <div className="relative z-50 sm:pl-20 sm:px-5 px-10 pr-5 py-14 flex-1 flex flex-col gap-5 justify-evenly">
         <div className="space-y-6">

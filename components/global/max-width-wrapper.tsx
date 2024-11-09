@@ -8,7 +8,7 @@ export const MaxWidthWrapper = ({
   className?: string;
 }) => {
   return (
-    <div className="bg-neutral">
+    <div className="bg-neutral-950">
       <div className={clsx("max-w-7xl mx-auto", className)}>{children}</div>
     </div>
   );

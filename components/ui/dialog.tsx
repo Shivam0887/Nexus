@@ -96,15 +96,23 @@ export const DialogItem = ({
 export const DialogContent = ({
   children,
   className,
+  disableBackdropClose = false,
+  disableXCloseButton = false,
+  disableEscapseClose = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  disableBackdropClose?: boolean;
+  disableXCloseButton?: boolean;
+  disableEscapseClose?: boolean;
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const { modal, open, onClose } = useDialog();
 
   const handleClick = useCallback(
     (e: MouseEvent) => {
+      if (disableBackdropClose) return;
+
       const dialog = dialogRef.current!;
       const dialogDim = dialog.getBoundingClientRect();
 
@@ -117,8 +125,15 @@ export const DialogContent = ({
         onClose();
       }
     },
-    [onClose]
+    [onClose, disableBackdropClose]
   );
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDialogElement>) => {
+    if (e.key === "Escape" && disableEscapseClose) {
+      e.preventDefault();
+      return;
+    }
+  };
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -154,24 +169,27 @@ export const DialogContent = ({
   return (
     <dialog
       ref={dialogRef}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "relative space-y-2 backdrop:backdrop-blur-sm max-w-[768px] w-[95%] h-72 bg-secondary rounded-2xl sm:px-5 px-2 pt-10 focus:outline-none border border-neutral-700 overflow-hidden",
+        "relative space-y-2 backdrop:backdrop-blur-sm max-w-[768px] w-[95%] h-72 bg-secondary rounded-2xl sm:px-5 px-2 pt-10 focus:outline-none border border-neutral-700 overflow-hidden shadow",
         className
       )}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 float-end"
-        aria-label="close button"
-      >
-        <X
-          className="size-4 mix-blend-exclusion text-text-primary"
-          style={{ strokeWidth: "3" }}
-        />
-      </button>
+      {!disableXCloseButton && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 float-end"
+          aria-label="close button"
+        >
+          <X
+            className="size-4 mix-blend-exclusion text-text-primary"
+            style={{ strokeWidth: "3" }}
+          />
+        </button>
+      )}
       <div
-        className="flex flex-col gap-4 h-full w-full overflow-auto"
+        className="flex flex-col gap-4 h-full overflow-y-auto"
         style={{ scrollbarWidth: "none" }}
       >
         {children}
@@ -188,7 +206,7 @@ export const Dialog = ({ children, open, onOpenChange, modal }: DialogType) => {
 
   if (Number(open === undefined) ^ Number(onOpenChange === undefined)) {
     throw new Error(
-      "You must specify both 'open' and 'onOpenChange', if you want the controlled componenet."
+      "You must specify both 'open' and 'onOpenChange', if you want the controlled component."
     );
   }
 

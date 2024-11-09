@@ -1,6 +1,10 @@
+"use client";
+
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
 import React, { useState } from "react";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 type SwitchProps = {
   label: React.ReactNode;
@@ -33,9 +37,12 @@ const Switch = ({
   return (
     <div
       role="button"
-      onClick={onContainerClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onContainerClick?.(e);
+      }}
       className={cn(
-        "relative w-full hover:bg-neutral-700 transition-colors py-2 flex flex-col items-center cursor-pointer px-4 rounded-lg",
+        `relative w-full hover:bg-neutral-700 transition-colors py-2 flex flex-col items-center cursor-pointer px-4 rounded-lg ${inter.className}`,
         className,
         disabled ? "bg-neutral-700" : "bg-neutral-800"
       )}

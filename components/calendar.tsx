@@ -26,7 +26,7 @@ const Calendar = () => {
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
       onClick={() => {
-        if (user.GOOGLE_CALENDAR === 1) {
+        if (user.GOOGLE_CALENDAR.connectionStatus === 1) {
           modalDispatch({
             type: "onOpen",
             payload: "CalendarModal",
