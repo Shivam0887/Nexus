@@ -5,7 +5,7 @@ import axios from "axios";
 
 import mongoose from "mongoose";
 import { PATTERNS } from "./sensitive-regex";
-import { TSlackAxiosResponse } from "./types";
+import { CombinedFilterKey, TSlackAxiosResponse } from "./types";
 import { UserType } from "@/models/user.model";
 
 type TResponse = {
@@ -73,6 +73,17 @@ export const typedEntries = <T extends Object>(
   entries: T
 ): [keyof T, T[keyof T]][] => {
   return Object.entries(entries) as [keyof T, T[keyof T]][];
+};
+
+export const isGoogleService = (platform: CombinedFilterKey) => {
+  return (
+    platform === "GMAIL" ||
+    platform === "GOOGLE_CALENDAR" ||
+    platform === "GOOGLE_DRIVE" || 
+    platform === "GOOGLE_DOCS" || 
+    platform === "GOOGLE_SHEETS" || 
+    platform === "GOOGLE_SLIDES"
+  );
 };
 
 export const generateGitHubJWT = () => {

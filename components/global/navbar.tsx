@@ -5,7 +5,6 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 import Link from "next/link";
 import Image from "next/image";
-import { Inter, Noto_Sans } from "next/font/google";
 import { usePathname } from "next/navigation";
 
 import SidebarNav from "./sidebar-nav";
@@ -24,12 +23,7 @@ import HamburgurIcon from "@/components/ui/hamburger-icon";
 import useUser from "@/hooks/useUser";
 import { AISearchPreference } from "@/actions/user.actions";
 import { toast } from "sonner";
-
-const inter = Inter({ subsets: ["latin"] });
-const notoSans = Noto_Sans({ subsets: ["latin"] });
-
-const interClassName = inter.className;
-const notoSansClassName = notoSans.className;
+import SearchService from "../search-service";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -67,9 +61,7 @@ export default function Navbar() {
   };
 
   return (
-    <header
-      className={`h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0 ${interClassName}`}
-    >
+    <header className="h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
       <nav className="flex py-4 sm:pl-10 pl-5 pr-5 justify-between items-center">
         <Link href="/" className="flex gap-1 items-center">
           <span className="sm:hidden inline relative size-6">
@@ -120,7 +112,11 @@ export default function Navbar() {
               </li>
             </ul>
           ) : (
-            <div className={`flex gap-4 items-center ${notoSansClassName}`}>
+            <div className="flex gap-4 items-center">
+              {/* Turn on the service against you want to perform search operation. */}
+
+              <SearchService />
+
               <div ref={searchRef} className="relative w-max">
                 {/* AI search button */}
                 <Switch

@@ -15,13 +15,22 @@ const defaultNumberSchema = {
   default: () => 0,
 };
 
+const optionalPlatformSchmea = {
+  refreshToken: defaultStringSchema,
+  expiresAt: defaultNumberSchema,
+};
+
 const platformSchmea = {
+  accessToken: defaultStringSchema,
+  connectionStatus: defaultNumberSchema,
+  searchResults: defaultNumberSchema,
+  searchStatus: defaultBooleanSchema,
+};
+
+const googlePlatformSchema = {
   type: {
-    accessToken: defaultStringSchema,
-    refreshToken: defaultStringSchema,
-    authUser: defaultStringSchema,
-    expiresAt: defaultNumberSchema,
     searchResults: defaultNumberSchema,
+    searchStatus: defaultBooleanSchema,
   },
   default: () => ({}),
 };
@@ -70,47 +79,54 @@ const userSchema = new Schema(
     shouldRemember: defaultBooleanSchema,
     isAISearch: defaultBooleanSchema,
     hasSubscription: defaultBooleanSchema,
-    GMAIL: platformSchmea,
-    GOOGLE_DRIVE: {
+    GMAIL: {
       type: {
-        GOOGLE_DOCS: {
-          type: {
-            searchResults: defaultNumberSchema,
-            connectionStatus: defaultBooleanSchema,
-          },
-          default: () => ({ searchResults: 0, connectionStatus: false }),
-        },
-        GOOGLE_SHEETS: {
-          type: {
-            searchResults: defaultNumberSchema,
-            connectionStatus: defaultBooleanSchema,
-          },
-          default: () => ({ searchResults: 0, connectionStatus: false }),
-        },
-        GOOGLE_SLIDES: {
-          type: {
-            searchResults: defaultNumberSchema,
-            connectionStatus: defaultBooleanSchema,
-          },
-          default: () => ({ searchResults: 0, connectionStatus: false }),
-        },
-        accessToken: defaultStringSchema,
-        refreshToken: defaultStringSchema,
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
         authUser: defaultStringSchema,
-        expiresAt: defaultNumberSchema,
       },
       default: () => ({}),
     },
-    GOOGLE_CALENDAR: platformSchmea,
-    MICROSOFT_TEAMS: platformSchmea,
-    DISCORD: platformSchmea,
+    GOOGLE_DRIVE: {
+      type: {
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
+        authUser: defaultStringSchema,
+      },
+      default: () => ({}),
+    },
+    GOOGLE_DOCS: googlePlatformSchema,
+    GOOGLE_SHEETS: googlePlatformSchema,
+    GOOGLE_SLIDES: googlePlatformSchema,
+
+    GOOGLE_CALENDAR: {
+      type: {
+        ...optionalPlatformSchmea,
+        authUser: defaultStringSchema,
+        accessToken: defaultStringSchema,
+        connectionStatus: defaultNumberSchema,
+      },
+      default: () => ({}),
+    },
+    MICROSOFT_TEAMS: {
+      type: {
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
+      },
+      default: () => ({}),
+    },
+    DISCORD: {
+      type: {
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
+      },
+      default: () => ({}),
+    },
     GITHUB: {
       type: {
         installationId: defaultStringSchema,
-        accessToken: defaultStringSchema,
-        refreshToken: defaultStringSchema,
-        expiresAt: defaultNumberSchema,
-        searchResults: defaultNumberSchema,
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
       },
       default: () => ({}),
     },
@@ -118,8 +134,7 @@ const userSchema = new Schema(
       type: {
         workspaceId: String,
         botId: String,
-        accessToken: defaultStringSchema,
-        searchResults: defaultNumberSchema,
+        ...platformSchmea,
       },
       default: () => ({}),
     },
@@ -127,7 +142,8 @@ const userSchema = new Schema(
       type: {
         teamId: String,
         teamName: String,
-        ...platformSchmea.type,
+        ...platformSchmea,
+        ...optionalPlatformSchmea,
       },
       default: () => ({}),
     },

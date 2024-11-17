@@ -25,9 +25,6 @@ type CalenderResponse =
     }
   | { success: false; error: string };
 
-const oauth2Client = await (async () =>
-  (await getPlatformClient("GOOGLE_CALENDAR")) as OAuth2Client)();
-
 const timeZones = Intl.supportedValuesOf("timeZone");
 
 const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
@@ -208,6 +205,7 @@ export const createCalender = async (
   };
 
   try {
+    const oauth2Client = await (async () => (await getPlatformClient(user, "GOOGLE_CALENDAR")) as OAuth2Client)();
     const response = await checkAndRefreshToken(user, "GOOGLE_CALENDAR", oauth2Client);
     if(!response.success) return response;
 

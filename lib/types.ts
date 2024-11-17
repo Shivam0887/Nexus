@@ -63,14 +63,18 @@ export type CombinedFilterKey = FilterKey | AdditionalFilterKey;
 export type Connection = {
   GOOGLE_DRIVE: {
     connectionStatus: number;
-    GoogleDocsConnectionStatus: boolean;
-    GoogleSheetsConnectionStatus: boolean;
-    GoogleSlidesConnectionStatus: boolean;
   };
+  GOOGLE_CALENDAR: {
+    connectionStatus: number;
+  };
+  GOOGLE_DOCS: { searchStatus: boolean };
+  GOOGLE_SHEETS: { searchStatus: boolean };
+  GOOGLE_SLIDES: { searchStatus: boolean };
 } & Record<
-  Exclude<FilterKey, "GOOGLE_DRIVE">,
+  Exclude<FilterKey, "GOOGLE_DRIVE" | "GOOGLE_CALENDAR">,
   {
     connectionStatus: number;
+    searchStatus: boolean;
   }
 >;
 
@@ -113,8 +117,20 @@ export type ActionType =
     }
   | {
       type: "CONNECTION";
-      payload: Connection[keyof Connection];
-      connectionType: keyof Connection;
+      payload: {
+        connectionStatus: number;
+        connectionType: FilterKey;
+      };
+    }
+  | {
+      type: "SEARCH_STATUS";
+      payload: {
+        searchStatus: boolean;
+        connectionType: Exclude<
+          CombinedFilterKey,
+          "GOOGLE_DRIVE" | "GOOGLE_CALENDAR"
+        >;
+      };
     };
 
 export type LogoType = {
@@ -146,7 +162,7 @@ export type DocumentType = {
   email: string;
   href: string;
   content: string;
-  key: Omit<FilterKey, "GOOGLE_CALENDAR">;
+  key: Exclude<CombinedFilterKey, "GOOGLE_CALENDAR">;
 };
 
 export type TSortBy = "" | "date" | "last hour" | "last day" | "last week";

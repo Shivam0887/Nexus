@@ -17,7 +17,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Nexus: AI-Search Assistant",
   description:
-    "An AI-powered search assistant that centralizes information from various work applications, allowing users to quickly find and access data across platforms like Gmail, Slack, Jira, and Google Drive. It uses search APIs to fetch information in real time without storing data, ensuring security and privacy. It supports multi-account integration and offers features like instant answers to work-related queries, document generation with source references, and streamlined search capabilities, enhancing team productivity and efficiency.",
+    "An AI-powered search assistant that centralizes information from various work applications, allowing users to quickly find and access data across platforms like Gmail, Slack, and Google Drive. It uses search APIs to fetch information in real time without storing data, ensuring security and privacy. It supports multi-account integration and offers features like instant answers to work-related queries, document generation with source references, and streamlined search capabilities, enhancing team productivity and efficiency.",
 };
 
 export default async function RootLayout({
@@ -43,35 +43,38 @@ export default async function RootLayout({
     shouldRemember: Boolean(user?.shouldRemember),
     username: user?.username ?? "",
     GOOGLE_CALENDAR: {
-      connectionStatus: Number(!!user?.GOOGLE_CALENDAR.accessToken),
+      connectionStatus: Number(!!user?.GOOGLE_CALENDAR.connectionStatus),
     },
     DISCORD: {
-      connectionStatus: Number(!!user?.DISCORD.accessToken),
+      connectionStatus: Number(!!user?.DISCORD.connectionStatus),
+      searchStatus: !!user?.DISCORD.searchStatus,
     },
     GITHUB: {
-      connectionStatus: Number(!!user?.GITHUB.accessToken),
+      connectionStatus: Number(!!user?.GITHUB.connectionStatus),
+      searchStatus: !!user?.GITHUB.searchStatus,
     },
     GMAIL: {
-      connectionStatus: Number(!!user?.GMAIL.accessToken),
+      connectionStatus: Number(!!user?.GMAIL.connectionStatus),
+      searchStatus: !!user?.GMAIL.searchStatus,
     },
     NOTION: {
-      connectionStatus: Number(!!user?.NOTION.accessToken),
+      connectionStatus: Number(!!user?.NOTION.connectionStatus),
+      searchStatus: !!user?.NOTION.searchStatus,
     },
     SLACK: {
-      connectionStatus: Number(!!user?.SLACK.accessToken),
+      connectionStatus: Number(!!user?.SLACK.connectionStatus),
+      searchStatus: !!user?.SLACK.searchStatus,
     },
     MICROSOFT_TEAMS: {
-      connectionStatus: Number(!!user?.MICROSOFT_TEAMS.accessToken),
+      connectionStatus: Number(!!user?.MICROSOFT_TEAMS.connectionStatus),
+      searchStatus: !!user?.MICROSOFT_TEAMS.searchStatus,
     },
     GOOGLE_DRIVE: {
-      connectionStatus: Number(!!user?.GOOGLE_DRIVE.accessToken),
-      GoogleDocsConnectionStatus:
-        !!user?.GOOGLE_DRIVE.GOOGLE_DOCS.connectionStatus,
-      GoogleSheetsConnectionStatus:
-        !!user?.GOOGLE_DRIVE.GOOGLE_SHEETS.connectionStatus,
-      GoogleSlidesConnectionStatus:
-        !!user?.GOOGLE_DRIVE.GOOGLE_SLIDES.connectionStatus,
+      connectionStatus: Number(!!user?.GOOGLE_DRIVE.connectionStatus),
     },
+    GOOGLE_DOCS: { searchStatus: !!user?.GOOGLE_DOCS.searchStatus },
+    GOOGLE_SHEETS: { searchStatus: !!user?.GOOGLE_SHEETS.searchStatus },
+    GOOGLE_SLIDES: { searchStatus: !!user?.GOOGLE_SLIDES.searchStatus },
   };
 
   return (

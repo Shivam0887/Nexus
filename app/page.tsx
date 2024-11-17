@@ -5,7 +5,7 @@ import { InfiniteCard } from "@/components/ui/infinite-card";
 
 import { ChevronRight } from "lucide-react";
 
-import { content, faqs, features, images, temp, words } from "@/lib/constants";
+import { content, faqs, features, images, words } from "@/lib/constants";
 import { MaxWidthWrapper } from "@/components/global/max-width-wrapper";
 import { StickyScroll } from "@/components/ui/sticky-scroll";
 import { WavyBackground } from "@/components/ui/wavy-background";

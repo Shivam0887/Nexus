@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
               "GOOGLE_CALENDAR.expiresAt":
                 Date.now() + tokens.expires_in * 1000,
               "GOOGLE_CALENDAR.authUser": authUser,
+              "GOOGLE_CALENDAR.connectionStatus": 1,
             },
           }
         );

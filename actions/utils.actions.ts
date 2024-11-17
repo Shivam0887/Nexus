@@ -4,6 +4,7 @@ import { JSDOM } from "jsdom";
 import {
   ConnectToDB,
   generateGitHubJWT,
+  isGoogleService,
   redactText,
   refreshGitHubAccessToken,
   refreshSlackAccessToken,
@@ -11,6 +12,7 @@ import {
 import { docs_v1, gmail_v1, google } from "googleapis";
 import { User, UserType } from "@/models/user.model";
 import {
+  CombinedFilterKey,
   DocumentType,
   FilterKey,
   OAuth2Client,
@@ -54,14 +56,6 @@ const tunedModel_GitHub = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/github-data-qw3h8evn8n45",
 });
-
-const isGoogleService = (platform: FilterKey) => {
-  return (
-    platform === "GMAIL" ||
-    platform === "GOOGLE_CALENDAR" ||
-    platform === "GOOGLE_DRIVE"
-  );
-};
 
 const refreshAccessToken = async (
   user: UserType,

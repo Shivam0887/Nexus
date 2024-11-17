@@ -1,10 +1,8 @@
 "use server";
 
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, isGoogleService } from "@/lib/utils";
 import {
-  AdditionalFilterKey,
   CombinedFilterKey,
-  FilterKey,
   TActionResponse,
   TSearchCount,
   TSearchHistory,
@@ -48,19 +46,37 @@ export const AISearchPreference = async (
   }
 };
 
-export const enableGoogleService = async (
-  service: AdditionalFilterKey,
+export const toggleSearchService = async (
+  service: Exclude<CombinedFilterKey, "GOOGLE_DRIVE" | "GOOGLE_CALENDAR">,
   status: boolean
 ): Promise<TActionResponse> => {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated");
 
+    const user = (await User.findOne<UserType>({ userId }))!;
+
+    if (service !== "GMAIL" && isGoogleService(service)) {
+      if (user.GOOGLE_DRIVE.connectionStatus !== 1)
+        return {
+          success: false,
+          error: "Please connect to your google drive account...",
+        };
+    } else {
+      if (user[service].connectionStatus !== 1)
+        return {
+          success: false,
+          error: `Please connect to your ${service
+            .replace("_", " ")
+            .toLowerCase()} account...`,
+        };
+    }
+
     await User.findOneAndUpdate(
       { userId },
       {
         $set: {
-          [`GOOGLE_DRIVE.${service}.connectionStatus`]: status,
+          [`${service}.searchStatus`]: status,
         },
       }
     );
@@ -80,29 +96,20 @@ export const enableGoogleService = async (
 };
 
 export const updateSearchResultCount = async (
-  platform: CombinedFilterKey,
+  platform: Exclude<CombinedFilterKey, "GOOGLE_DRIVE">,
   inc: number
 ) => {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated");
 
-    let updateQuery: Record<string, number> = {};
-    if (
-      platform === "GOOGLE_DOCS" ||
-      platform === "GOOGLE_SHEETS" ||
-      platform === "GOOGLE_SLIDES"
-    ) {
-      updateQuery[`GOOGLE_DRIVE.${platform}.searchResults`] = inc;
-    } else {
-      updateQuery[`${platform}.searchResults`] = inc;
-    }
-
     await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },
       {
-        $inc: updateQuery,
+        $inc: {
+          [`${platform}.searchResults`]: inc,
+        },
       }
     );
   } catch (error: any) {
@@ -110,6 +117,7 @@ export const updateSearchResultCount = async (
   }
 };
 
+// Number of search results for individual platform
 export const getSearchResultCount = async (): Promise<
   TActionResponse<TSearchResult>
 > => {
@@ -119,14 +127,19 @@ export const getSearchResultCount = async (): Promise<
 
     await ConnectToDB();
     const user = (await User.findOne<
-      Pick<UserType, Exclude<FilterKey, "GOOGLE_CALENDAR">>
+      Pick<
+        UserType,
+        Exclude<CombinedFilterKey, "GOOGLE_CALENDAR" | "GOOGLE_DRIVE">
+      >
     >(
       { userId },
       {
         DISCORD: 1,
         GITHUB: 1,
         GMAIL: 1,
-        GOOGLE_DRIVE: 1,
+        GOOGLE_DOCS: 1,
+        GOOGLE_SHEETS: 1,
+        GOOGLE_SLIDES: 1,
         MICROSOFT_TEAMS: 1,
         NOTION: 1,
         SLACK: 1,
@@ -138,9 +151,9 @@ export const getSearchResultCount = async (): Promise<
       DISCORD: user.DISCORD.searchResults,
       GITHUB: user.GITHUB.searchResults,
       GMAIL: user.GMAIL.searchResults,
-      GOOGLE_DOCS: user.GOOGLE_DRIVE.GOOGLE_DOCS.searchResults,
-      GOOGLE_SHEETS: user.GOOGLE_DRIVE.GOOGLE_SHEETS.searchResults,
-      GOOGLE_SLIDES: user.GOOGLE_DRIVE.GOOGLE_SLIDES.searchResults,
+      GOOGLE_DOCS: user.GOOGLE_DOCS.searchResults,
+      GOOGLE_SHEETS: user.GOOGLE_SHEETS.searchResults,
+      GOOGLE_SLIDES: user.GOOGLE_SLIDES.searchResults,
       MICROSOFT_TEAMS: user.MICROSOFT_TEAMS.searchResults,
       NOTION: user.NOTION.searchResults,
       SLACK: user.SLACK.searchResults,

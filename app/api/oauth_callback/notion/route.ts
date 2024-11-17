@@ -60,6 +60,9 @@ export async function GET(req: NextRequest) {
           "NOTION.accessToken": access_token,
           "NOTION.workspaceId": workspace_id,
           "NOTION.botId": bot_id,
+          "NOTION.searchResults": 0,
+          "NOTION.connectionStatus": 1,
+          "NOTION.searchStatus": false,
         },
       }
     );

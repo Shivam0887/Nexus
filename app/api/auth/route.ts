@@ -3,10 +3,11 @@ import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
-import { User } from "@/models/user.model";
+import { User, UserType } from "@/models/user.model";
 import { Platforms, Scopes } from "@/lib/constants";
 import { getPlatformClient } from "@/actions/utils.actions";
 import { OAuth2Client } from "@/lib/types";
+import { ConnectToDB } from "@/lib/utils";
 
 const platformSchema = z.enum(Platforms);
 
@@ -19,6 +20,9 @@ export async function POST(req: NextRequest) {
     const platform = platformSchema.parse(
       req.nextUrl.searchParams.get("platform")
     );
+
+    await ConnectToDB();
+    const user = (await User.findOne<UserType>({ userId }))!;
 
     let url = "";
     switch (platform) {
@@ -44,6 +48,7 @@ export async function POST(req: NextRequest) {
         break;
       default:
         const oauth2Client = (await getPlatformClient(
+          user,
           platform
         )) as OAuth2Client;
         url = oauth2Client.generateAuthUrl({

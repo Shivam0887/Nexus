@@ -83,6 +83,9 @@ export async function GET(req: NextRequest) {
           "SLACK.expiresAt": Date.now() + authed_user.expires_in! * 1000,
           "SLACK.teamId": team.id,
           "SLACK.teamName": team.name,
+          "SLACK.searchResults": 0,
+          "SLACK.connectionStatus": 1,
+          "SLACK.searchStatus": false,
         },
       }
     );

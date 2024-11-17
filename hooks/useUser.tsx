@@ -3,6 +3,11 @@
 import { ActionType, StateType } from "@/lib/types";
 import React, { createContext, useContext, useMemo, useReducer } from "react";
 
+const platformStatus = {
+  connectionStatus: 0,
+  searchStatus: false,
+};
+
 const InitialState: StateType = {
   coverImage: "",
   email: "",
@@ -15,31 +20,17 @@ const InitialState: StateType = {
   plan: "Starter",
   GOOGLE_DRIVE: {
     connectionStatus: 0,
-    GoogleDocsConnectionStatus: false,
-    GoogleSheetsConnectionStatus: false,
-    GoogleSlidesConnectionStatus: false,
   },
-  MICROSOFT_TEAMS: {
-    connectionStatus: 0,
-  },
-  DISCORD: {
-    connectionStatus: 0,
-  },
-  GITHUB: {
-    connectionStatus: 0,
-  },
-  GMAIL: {
-    connectionStatus: 0,
-  },
-  NOTION: {
-    connectionStatus: 0,
-  },
-  SLACK: {
-    connectionStatus: 0,
-  },
-  GOOGLE_CALENDAR: {
-    connectionStatus: 0,
-  },
+  GOOGLE_DOCS: { searchStatus: false },
+  GOOGLE_SHEETS: { searchStatus: false },
+  GOOGLE_SLIDES: { searchStatus: false },
+  MICROSOFT_TEAMS: platformStatus,
+  DISCORD: platformStatus,
+  GITHUB: platformStatus,
+  GMAIL: platformStatus,
+  NOTION: platformStatus,
+  SLACK: platformStatus,
+  GOOGLE_CALENDAR: platformStatus,
 };
 
 type UserContextType = {
@@ -85,12 +76,17 @@ const reducer = (state: StateType, action: ActionType): StateType => {
     case "CONNECTION":
       return {
         ...state,
-        [action.connectionType]: {
-          ...state[action.connectionType],
-          ...action.payload,
+        [action.payload.connectionType]: {
+          connectionStatus: action.payload.connectionStatus,
         },
       };
-
+    case "SEARCH_STATUS":
+      return {
+        ...state,
+        [action.payload.connectionType]: {
+          searchStatus: action.payload.searchStatus,
+        },
+      };
     default:
       throw new Error("Invalid action");
   }

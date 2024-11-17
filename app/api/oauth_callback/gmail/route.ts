@@ -60,6 +60,9 @@ export async function GET(req: NextRequest) {
               "GMAIL.refreshToken": tokens.refresh_token,
               "GMAIL.expiresAt": Date.now() + tokens.expires_in * 1000,
               "GMAIL.authUser": authUser,
+              "GMAIL.connectionStatus": 1,
+              "GMAIL.searchStatus": false,
+              "GMAIL.searchResults": 0,
             },
           }
         );

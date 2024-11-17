@@ -1,5 +1,6 @@
 import {
   COLOR_PALETTES,
+  CombinedFilterKey,
   DrawerDirection,
   FAQ,
   FilterKey,
@@ -111,51 +112,6 @@ export const images: LogoType[] = [
     key: "notion",
     width: 64,
     height: 64,
-  },
-];
-
-export const temp = [
-  {
-    src: "/temp/temp1.png",
-    alt: "temp1",
-    key: "temp1",
-    width: 512,
-    height: 512,
-  },
-  {
-    src: "/temp/temp2.png",
-    alt: "temp2",
-    key: "temp2",
-    width: 512,
-    height: 512,
-  },
-  {
-    src: "/temp/temp3.png",
-    alt: "temp3",
-    key: "temp3",
-    width: 512,
-    height: 512,
-  },
-  {
-    src: "/temp/temp4.png",
-    alt: "temp4",
-    key: "temp4",
-    width: 512,
-    height: 512,
-  },
-  {
-    src: "/temp/temp5.png",
-    alt: "temp5",
-    key: "temp5",
-    width: 512,
-    height: 512,
-  },
-  {
-    src: "/temp/temp6.png",
-    alt: "temp6",
-    key: "temp6",
-    width: 512,
-    height: 512,
   },
 ];
 
@@ -451,11 +407,7 @@ export const Platforms = [
 export const SortBy: TSortBy[] = ["date", "last hour", "last day", "last week"];
 
 export const LogoMap: {
-  [key in
-    | Exclude<FilterKey, "GOOGLE_DRIVE">
-    | "GOOGLE_DOCS"
-    | "GOOGLE_SHEETS"
-    | "GOOGLE_SLIDES"]: string;
+  [key in Exclude<CombinedFilterKey, "GOOGLE_DRIVE">]: string;
 } = {
   GOOGLE_DOCS: "./Google_Docs.svg",
   GOOGLE_SHEETS: "./Google_Sheets.svg",

@@ -60,6 +60,13 @@ export async function GET(req: NextRequest) {
               "GOOGLE_DRIVE.refreshToken": tokens.refresh_token,
               "GOOGLE_DRIVE.expiresAt": Date.now() + tokens.expires_in * 1000,
               "GOOGLE_DRIVE.authUser": authUser,
+              "GOOGLE_DRIVE.connectionStatus": 1,
+              "GOOGLE_DOCS.searchStatus": false,
+              "GOOGLE_DOCS.searchResults": 0,
+              "GOOGLE_SHEETS.searchStatus": false,
+              "GOOGLE_SHEETS.searchResults": 0,
+              "GOOGLE_SLIDES.searchStatus": false,
+              "GOOGLE_SLIDES.searchResults": 0,
             },
           }
         );

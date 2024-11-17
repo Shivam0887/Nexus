@@ -77,8 +77,7 @@ const Page = () => {
           const platform = response.error.split("-")[1] as FilterKey;
           dispatch({
             type: "CONNECTION",
-            connectionType: platform,
-            payload: { connectionStatus: 2 },
+            payload: { connectionStatus: 2, connectionType: platform },
           });
         }
         return;

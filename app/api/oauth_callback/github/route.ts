@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
           "GITHUB.expiresAt": new Date(expires_at).getTime(),
           "GITHUB.installationId": installationId,
           "GITHUB.searchResults": 0,
+          "GITHUB.connectionStatus": 1,
+          "GITHUB.searchStatus": false,
         },
       }
     );

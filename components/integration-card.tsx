@@ -6,132 +6,15 @@ import axios from "axios";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AdditionalFilterKey, FilterKey } from "@/lib/types";
+import { FilterKey } from "@/lib/types";
 import { toast } from "sonner";
 import { Platforms } from "@/lib/constants";
-import Switch from "./ui/switch";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { enableGoogleService } from "@/actions/user.actions";
 import { useModalSelection } from "@/hooks/useModalSelection";
 
 const searchParamsSchema = z.object({
   success: z.enum(["true", "false"]),
   platform: z.enum(Platforms),
 });
-
-const GoogleServicePlatforms = ({
-  status,
-  disabled = false,
-}: {
-  disabled?: boolean;
-  status: {
-    connectionStatus: number;
-    GoogleDocsConnectionStatus: boolean;
-    GoogleSheetsConnectionStatus: boolean;
-    GoogleSlidesConnectionStatus: boolean;
-  };
-}) => {
-  const { dispatch } = useUser();
-
-  const handleChange = async (
-    value: boolean,
-    platform:
-      | "GoogleDocsConnectionStatus"
-      | "GoogleSheetsConnectionStatus"
-      | "GoogleSlidesConnectionStatus"
-  ) => {
-    const platformMap: Record<any, AdditionalFilterKey> = {
-      GoogleDocsConnectionStatus: "GOOGLE_DOCS",
-      GoogleSheetsConnectionStatus: "GOOGLE_SHEETS",
-      GoogleSlidesConnectionStatus: "GOOGLE_SLIDES",
-    };
-
-    dispatch({
-      connectionType: "GOOGLE_DRIVE",
-      type: "CONNECTION",
-      payload: { ...status, [platform]: value },
-    });
-
-    const response = await enableGoogleService(platformMap[platform], value);
-    if (response.success) {
-      toast.success(response.data);
-    } else {
-      toast.error(response.error);
-    }
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        asChild
-        className="cursor-pointer shadow-xl"
-        disabled={disabled}
-      >
-        <button
-          type="button"
-          className="text-sm bg-neutral-900 px-4 py-2 rounded-md"
-        >
-          Enable Google Service
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-neutral-900 border-none shadow-xl">
-        <DropdownMenuItem>
-          <Switch
-            value={status.GoogleDocsConnectionStatus}
-            onValueChange={(value) =>
-              handleChange(value, "GoogleDocsConnectionStatus")
-            }
-            label={
-              <div className="flex items-center gap-2">
-                <div className="relative size-5">
-                  <Image src="./Google_Docs.svg" alt="Google Docs" fill />
-                </div>
-                <p className="text-xs">Google Docs</p>
-              </div>
-            }
-          />
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Switch
-            value={status.GoogleSheetsConnectionStatus}
-            onValueChange={(value) =>
-              handleChange(value, "GoogleSheetsConnectionStatus")
-            }
-            label={
-              <div className="flex items-center gap-2">
-                <div className="relative size-5">
-                  <Image src="./Google_Sheets.svg" alt="Google Sheets" fill />
-                </div>
-                <p className="text-xs">Google Sheets</p>
-              </div>
-            }
-          />
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Switch
-            value={status.GoogleSlidesConnectionStatus}
-            onValueChange={(value) =>
-              handleChange(value, "GoogleSlidesConnectionStatus")
-            }
-            label={
-              <div className="flex items-center gap-2">
-                <div className="relative size-5">
-                  <Image src="./Google_Slides.svg" alt="Google Slides" fill />
-                </div>
-                <p className="text-xs">Google Slides</p>
-              </div>
-            }
-          />
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
 
 const IntegrationCard = ({
   src,
@@ -144,11 +27,13 @@ const IntegrationCard = ({
 }) => {
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const previousConnectionStatusRef = useRef(0);
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const { dispatch, user } = useUser();
   const { modalDispatch } = useModalSelection();
+
 
   useEffect(() => {
     const container = containerRef.current;
@@ -197,10 +82,10 @@ const IntegrationCard = ({
   ) => {
     try {
       e.stopPropagation();
+      previousConnectionStatusRef.current = user[alt].connectionStatus;
       dispatch({
         type: "CONNECTION",
-        payload: { connectionStatus: 0 },
-        connectionType: platform,
+        payload: { connectionStatus: 0, connectionType: platform },
       });
 
       await axios.patch(`/api/auth?platform=${platform}`);
@@ -208,8 +93,7 @@ const IntegrationCard = ({
       toast.error(error.message);
       dispatch({
         type: "CONNECTION",
-        payload: { connectionStatus: 1 },
-        connectionType: platform,
+        payload: { connectionStatus: previousConnectionStatusRef.current, connectionType: platform },
       });
     }
   };
@@ -284,12 +168,6 @@ const IntegrationCard = ({
           className="flex items-center flex-wrap gap-2"
           style={{ gridColumn: "1/-1" }}
         >
-          {alt === "GOOGLE_DRIVE" && (
-            <GoogleServicePlatforms
-              status={user[alt]}
-              disabled={user[alt].connectionStatus !== 1}
-            />
-          )}
           <p className="text-sm">{desc}</p>
         </div>
       </div>
