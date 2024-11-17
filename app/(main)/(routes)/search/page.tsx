@@ -318,9 +318,9 @@ const Page = () => {
         </button>
       </div>
 
-      <span className="absolute -translate-x-1/2 left-1/2 bottom-1 text-xs text-neutral-300 font-light">
+      <p className="w-max absolute -translate-x-1/2 left-1/2 bottom-1 text-xs text-neutral-300 font-light">
         Nexus can make mistakes as it uses AI models.
-      </span>
+      </p>
     </div>
   );
 };

@@ -187,3 +187,15 @@ export type TSearchResult = {
     "GOOGLE_CALENDAR" | "GOOGLE_DRIVE"
   >]: number;
 };
+
+export type TSlackAxiosResponse = {
+  ok: true | false;
+  authed_user: {
+    id: string;
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
+  team: { id: string; name: string };
+  error?: string;
+};

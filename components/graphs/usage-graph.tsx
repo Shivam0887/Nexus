@@ -106,9 +106,7 @@ const UsageGraph = () => {
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
-                          className={`fill-white ${
-                            isMobile ? "text-xs" : "text-base"
-                          }`}
+                          className="fill-white text-xs"
                         >
                           credits used
                         </tspan>
@@ -163,9 +161,7 @@ const UsageGraph = () => {
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
-                          className={`fill-white ${
-                            isMobile ? "text-xs" : "text-base"
-                          }`}
+                          className="fill-white text-xs"
                         >
                           credits used
                         </tspan>

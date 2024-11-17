@@ -282,7 +282,7 @@ export const getSearchHistory = async (
 
     const query: { [key: string]: any } = { userId };
     if (pageToken) {
-      query["_id"] = { $lt: pageToken };
+      query["_id"] = { $lte: pageToken };
     }
 
     const result = await SearchHistory.find<TSearchHistorySchema>(

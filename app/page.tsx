@@ -16,6 +16,8 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 import { Noto_Sans } from "next/font/google";
 import AnimatedRubiksCube from "@/components/ui/rubiks-cube";
+import { AnimatedCards } from "@/components/ui/animated-cards";
+import Image from "next/image";
 
 const notoSans = Noto_Sans({ subsets: ["latin"] });
 
@@ -68,7 +70,7 @@ export default function Home() {
               <span className="absolute right-32 bottom-16 opacity-10 rounded-full w-28 h-28 bg-gradient-radial from-[#D9D9D9] to-[#737373]" />
             </div>
 
-            <div className="md:w-1/2 sm:w-2/3 w-full h-[calc(100vh-56px)]">
+            <div className="hidden sm:block md:w-1/2 sm:w-2/3 w-full h-[calc(100vh-56px)]">
               <AnimatedRubiksCube />
             </div>
           </section>
@@ -76,45 +78,36 @@ export default function Home() {
           {/* features section */}
           <section
             id="features"
-            className="overflow-hidden spotlight_container relative h-[calc(100vh-56px)]  px-10"
+            className="overflow-hidden px-10 flex md:flex-row flex-col"
           >
             {/* Spotlight */}
-            <div className="spotlight_item absolute h-max md:w-1/2 w-full opacity-0 left-0 transition-all duration-[2000ms] -top-40 translate-y-[-100%]">
-              <Spotlight />
+            <div className="h-[calc(100vh-56px)] spotlight_container relative md:w-1/2 w-full">
+              <div className="spotlight_item absolute h-max w-full opacity-0 left-0 transition-all duration-[2000ms] -top-40 translate-y-[-100%]">
+                <Spotlight />
+              </div>
+
+              <div className="pt-20 h-full flex flex-col max-w-2xl text">
+                <h1 className="sm:text-5xl text-4xl">
+                  Unleash the Power of Advanced{" "}
+                  <span className="inline-block w-[260px]">
+                    <Flipwords words={words} charSpeed={100} />
+                  </span>
+                  <div className="sm:text-5xl text-4xl">search</div>
+                </h1>
+                <div className="relative flex-1 w-full">
+                  <Image
+                    src="/Man.png"
+                    alt="man"
+                    fill
+                    className="object-contain "
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="relative pt-20 max-w-2xl text">
-              <h1 className="sm:text-5xl text-4xl">
-                Unleash the Power of Advanced{" "}
-                <span className="inline-block w-[260px]">
-                  <Flipwords words={words} charSpeed={100} />
-                </span>
-                <div className="sm:text-5xl text-4xl">search</div>
-              </h1>
-              <p className="sm:text-base text-sm !font-normal mt-6">
-                Nexus&apos;s advanced search capabilities empower users to
-                quickly find and access information across multiple platforms,
-                saving time and increasing productivity. With features like
-                smart contextual search, voice search, and advanced filtering
-                and sorting, Nexus revolutionizes the way you search for
-                information.
-              </p>
+            <div className="h-[calc(100vh-56px)] md:w-1/2 w-full">
+              <AnimatedCards data={features} autoplay />
             </div>
-
-            {/* <div className="hidden sm:flex relative h-[250px] my-12 [perspective:1000px]">
-              {features.map(({ colorPalette, desc, title }, i) => (
-                <Cards
-                  key={colorPalette}
-                  colorPalette={colorPalette}
-                  title={title}
-                  desc={(desc[0].toUpperCase() + desc.substring(1)).split(" ")}
-                  delay={(i + 1) * 100}
-                  className={`w-[300px] h-[250px] absolute transition-all duration-500 card${
-                    i + 1
-                  }`}
-                />
-              ))}
-            </div> */}
           </section>
 
           {/* working section */}
@@ -127,9 +120,9 @@ export default function Home() {
               className="w-full flex justify-center"
               backgroundFill="#0a0a0a"
               waveWidth={30}
-              containerClassName="[mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)] [mask-mode:alpha] relative flex-1"
+              containerClassName="[mask-image:linear-gradient(90deg,transparent,black_5%,black_95%,transparent)] relative flex-1"
             >
-              <div className="relative w-[80%]">
+              <div className="relative w-[80%] ">
                 <StickyScroll content={content} />
               </div>
             </WavyBackground>

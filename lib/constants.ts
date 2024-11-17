@@ -4,7 +4,6 @@ import {
   FAQ,
   FilterKey,
   LogoType,
-  PALETTE_NAME,
   PLAN,
   TSortBy,
 } from "./types";
@@ -19,32 +18,32 @@ export const words = ["visual", "contextual", "voice"];
 export const features: {
   title: string;
   desc: string;
-  colorPalette: PALETTE_NAME;
+  src: string;
 }[] = [
   {
     title: "smart contextual search",
     desc: "Nexus's smart contextual search is designed to grasp the nuances of your queries, ensuring a deep understanding of the context, delivers highly relevant results by analyzing the context behind each search. With Nexus, you get precise outcomes that cater specifically to your needs.",
-    colorPalette: "Radiant Orchid Dream",
+    src: "/temp/temp1.png",
   },
   {
     title: "voice search",
     desc: "Search hands-free with Nexus's innovative voice search feature, which allows you to find what you're looking for effortlessly. Simply speak your query, and Nexus will quickly deliver the results you need without the need for typing, making your search experience smoother than ever.",
-    colorPalette: "Velvet Night",
+    src: "/temp/temp2.png",
   },
   {
     title: "sorting and filtering",
     desc: "Enhance your search experience with advanced filtering and sorting options. These features allow you to narrow down results based on specific criteria, making it easier to locate the most pertinent information efficiently.",
-    colorPalette: "Oceanic Dream",
+    src: "/temp/temp3.png",
   },
   {
     title: "visual search",
     desc: "Integrate advanced image recognition technology to enable users to upload photos for searching, enhances user experience by providing intuitive and efficient access to the needed data based on visual inputs. By leveraging ML algorithms, it ensures accurate and swift retrieval of related content.",
-    colorPalette: "Ocean Depths",
+    src: "/temp/temp4.png",
   },
   {
     title: "personalized dashboard",
     desc: "We offer customizable dashboards that aggregate frequently accessed data and recent searches, allowing users to have all their important information in one place. By consolidating key data and search history, we enhance productivity and ensure users can easily access the information they need.",
-    colorPalette: "Midnight Velvet",
+    src: "/temp/temp5.png",
   },
 ];
 

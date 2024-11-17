@@ -1,8 +1,17 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { sign } from "jsonwebtoken";
+import axios from "axios";
 
 import mongoose from "mongoose";
 import { PATTERNS } from "./sensitive-regex";
+import { TSlackAxiosResponse } from "./types";
+import { UserType } from "@/models/user.model";
+
+type TResponse = {
+  token: string;
+  expires_at: string;
+};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -64,4 +73,62 @@ export const typedEntries = <T extends Object>(
   entries: T
 ): [keyof T, T[keyof T]][] => {
   return Object.entries(entries) as [keyof T, T[keyof T]][];
+};
+
+export const generateGitHubJWT = () => {
+  const signingKey = process.env.GITHUB_PRIVATE_KEY!.replace(/\\n/g, "\n");
+  const clientId = process.env.GITHUB_CLIENT_ID!;
+
+  const now = Date.now();
+
+  const payload = {
+    // Issued at time
+    iat: Math.floor(now / 1000),
+    // JWT expiration time (5 minutes maximum)
+    exp: Math.floor(now / 1000) + 300,
+    iss: clientId,
+  };
+
+  return sign(payload, signingKey, { algorithm: "RS256" });
+};
+
+export const refreshGitHubAccessToken = async (
+  token: string,
+  installationId: string
+) => {
+  return await axios.post<TResponse>(
+    `https://api.github.com/app/installations/${installationId}/access_tokens`,
+    {},
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    }
+  );
+};
+
+export const refreshSlackAccessToken = async (user: UserType) => {
+  const clientId = process.env.SLACK_CLIENT_ID!;
+  const clientSecret = process.env.SLACK_CLIENT_SECRET!;
+  const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/slack`;
+
+  const tokenUrl = "https://slack.com/api/oauth.v2.access";
+  return await axios.post<TSlackAxiosResponse>(
+    tokenUrl,
+    {},
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      params: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: "refresh_token",
+        refresh_token: user.GITHUB.refreshToken,
+        redirect_uri: redirectUri,
+      }),
+    }
+  );
 };

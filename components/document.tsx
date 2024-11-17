@@ -30,7 +30,7 @@ const Document = ({
       draggable
       onDragStart={handleDragStart}
       className={cn(
-        "px-5 py-2 w-full h-16 grid grid-cols-[auto_1fr_auto] items-center gap-6 mx-auto bg-neutral-800 rounded-lg",
+        "px-5 py-2 w-full h-24 grid grid-cols-[auto_1fr_auto] items-center gap-6 mx-auto bg-neutral-800 rounded-lg",
         {
           "max-w-sm h-auto": layout === "grid",
         }
@@ -54,18 +54,19 @@ const Document = ({
           }
         )}
       >
-        <div
-          className={cn("flex items-center gap-2", {
-            "flex-col items-start": layout === "grid",
-          })}
-        >
-          <p className="line-clamp-1">Title: {document.title}</p>
-          {layout === "list" && (
+        <div className="space-y-2">
+          <div className="flex">
             <span>
               <Dot />
-            </span>
-          )}
-          <p className="line-clamp-1">Author: {document.author}</p>
+            </span>{" "}
+            <p className="line-clamp-1">Title: {document.title}</p>
+          </div>
+          <div className="flex">
+            <span>
+              <Dot />
+            </span>{" "}
+            <p className="line-clamp-1">Author: {document.author}</p>
+          </div>
         </div>
 
         <div className="flex items-center">

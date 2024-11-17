@@ -111,7 +111,7 @@ const IntegrationGraph = () => {
                             y={viewBox.cy}
                             className="fill-[#C4D7FF] text-4xl font-bold"
                           >
-                            {chartData[0].integrations.toString()}
+                            {` ${chartData[0].integrations.toString()} / ${TOTAL_PLATFORMS}`}
                           </tspan>
                           <tspan
                             x={viewBox.cx}

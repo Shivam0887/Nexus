@@ -23,13 +23,7 @@ const platformSchmea = {
     expiresAt: defaultNumberSchema,
     searchResults: defaultNumberSchema,
   },
-  default: () => ({
-    accessToken: "",
-    refreshToken: "",
-    authUser: "",
-    expiresAt: 0,
-    searchResults: 0,
-  }),
+  default: () => ({}),
 };
 
 const searchCountSchema = new Schema(
@@ -110,12 +104,22 @@ const userSchema = new Schema(
     GOOGLE_CALENDAR: platformSchmea,
     MICROSOFT_TEAMS: platformSchmea,
     DISCORD: platformSchmea,
-    GITHUB: platformSchmea,
+    GITHUB: {
+      type: {
+        installationId: defaultStringSchema,
+        accessToken: defaultStringSchema,
+        refreshToken: defaultStringSchema,
+        expiresAt: defaultNumberSchema,
+        searchResults: defaultNumberSchema,
+      },
+      default: () => ({}),
+    },
     NOTION: {
       type: {
         workspaceId: String,
         botId: String,
-        ...platformSchmea.type,
+        accessToken: defaultStringSchema,
+        searchResults: defaultNumberSchema,
       },
       default: () => ({}),
     },

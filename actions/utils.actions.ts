@@ -1,7 +1,13 @@
 "use server";
 
 import { JSDOM } from "jsdom";
-import { ConnectToDB, redactText } from "@/lib/utils";
+import {
+  ConnectToDB,
+  generateGitHubJWT,
+  redactText,
+  refreshGitHubAccessToken,
+  refreshSlackAccessToken,
+} from "@/lib/utils";
 import { docs_v1, gmail_v1, google } from "googleapis";
 import { User, UserType } from "@/models/user.model";
 import {
@@ -14,12 +20,13 @@ import { CharacterTextSplitter } from "langchain/text_splitter";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { updateSearchResultCount } from "./user.actions";
 import { WebClient } from "@slack/web-api";
+import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import {
-  isFullDatabase,
   isFullPage,
   isFullPageOrDatabase,
   Client as NotionClient,
 } from "@notionhq/client";
+import { LogoMap } from "@/lib/constants";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
 
@@ -43,12 +50,73 @@ const tunedModel_Slack = new ChatGoogleGenerativeAI({
   model: "tunedModels/slack-data-oglib9jwnvqj",
 });
 
+const tunedModel_GitHub = new ChatGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  model: "tunedModels/github-data-qw3h8evn8n45",
+});
+
+const isGoogleService = (platform: FilterKey) => {
+  return (
+    platform === "GMAIL" ||
+    platform === "GOOGLE_CALENDAR" ||
+    platform === "GOOGLE_DRIVE"
+  );
+};
+
+const refreshAccessToken = async (
+  user: UserType,
+  platform: Exclude<FilterKey, "NOTION">,
+  oauth2Client?: OAuth2Client,
+  refreshToken?: string
+): Promise<{
+  accessToken: string;
+  expiresAt: number;
+  refreshToken?: string;
+}> => {
+  switch (platform) {
+    case "GITHUB":
+      const encodedJwt = generateGitHubJWT();
+      const gitHubResponse = await refreshGitHubAccessToken(
+        encodedJwt,
+        user.GITHUB.installationId
+      );
+      return {
+        accessToken: gitHubResponse.data.token,
+        expiresAt: new Date(gitHubResponse.data.expires_at).getTime(),
+      };
+    case "DISCORD":
+      return { accessToken: "", expiresAt: 0 };
+    case "MICROSOFT_TEAMS":
+      return { accessToken: "", expiresAt: 0 };
+    case "SLACK":
+      const slackResponse = await refreshSlackAccessToken(user);
+      const { access_token, expires_in, refresh_token } =
+        slackResponse.data.authed_user;
+      return {
+        accessToken: access_token,
+        expiresAt: expires_in!,
+        refreshToken: refresh_token!,
+      };
+    default:
+      oauth2Client!.setCredentials({ refresh_token: refreshToken! });
+      const { credentials } = await oauth2Client!.refreshAccessToken();
+      oauth2Client!.setCredentials({
+        access_token: credentials.access_token,
+      });
+
+      return {
+        accessToken: credentials.access_token!,
+        expiresAt: credentials.expiry_date!,
+      };
+  }
+};
+
 export const checkAndRefreshToken = async (
   user: UserType,
-  platform: FilterKey,
-  oauth2Client: OAuth2Client
+  platform: Exclude<FilterKey, "NOTION">,
+  oauth2Client?: OAuth2Client
 ): Promise<TActionResponse> => {
-  const { accessToken, refreshToken, expiresAt } = user[platform];
+  const { accessToken, expiresAt, refreshToken } = user[platform];
 
   if (!accessToken) {
     return {
@@ -60,9 +128,11 @@ export const checkAndRefreshToken = async (
   // Check if the token has expired
   const currentTime = Date.now();
   if (expiresAt && currentTime < expiresAt - 60000) {
-    oauth2Client.setCredentials({
-      access_token: accessToken,
-    });
+    if (isGoogleService(platform)) {
+      oauth2Client!.setCredentials({
+        access_token: accessToken,
+      });
+    }
 
     return {
       success: true,
@@ -70,22 +140,21 @@ export const checkAndRefreshToken = async (
     };
   } else {
     try {
-      oauth2Client.setCredentials({ refresh_token: refreshToken! });
-      // Attempt to refresh the token
-      const { credentials } = await oauth2Client.refreshAccessToken();
-      oauth2Client.setCredentials({
-        access_token: credentials.access_token,
-      });
+      const { accessToken, expiresAt, refreshToken: refresh_token } = await refreshAccessToken(user, platform, oauth2Client, refreshToken);
+      const updateQuery = {
+        [`${platform}.accessToken`]: accessToken,
+        [`${platform}.expiresAt`]: expiresAt,
+      };
 
-      // Store the new tokens in the database
+      if (platform === "GITHUB") {
+        updateQuery[`${platform}.refreshToken`] = refresh_token!;
+      }
+
       await ConnectToDB();
       await User.findOneAndUpdate(
         { userId: user.userId },
         {
-          $set: {
-            [`${platform}.accessToken`]: credentials.access_token,
-            [`${platform}.expiresAt`]: credentials.expiry_date,
-          },
+          $set: updateQuery,
         }
       );
 
@@ -95,10 +164,7 @@ export const checkAndRefreshToken = async (
         data: "",
       };
     } catch (error: any) {
-      const errorMessage =
-        error?.response && error?.response?.data?.error === "invalid_grant"
-          ? `RE_AUTHENTICATE-${platform}`
-          : error.message;
+      const errorMessage = error?.response && error?.response?.data?.error === "invalid_grant" ? `RE_AUTHENTICATE-${platform}` : error.message;
       return {
         success: false,
         error: errorMessage,
@@ -107,27 +173,31 @@ export const checkAndRefreshToken = async (
   }
 };
 
-export const getPlatformClient = async <T extends FilterKey>(platform: T) => {
-  try {
-    switch (platform) {
-      case "SLACK":
-        return new WebClient();
-      case "NOTION":
-        return new NotionClient();
-      default:
-        const clientId = process.env[`${platform}_CLIENT_ID`]!;
-        const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
-        const redirectUri = `${process.env
-          .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
+export const getPlatformClient = async (
+  user: UserType,
+  platform: FilterKey
+) => {
+  const clientId = process.env[`${platform}_CLIENT_ID`]!;
+  const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
+  const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
 
-        return new google.auth.OAuth2({
-          clientId,
-          clientSecret,
-          redirectUri,
-        });
-    }
-  } catch (error) {
-    throw error;
+  const dbUser = (await User.findOne<UserType>({ userId: user.userId }))!;
+
+  user = dbUser;
+
+  switch (platform) {
+    case "SLACK":
+      return new WebClient(dbUser?.[platform].accessToken);
+    case "NOTION":
+      return new NotionClient({ auth: dbUser?.[platform].accessToken });
+    case "GITHUB":
+      return new Octokit({ auth: dbUser?.[platform].accessToken });
+    default:
+      return new google.auth.OAuth2({
+        clientId,
+        clientSecret,
+        redirectUri,
+      });
   }
 };
 
@@ -189,16 +259,17 @@ export const searchEmails = async (
 ): Promise<DocumentType[]> => {
   if (searchQuery.trim().length === 0) return [];
 
-  const oauth2Client = (await getPlatformClient("GMAIL")) as OAuth2Client;
+  const oauth2Client = (await getPlatformClient(user, "GMAIL")) as OAuth2Client;
   const response = await checkAndRefreshToken(user, "GMAIL", oauth2Client);
-  if (!response.success) return [];
+
+  const result: DocumentType[] = [];
+  if (!response.success) return result;
 
   const gmail = google.gmail({
     version: "v1",
     auth: oauth2Client,
   });
 
-  const result: DocumentType[] = [];
   let pageToken: string | undefined;
 
   // Helper function to extract header value
@@ -222,7 +293,7 @@ export const searchEmails = async (
 
     // Process each email
     const emails = await Promise.all(
-      data.messages.map(async ({ id }): Promise<DocumentType | undefined> => {
+      data.messages.map(async ({ id }): Promise<DocumentType> => {
         const message = await gmail.users.messages.get({
           userId: user.email,
           id: id!,
@@ -232,14 +303,10 @@ export const searchEmails = async (
         const headers = payload?.headers ?? [];
 
         // Determine the label (inbox or first available label)
-        const label = labelIds?.includes("INBOX")
-          ? "inbox"
-          : labelIds?.[0]?.toLowerCase() ?? "inbox";
+        const label = labelIds?.includes("INBOX") ? "inbox" : labelIds?.[0]?.toLowerCase() ?? "inbox";
 
         // Construct email URL
-        const href = `https://mail.google.com/mail/u/${
-          user.GMAIL!.authUser
-        }/#${label}/${id}`;
+        const href = `https://mail.google.com/mail/u/${user.GMAIL!.authUser}/#${label}/${id}`;
 
         // Process email content
         let content = "";
@@ -254,7 +321,7 @@ export const searchEmails = async (
           title: getHeader(headers, "Subject"),
           href,
           email: user.email,
-          logo: "./Gmail.svg",
+          logo: LogoMap["GMAIL"],
           content,
           key: "GMAIL",
         };
@@ -262,7 +329,7 @@ export const searchEmails = async (
     );
 
     emails.forEach((email) => {
-      if (email) result.push(email);
+      result.push(email);
     });
 
     pageToken = data.nextPageToken ?? undefined;
@@ -274,6 +341,7 @@ export const searchEmails = async (
 
 export const searchDocs = async (searchQuery: string, user: UserType) => {
   const oauth2Client = (await getPlatformClient(
+    user,
     "GOOGLE_DRIVE"
   )) as OAuth2Client;
   const response = await checkAndRefreshToken(
@@ -326,7 +394,7 @@ export const searchDocs = async (searchQuery: string, user: UserType) => {
         date: createdTime!,
         email: user.email,
         title: document.data.title!,
-        logo: "./Google_Docs.svg",
+        logo: LogoMap["GOOGLE_DOCS"],
         href: `https://docs.google.com/document/d/${id!}`,
         key: "GOOGLE_DOCS",
       };
@@ -344,11 +412,10 @@ export const searchSheets = async (
   searchQuery: string,
   user: UserType
 ): Promise<DocumentType[]> => {
-  const oauth2Client = (await getPlatformClient(
-    "GOOGLE_DRIVE"
-  )) as OAuth2Client;
-  const resp = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
-  if (!resp.success) return [];
+  const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
+  const {success} = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
+
+  if (!success) return [];
 
   const [q, ...ranges] = searchQuery.split("_");
 
@@ -409,7 +476,7 @@ export const searchSheets = async (
         href,
         id: id!,
         key: "GOOGLE_SHEETS",
-        logo: "./google_sheets.svg",
+        logo: LogoMap["GOOGLE_SHEETS"],
         title,
       };
     }
@@ -426,10 +493,11 @@ export const searchSlack = async (
   searchQuery: string,
   user: UserType
 ): Promise<DocumentType[]> => {
-  const slackClient = (await getPlatformClient("SLACK")) as WebClient;
+  const { success } =  await checkAndRefreshToken(user, 'SLACK');
+  if(!success) return [];
 
+  const slackClient = (await getPlatformClient(user, "SLACK")) as WebClient;
   const response = await slackClient.search.messages({
-    token: user.SLACK.accessToken,
     query: searchQuery,
   });
 
@@ -468,7 +536,7 @@ export const searchSlack = async (
             })
           ).user?.profile?.email ?? "",
         key: "SLACK",
-        logo: "./Slack.svg",
+        logo: LogoMap["SLACK"],
         title: content,
       };
     }
@@ -481,9 +549,11 @@ export const searchSlack = async (
 };
 
 export const searchNotion = async (searchQuery: string, user: UserType) => {
-  const notionClient = (await getPlatformClient("NOTION")) as NotionClient;
+  const notionClient = (await getPlatformClient(
+    user,
+    "NOTION"
+  )) as NotionClient;
   const response = await notionClient.search({
-    auth: user.NOTION.accessToken,
     query: searchQuery,
   });
 
@@ -497,7 +567,7 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
         href: "",
         id: "",
         key: "NOTION",
-        logo: "./Notion.svg",
+        logo: LogoMap["NOTION"],
         title: "",
       };
 
@@ -535,13 +605,91 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
   return result;
 };
 
+export const searchGitHub = async (searchQuery: string, user: UserType) => {
+  const { success } =  await checkAndRefreshToken(user, 'GITHUB');
+  if(!success) return [];
+  
+  const index = searchQuery.search(/type=/);
+  const startIndex = index + 5;
+  const str = searchQuery.slice(startIndex);
+  const endIndex = str.search(/\s/);
+  const searchSpace = (str.slice(0, endIndex === -1 ? undefined : endIndex)) as ("Repositories" | "Commits" | "PullRequests" | "Issues");
+
+  const gitHub = (await getPlatformClient(user, 'GITHUB')) as Octokit;
+
+  const result: DocumentType[] = [];
+  const searchParams = {
+    q: searchQuery.replace(`type=${searchSpace}`, ''),
+    headers: {
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+  }
+
+  switch(searchSpace){
+    case "Commits":
+      const { data: commitData } = await gitHub.rest.search.commits(searchParams as RestEndpointMethodTypes["search"]["commits"]["parameters"]);      
+      commitData.items.forEach(({ url, commit, node_id }) => {
+        const { author, message } = commit;
+        const { date, email, name } = author;
+    
+        result.push({
+          author: name,
+          content: message,
+          date,
+          email,
+          href: url,
+          id: node_id,
+          key: 'GITHUB',
+          logo: LogoMap["GITHUB"],
+          title: message
+        });
+      });
+      break;
+    case "Repositories":
+      const { data: repoData } = await gitHub.rest.search.repos(searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]);
+      repoData.items.forEach(({ created_at, description, full_name, id, html_url }) => {
+        result.push({
+          author: full_name,
+          content: description ?? "",
+          date: created_at,
+          email: "",
+          href: html_url,
+          id: id.toString(),
+          key: 'GITHUB',
+          logo: LogoMap["GITHUB"],
+          title: description ?? ""
+        });
+      });
+      break;
+    default:
+      const { data } = await gitHub.rest.search.issuesAndPullRequests(searchParams as RestEndpointMethodTypes["search"]["issuesAndPullRequests"]["parameters"])
+      
+      data.items.forEach(({ html_url, id, title, user, created_at, body }) => {
+        result.push({
+          author: user?.name ?? "",
+          content: body ?? "",
+          date: created_at,
+          email: user?.email ?? "",
+          href: html_url,
+          id: id.toString(),
+          key: 'GITHUB',
+          logo: LogoMap["GITHUB"],
+          title
+        });
+      })
+  }
+
+  await updateSearchResultCount('GITHUB', result.length);
+  return result;
+};
+
 export const generateSearchQuery = async (input: string) => {
   // const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
   // const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
   // const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
+  // const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
+  const gitHubQuery = (await tunedModel_GitHub.invoke(input)).content.toString();
 
-  const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
-  console.log({ slackQuery });
-
-  return { slackQuery };
+  return { gitHubQuery };
 };
