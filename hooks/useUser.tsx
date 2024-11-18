@@ -77,6 +77,7 @@ const reducer = (state: StateType, action: ActionType): StateType => {
       return {
         ...state,
         [action.payload.connectionType]: {
+          ...state[action.payload.connectionType],
           connectionStatus: action.payload.connectionStatus,
         },
       };
@@ -84,6 +85,7 @@ const reducer = (state: StateType, action: ActionType): StateType => {
       return {
         ...state,
         [action.payload.connectionType]: {
+          ...state[action.payload.connectionType],
           searchStatus: action.payload.searchStatus,
         },
       };

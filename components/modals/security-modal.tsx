@@ -3,13 +3,12 @@
 import { createPasskey, validatePasskey } from "@/actions/passkey.actions";
 import useUser from "@/hooks/useUser";
 import {
-  CircleCheckBig,
   CirclePlus,
   KeyRound,
   Loader2,
   ShieldAlert,
 } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Dialog, DialogContent, DialogItem } from "@/components/ui/dialog";
 import { useModalSelection } from "@/hooks/useModalSelection";
@@ -42,9 +41,7 @@ const SecurityInputs = ({
       setPasskey(arr);
 
       if (index > 0) {
-        const nextInput = document.getElementById(
-          `passkey${index - 1}`
-        ) as HTMLInputElement;
+        const nextInput = document.getElementById(`passkey${index - 1}`) as HTMLInputElement;
         nextInput.focus();
       }
     } else if (key.charCodeAt(0) >= 48 && key.charCodeAt(0) <= 57) {
@@ -52,9 +49,7 @@ const SecurityInputs = ({
       setPasskey(arr);
 
       if (index < 5) {
-        const nextInput = document.getElementById(
-          `passkey${index + 1}`
-        ) as HTMLInputElement;
+        const nextInput = document.getElementById(`passkey${index + 1}`) as HTMLInputElement;
         nextInput.focus();
         nextInput.setSelectionRange(1, 1);
       }
@@ -185,7 +180,9 @@ const SecurityModal = () => {
                 <KeyRound className="stroke-neutral-950 fill-btn-primary [transform:rotateY(180deg)]" />
               </div>
               <p className="sm:text-sm text-xs">
-                Set-up a passkey before you start integrating your apps.
+                {validate
+                  ? "Please verify your passkey before you start integrating your apps."
+                  : "Set-up a passkey before you start integrating your apps."}
               </p>
             </div>
             <SecurityInputs

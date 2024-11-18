@@ -12,14 +12,12 @@ import {
 import { docs_v1, gmail_v1, google } from "googleapis";
 import { User, UserType } from "@/models/user.model";
 import {
-  CombinedFilterKey,
   DocumentType,
   FilterKey,
   OAuth2Client,
   TActionResponse,
 } from "@/lib/types";
 import { CharacterTextSplitter } from "langchain/text_splitter";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { updateSearchResultCount } from "./user.actions";
 import { WebClient } from "@slack/web-api";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
@@ -31,31 +29,6 @@ import {
 import { LogoMap } from "@/lib/constants";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
-
-const tunedModel_Gmail = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/gmailquery-ham7ian0yejt",
-});
-
-const tunedModel_Docs = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/google-docs-data-5u6szrdsitel",
-});
-
-const tunedModel_Sheets = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/google-sheets-data-rsvd22fipb8n",
-});
-
-const tunedModel_Slack = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/slack-data-oglib9jwnvqj",
-});
-
-const tunedModel_GitHub = new ChatGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/github-data-qw3h8evn8n45",
-});
 
 const refreshAccessToken = async (
   user: UserType,
@@ -247,7 +220,7 @@ const processDocsContent = (
   return result;
 };
 
-export const searchEmails = async (
+export const searchGmail = async (
   searchQuery: string,
   user: UserType
 ): Promise<DocumentType[]> => {
@@ -676,14 +649,4 @@ export const searchGitHub = async (searchQuery: string, user: UserType) => {
 
   await updateSearchResultCount('GITHUB', result.length);
   return result;
-};
-
-export const generateSearchQuery = async (input: string) => {
-  // const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
-  // const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
-  // const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
-  // const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
-  const gitHubQuery = (await tunedModel_GitHub.invoke(input)).content.toString();
-
-  return { gitHubQuery };
 };

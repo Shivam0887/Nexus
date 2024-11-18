@@ -62,7 +62,10 @@ const SearchService = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider">
+      <DropdownMenuTrigger
+        title="Turn on the service against which you want to perform search operations."
+        className="bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
+      >
         Enable Service
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-neutral-900 border-none shadow-xl z-[120] rounded-lg">

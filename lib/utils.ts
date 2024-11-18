@@ -79,10 +79,24 @@ export const isGoogleService = (platform: CombinedFilterKey) => {
   return (
     platform === "GMAIL" ||
     platform === "GOOGLE_CALENDAR" ||
-    platform === "GOOGLE_DRIVE" || 
-    platform === "GOOGLE_DOCS" || 
-    platform === "GOOGLE_SHEETS" || 
+    platform === "GOOGLE_DRIVE" ||
+    platform === "GOOGLE_DOCS" ||
+    platform === "GOOGLE_SHEETS" ||
     platform === "GOOGLE_SLIDES"
+  );
+};
+
+export const isSearchableService = (service: keyof UserType) => {
+  return (
+    service === "GMAIL" ||
+    service === "NOTION" ||
+    service === "SLACK" ||
+    service === "DISCORD" ||
+    service === "MICROSOFT_TEAMS" ||
+    service === "GITHUB" ||
+    service === "GOOGLE_DOCS" ||
+    service === "GOOGLE_SHEETS" ||
+    service === "GOOGLE_SLIDES"
   );
 };
 

@@ -215,3 +215,8 @@ export type TSlackAxiosResponse = {
   team: { id: string; name: string };
   error?: string;
 };
+
+export type TSearchableService = Exclude<
+  CombinedFilterKey,
+  "GOOGLE_DRIVE" | "GOOGLE_CALENDAR"
+>;
