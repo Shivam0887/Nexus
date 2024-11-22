@@ -1,17 +1,58 @@
 "use client";
 
+import { z } from "zod";
+import { toast } from "sonner";
 import Image from "next/image";
 import { useEffect } from "react";
 import { images } from "@/lib/constants";
 
 import useUser from "@/hooks/useUser";
 import { useModalSelection } from "@/hooks/useModalSelection";
+import { Platforms } from "@/lib/constants";
 
 import IntegrationCard from "@/components/integration-card";
+import { useSearchParams } from "next/navigation";
+
+const searchParamsSchema = z.object({
+  success: z.enum(["true", "false"]),
+  platform: z.enum(Platforms),
+});
 
 const Page = () => {
   const { user } = useUser();
   const { modalDispatch } = useModalSelection();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const isSucceed = searchParams.get("success");
+    const platform = searchParams.get("platform");
+
+    if (isSucceed && platform) {
+      console.log({ searchParams });
+      const { success, data } = searchParamsSchema.safeParse({
+        success: isSucceed,
+        platform,
+      });
+
+      if (success) {
+        if (data.success === "true")
+          toast.success(
+            `${data.platform.replace("_", " ")} connected successfully.`
+          );
+        else
+          toast.error(
+            `Failed to connect with ${data.platform.replace(
+              "_",
+              " "
+            )}. Please try again later.`
+          );
+      } else {
+        toast.error(
+          "Not able to connect to the service, please try again later."
+        );
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user.hasPasskey) {

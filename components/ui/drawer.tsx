@@ -112,7 +112,10 @@ export const DrawerContent = ({
     <>
       {open && (
         <DrawerPortal onClose={() => onClose(drawerDirection.current)}>
-          <div className="drawer-container">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="drawer-container"
+          >
             {/* overlay */}
             <div
               className="z-[9999] fixed inset-0 bg-neutral-950/70"
@@ -136,7 +139,9 @@ export const DrawerContent = ({
                   ...DrawerDir[drawerDirection.current].handleStyles,
                 }}
               />
-              <div className={cn("mt-10", containerClassName)}>{children}</div>
+              <div className={cn("w-full mt-10", containerClassName)}>
+                {children}
+              </div>
             </div>
           </div>
         </DrawerPortal>
@@ -208,22 +213,34 @@ export const DrawerClose = ({ children, className }: Props) => {
 export const Drawer = ({
   children,
   drawerDirection,
-}: { drawerDirection: DrawerDirection } & Pick<Props, "children">) => {
+  onOpenChange,
+  open,
+}: {
+  drawerDirection: DrawerDirection;
+  open?: boolean;
+  onOpenChange?: React.Dispatch<React.SetStateAction<boolean>>;
+} & Pick<Props, "children">) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isPortalLoaded, setIsPortalLoaded] = useState(false);
   const direction = useRef<DrawerDirection>(drawerDirection);
 
   const { DrawerProvider } = useDrawer();
 
+  if (Number(open === undefined) ^ Number(onOpenChange === undefined)) {
+    throw new Error(
+      "You must specify both 'open' and 'onOpenChange', if you want the controlled component."
+    );
+  }
+
   const values = useMemo(
     () => ({
-      open: isOpen,
-      onOpenChange: setIsOpen,
+      open: open ?? isOpen,
+      onOpenChange: onOpenChange ?? setIsOpen,
       isPortalLoaded,
       setIsPortalLoaded,
       drawerDirection: direction,
     }),
-    [isOpen, isPortalLoaded, direction]
+    [isOpen, isPortalLoaded, direction, open, onOpenChange]
   );
 
   return <DrawerProvider value={values}>{children}</DrawerProvider>;

@@ -12,7 +12,7 @@ type TFilter = {
   isSelected: boolean;
 };
 
-type TFilterProps = {
+export type TFilterProps = {
   className?: string;
   controlledHeight?: boolean;
   documents: DocumentType[];

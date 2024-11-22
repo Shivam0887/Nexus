@@ -36,13 +36,12 @@ const Switch = ({
 
   return (
     <div
-      role="button"
       onClick={(e) => {
         e.stopPropagation();
         onContainerClick?.(e);
       }}
       className={cn(
-        `relative w-full hover:bg-neutral-700 transition-colors py-2 flex flex-col items-center cursor-pointer px-4 rounded-lg ${inter.className}`,
+        `relative w-full hover:bg-neutral-700 transition-colors py-2 flex flex-col items-center px-4 rounded-lg ${inter.className}`,
         className,
         disabled ? "bg-neutral-700" : "bg-neutral-800"
       )}
@@ -75,7 +74,9 @@ const Switch = ({
             setIsChecked(_value);
           }
         }}
-        className="w-full h-full rounded-lg absolute top-0 opacity-0 z-10 cursor-pointer"
+        className={`w-full h-full rounded-lg absolute top-0 opacity-0 z-10 ${
+          disabled ? "cursor-not-allowed" : "cursor-pointer"
+        }`}
       />
     </div>
   );

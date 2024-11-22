@@ -5,7 +5,11 @@ import axios from "axios";
 
 import mongoose from "mongoose";
 import { PATTERNS } from "./sensitive-regex";
-import { CombinedFilterKey, TSlackAxiosResponse } from "./types";
+import {
+  CombinedFilterKey,
+  TNotionPageBlockType,
+  TSlackAxiosResponse,
+} from "./types";
 import { UserType } from "@/models/user.model";
 
 type TResponse = {
@@ -155,5 +159,20 @@ export const refreshSlackAccessToken = async (user: UserType) => {
         redirect_uri: redirectUri,
       }),
     }
+  );
+};
+
+export const hasRichTextObject = (type: TNotionPageBlockType) => {
+  return (
+    type === "bulleted_list_item" ||
+    type === "callout" ||
+    type === "code" ||
+    type === "heading_1" ||
+    type === "heading_2" ||
+    type === "heading_3" ||
+    type === "numbered_list_item" ||
+    type === "paragraph" ||
+    type === "quote" ||
+    type === "to_do"
   );
 };

@@ -9,6 +9,7 @@ import {
   useContext,
   useMemo,
 } from "react";
+import { useDrawerSelection } from "./useDrawerSelection";
 
 type DrawerContextType = {
   open: boolean;
@@ -36,6 +37,7 @@ const useDrawer = () => {
     setIsPortalLoaded,
     drawerDirection,
   } = useContext(drawerContext);
+  const { drawerDispatch } = useDrawerSelection();
 
   const onPortalOpen = useCallback(
     () => setIsPortalLoaded(true),
@@ -56,11 +58,12 @@ const useDrawer = () => {
 
       setTimeout(() => {
         document.body.style.overflow = "auto";
+        drawerDispatch({ type: "onClose" });
         onOpenChange(false);
         onPortalClose();
       }, 300);
     },
-    [onOpenChange, onPortalClose]
+    [onOpenChange, onPortalClose, drawerDispatch]
   );
   const onOpen = useCallback(() => onOpenChange(true), [onOpenChange]);
 

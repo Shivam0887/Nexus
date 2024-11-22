@@ -24,7 +24,12 @@ import {
 } from "ai";
 import { createStreamableValue, StreamableValue } from "ai/rsc";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { DocumentType, TActionResponse, TSearchableService } from "@/lib/types";
+import {
+  DocumentType,
+  TActionResponse,
+  TDocumentResponse,
+  TSearchableService,
+} from "@/lib/types";
 import { createSearchHistoryInstance } from "./user.actions";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
@@ -70,69 +75,109 @@ const checkEnabledServices = (user: UserType) => {
   return enabledServices;
 };
 
-const generateSearchResult = async (user: UserType, input: string, enabledServices: TSearchableService[]) => {
+const generateSearchResult = async (
+  user: UserType,
+  input: string,
+  enabledServices: TSearchableService[]
+): Promise<TActionResponse<TDocumentResponse[]>> => {
   let discordResult: DocumentType[] = [];
   let githubResult: DocumentType[] = [];
   let gmailResult: DocumentType[] = [];
   let docsResult: DocumentType[] = [];
-  let sheetsResult: DocumentType[] = [];
+  let sheetsResult: (DocumentType & { ranges: string[] })[] = [];
   let slidesResult: DocumentType[] = [];
   let teamsResult: DocumentType[] = [];
-  let notionResult: DocumentType[] = [];
+  let notionResult: (DocumentType & { type: "Page" | "Database" })[] = [];
   let slackResult: DocumentType[] = [];
 
-  await Promise.all(enabledServices.map(async (service) => {
-    switch(service){
-      case "DISCORD":
-        // Implemented soon;
-        break;
-      case "GITHUB":
-        const githubQuery = (await tunedModel_GitHub.invoke(input)).content.toString();
-        githubResult = await searchGitHub(githubQuery, user);
-        break;
-      case "GMAIL":
-        const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
-        gmailResult = await searchGmail(emailQuery, user);
-        break;
-      case "GOOGLE_DOCS":
-        const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
-        docsResult = await searchDocs(docsQuery, user);
-        break;
-      case "GOOGLE_SHEETS":
-        const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
-        sheetsResult = await searchSheets(sheetsQuery, user);
-        break;
-      case "GOOGLE_SLIDES":
-        // Implemented soon;
-        break;
-      case "MICROSOFT_TEAMS":
-        // Implemented soon;
-        break;
-      case "NOTION":
-        notionResult = await searchNotion(input, user);
-        break;
-      default:   
-        const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
-        slackResult = await searchSlack(slackQuery, user);
-    }
-  }));
+  try {
+    await Promise.all(
+      enabledServices.map(async (service) => {
+        switch (service) {
+          case "DISCORD":
+            // Implemented soon;
+            break;
+          case "GITHUB":
+            const githubQuery = (
+              await tunedModel_GitHub.invoke(input)
+            ).content.toString();
+            const githubResponse = await searchGitHub(githubQuery.trim(), user);
+            if (githubResponse.success) githubResult = githubResponse.data;
+            else throw new Error(githubResponse.error);
+            break;
+          case "GMAIL":
+            const emailQuery = (
+              await tunedModel_Gmail.invoke(input)
+            ).content.toString();
+            const gmailResponse = await searchGmail(emailQuery.trim(), user);
+            if (gmailResponse.success) gmailResult = gmailResponse.data;
+            else throw new Error(gmailResponse.error);
+            break;
+          case "GOOGLE_DOCS":
+            const docsQuery = (
+              await tunedModel_Docs.invoke(input)
+            ).content.toString();
+            const docsResponse = await searchDocs(docsQuery.trim(), user);
+            if (docsResponse.success) docsResult = docsResponse.data;
+            else throw new Error(docsResponse.error);
+            break;
+          case "GOOGLE_SHEETS":
+            const sheetsQuery = (
+              await tunedModel_Sheets.invoke(input)
+            ).content.toString();
+            const sheetsResponse = await searchSheets(sheetsQuery.trim(), user);
+            if (sheetsResponse.success) sheetsResult = sheetsResponse.data;
+            else throw new Error(sheetsResponse.error);
+            break;
+          case "GOOGLE_SLIDES":
+            // Implemented soon;
+            break;
+          case "MICROSOFT_TEAMS":
+            // Implemented soon;
+            break;
+          case "NOTION":
+            const notionResponse = await searchNotion(input, user);
+            if (notionResponse.success) notionResult = notionResponse.data;
+            else throw new Error(notionResponse.error);
+            break;
+          default:
+            const slackQuery = (
+              await tunedModel_Slack.invoke(input)
+            ).content.toString();
+            const slackResponse = await searchSlack(slackQuery.trim(), user);
+            if (slackResponse.success) slackResult = slackResponse.data;
+            else throw new Error(slackResponse.error);
+        }
+      })
+    );
 
-  return [
-    ...gmailResult,
-    ...docsResult,
-    ...sheetsResult,
-    ...slackResult,
-    ...notionResult,
-    ...githubResult,
-    ...discordResult,
-    ...slidesResult,
-    ...teamsResult
-  ]
+    return {
+      success: true,
+      data: [
+        ...gmailResult,
+        ...docsResult,
+        ...sheetsResult,
+        ...slackResult,
+        ...notionResult,
+        ...githubResult,
+        ...discordResult,
+        ...slidesResult,
+        ...teamsResult,
+      ],
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 };
 
 export const searchAction = async (
   formData: FormData
-): Promise<TActionResponse<DocumentType[] | StreamableValue<string, any>>> => {
+): Promise<
+  TActionResponse<TDocumentResponse[] | StreamableValue<string, any>>
+> => {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated user. Please login first.");
@@ -153,9 +198,12 @@ export const searchAction = async (
     }
 
     await createSearchHistoryInstance(query, user.searchCount, user.isAISearch);
- 
+
     // Search the query against every platform the user is connected to.
-    const result =  await generateSearchResult(user, query, enabledServices);
+    const response = await generateSearchResult(user, query, enabledServices);
+    if (!response.success) throw new Error(response.error);
+
+    const result = response.data;
 
     // If no AI-Search, then just return the result.
     if (!user.isAISearch) return { success: true, data: result };
@@ -221,8 +269,10 @@ export const searchAction = async (
       temperature: 1,
     });
 
-    const stream = createStreamableValue(streamResult.textStream);
-    return { success: true, data: stream.value };
+    return {
+      success: true,
+      data: createStreamableValue(streamResult.textStream).value,
+    };
   } catch (error: any) {
     console.error("Search error:", error.message);
 
@@ -230,5 +280,24 @@ export const searchAction = async (
       success: false,
       error: error.message,
     };
+  }
+};
+
+export const chatAction = async (
+  data: { role: "user" | "assistant"; content: string }[]
+): Promise<TActionResponse<StreamableValue<string, any>>> => {
+  try {
+    const streamResult = await streamText({
+      model: googleGenAI("gemini-1.5-flash"),
+      messages: data as CoreMessage[],
+      temperature: 1,
+    });
+
+    return {
+      success: true,
+      data: createStreamableValue(streamResult.textStream).value,
+    };
+  } catch (error: any) {
+    return { success: false, error: error.name };
   }
 };

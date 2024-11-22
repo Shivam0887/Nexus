@@ -11,6 +11,7 @@ import { StateType } from "@/lib/types";
 import { UserProvider } from "@/hooks/useUser";
 import { ModalProvider } from "@/hooks/useModalSelection";
 import { Toaster } from "@/components/ui/sonner";
+import { DrawerProvider } from "@/hooks/useDrawerSelection";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -85,10 +86,12 @@ export default async function RootLayout({
         <body className={`${inter.className} bg-neutral-950 relative`}>
           <UserProvider userData={userData}>
             <ModalProvider>
-              <div id="drawer-portal"></div>
-              <Navbar />
-              <Toaster />
-              {children}
+              <DrawerProvider>
+                <div id="drawer-portal"></div>
+                <Navbar />
+                <Toaster />
+                {children}
+              </DrawerProvider>
             </ModalProvider>
           </UserProvider>
         </body>

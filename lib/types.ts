@@ -162,7 +162,12 @@ export type DocumentType = {
   email: string;
   href: string;
   content: string;
-  key: Exclude<CombinedFilterKey, "GOOGLE_CALENDAR">;
+  key: Exclude<CombinedFilterKey, "GOOGLE_CALENDAR" | "GOOGLE_DRIVE">;
+};
+
+export type TDocumentResponse = DocumentType & {
+  ranges?: string[];
+  type?: "Page" | "Database";
 };
 
 export type TSortBy = "" | "date" | "last hour" | "last day" | "last week";
@@ -220,3 +225,38 @@ export type TSearchableService = Exclude<
   CombinedFilterKey,
   "GOOGLE_DRIVE" | "GOOGLE_CALENDAR"
 >;
+
+export type TNotionPageBlockType =
+  | "audio"
+  | "bookmark"
+  | "breadcrumb"
+  | "bulleted_list_item"
+  | "callout"
+  | "child_database"
+  | "child_page"
+  | "code"
+  | "column"
+  | "column_list"
+  | "divider"
+  | "embed"
+  | "equation"
+  | "file"
+  | "heading_1"
+  | "heading_2"
+  | "heading_3"
+  | "image"
+  | "link_preview"
+  | "link_to_page"
+  | "numbered_list_item"
+  | "paragraph"
+  | "pdf"
+  | "quote"
+  | "synced_block"
+  | "table"
+  | "table_of_contents"
+  | "table_row"
+  | "template"
+  | "to_do"
+  | "toggle"
+  | "unsupported"
+  | "video";

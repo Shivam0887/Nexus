@@ -3,7 +3,7 @@
 import { deleteSearchHistory, getSearchHistory } from "@/actions/user.actions";
 import { TMonth, TSearchHistory } from "@/lib/types";
 import { typedEntries } from "@/lib/utils";
-import { format, differenceInDays, getYear, getMonth } from "date-fns";
+import { format, getYear, getMonth, differenceInHours } from "date-fns";
 import { Loader, Trash } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -27,10 +27,10 @@ const months: TMonth[] = [
 
 const groupSearchHistory = (data: TSearchHistory[]) => {
   const searchHistory: TSearchHistoryGroup = {};
-  data.forEach(({ createdAt, searchItem, id }) => {
-    const now = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+  const now = format(new Date(), "yyyy-MM-dd HH:mm:ss");
 
-    const diffInDays = differenceInDays(now, createdAt);
+  data.forEach(({ createdAt, searchItem, id }) => {
+    const diffInDays = Math.trunc(differenceInHours(now, createdAt)/24)|0;
     const diffInYears = getYear(now) - getYear(createdAt);
 
     const item = { id, createdAt, searchItem };

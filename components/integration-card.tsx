@@ -1,20 +1,13 @@
 "use client";
 
-import { z } from "zod";
 import useUser from "@/hooks/useUser";
 import axios from "axios";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FilterKey } from "@/lib/types";
 import { toast } from "sonner";
-import { Platforms } from "@/lib/constants";
 import { useModalSelection } from "@/hooks/useModalSelection";
-
-const searchParamsSchema = z.object({
-  success: z.enum(["true", "false"]),
-  platform: z.enum(Platforms),
-});
 
 const IntegrationCard = ({
   src,
@@ -28,12 +21,11 @@ const IntegrationCard = ({
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previousConnectionStatusRef = useRef(0);
-  const searchParams = useSearchParams();
+
   const router = useRouter();
 
   const { dispatch, user } = useUser();
   const { modalDispatch } = useModalSelection();
-
 
   useEffect(() => {
     const container = containerRef.current;
@@ -45,36 +37,6 @@ const IntegrationCard = ({
       container.style.height = isClicked ? "15rem" : "8rem";
     }
   }, [isClicked]);
-
-  useEffect(() => {
-    const isSucceed = searchParams.get("success");
-    const platform = searchParams.get("platform");
-
-    if (isSucceed && platform) {
-      const { success, data } = searchParamsSchema.safeParse({
-        success: isSucceed,
-        platform,
-      });
-
-      if (success) {
-        if (data.success === "true")
-          toast.success(
-            `${data.platform.replace("_", " ")} connected successfully.`
-          );
-        else
-          toast.error(
-            `Failed to connect with ${data.platform.replace(
-              "_",
-              " "
-            )}. Please try again later.`
-          );
-      } else {
-        toast.error(
-          "Not able to connect to the service, please try again later."
-        );
-      }
-    }
-  }, [searchParams]);
 
   const handleDisconnect = async (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -93,7 +55,10 @@ const IntegrationCard = ({
       toast.error(error.message);
       dispatch({
         type: "CONNECTION",
-        payload: { connectionStatus: previousConnectionStatusRef.current, connectionType: platform },
+        payload: {
+          connectionStatus: previousConnectionStatusRef.current,
+          connectionType: platform,
+        },
       });
     }
   };
@@ -157,10 +122,18 @@ const IntegrationCard = ({
           ) : (
             <button
               type="button"
-              onClick={(e) => handleConnect(e, alt)}
+              onClick={(e) => {
+                if (!(alt === "DISCORD" || alt === "MICROSOFT_TEAMS")) {
+                  handleConnect(e, alt);
+                }
+              }}
               className="w-max text-xs border border-btn-primary py-2 px-4 rounded-3xl text-btn-primary"
             >
-              {user[alt].connectionStatus === 2 ? "Reconnect" : "Connect"}
+              {alt === "MICROSOFT_TEAMS" || alt === "DISCORD"
+                ? "Coming soon"
+                : user[alt].connectionStatus === 2
+                ? "Reconnect"
+                : "Connect"}
             </button>
           )}
         </div>

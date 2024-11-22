@@ -25,13 +25,11 @@ export async function GET(req: NextRequest) {
     const clientSecret = process.env.GMAIL_CLIENT_SECRET!;
     const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/gmail`;
 
-    const authUser = new URL(
-      req.headers.get("x-clerk-clerk-url")!
-    ).searchParams.get("authuser");
+    const authUser = new URL(req.headers.get("x-clerk-clerk-url")!).searchParams.get("authuser");
 
     const tokenUrl = "https://oauth2.googleapis.com/token";
 
-    const response = await axios.post(
+    const response = await axios.post<Credentials>(
       tokenUrl,
       {},
       {
@@ -49,8 +47,14 @@ export async function GET(req: NextRequest) {
     );
 
     if (response.data) {
-      const tokens = response.data as Credentials;
+      const tokens = response.data;
       if (tokens.access_token && tokens.refresh_token && tokens.expires_in) {
+        const { data } = await axios.get<{ email: string }>('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+          },
+        });
+
         await ConnectToDB();
         await User.findOneAndUpdate(
           { userId },
@@ -63,6 +67,7 @@ export async function GET(req: NextRequest) {
               "GMAIL.connectionStatus": 1,
               "GMAIL.searchStatus": false,
               "GMAIL.searchResults": 0,
+              "GMAIL.email": data.email
             },
           }
         );

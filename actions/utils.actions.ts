@@ -4,6 +4,7 @@ import { JSDOM } from "jsdom";
 import {
   ConnectToDB,
   generateGitHubJWT,
+  hasRichTextObject,
   isGoogleService,
   redactText,
   refreshGitHubAccessToken,
@@ -16,6 +17,7 @@ import {
   FilterKey,
   OAuth2Client,
   TActionResponse,
+  TSearchableService,
 } from "@/lib/types";
 import { CharacterTextSplitter } from "langchain/text_splitter";
 import { updateSearchResultCount } from "./user.actions";
@@ -25,8 +27,14 @@ import {
   isFullPage,
   isFullPageOrDatabase,
   Client as NotionClient,
+  collectPaginatedAPI,
+  isFullBlock,
+  isFullUser 
 } from "@notionhq/client";
 import { LogoMap } from "@/lib/constants";
+import { BlockObjectResponse, PageObjectResponse, PartialBlockObjectResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
+import { format } from "date-fns";
+import { auth } from "@clerk/nextjs/server";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
 
@@ -107,7 +115,11 @@ export const checkAndRefreshToken = async (
     };
   } else {
     try {
-      const { accessToken, expiresAt, refreshToken: refresh_token } = await refreshAccessToken(user, platform, oauth2Client, refreshToken);
+      const {
+        accessToken,
+        expiresAt,
+        refreshToken: refresh_token,
+      } = await refreshAccessToken(user, platform, oauth2Client, refreshToken);
       const updateQuery = {
         [`${platform}.accessToken`]: accessToken,
         [`${platform}.expiresAt`]: expiresAt,
@@ -131,7 +143,20 @@ export const checkAndRefreshToken = async (
         data: "",
       };
     } catch (error: any) {
-      const errorMessage = error?.response && error?.response?.data?.error === "invalid_grant" ? `RE_AUTHENTICATE-${platform}` : error.message;
+      const errorMessage =
+        error?.response && error?.response?.data?.error === "invalid_grant"
+          ? `RE_AUTHENTICATE-${platform}`
+          : error.message;
+      if (errorMessage === `RE_AUTHENTICATE-${platform}`) {
+        await User.findOneAndUpdate(
+          { userId: user.userId },
+          {
+            $set: {
+              [`${platform}.connectionStatus`]: 2,
+            },
+          }
+        );
+      }
       return {
         success: false,
         error: errorMessage,
@@ -146,7 +171,8 @@ export const getPlatformClient = async (
 ) => {
   const clientId = process.env[`${platform}_CLIENT_ID`]!;
   const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
-  const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
+  const redirectUri = `${process.env
+    .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
 
   const dbUser = (await User.findOne<UserType>({ userId: user.userId }))!;
 
@@ -168,76 +194,61 @@ export const getPlatformClient = async (
   }
 };
 
-// Helper function to process email content
+// Helper function to process Gmail content
 const processEmailContent = async (
-  parts: gmail_v1.Schema$MessagePart[] | undefined
-): Promise<string> => {
-  if (!parts) return "";
-
-  const contentPromises = parts.map(async ({ body, mimeType }) => {
-    if (!body?.data) return "";
-
-    let content = Buffer.from(body.data, "base64").toString("utf8");
-
-    if (mimeType === "text/html") {
-      const htmlContent = await textSplitter.splitText(content);
-      content = htmlContent
-        .map((html) => {
-          const dom = new JSDOM(html.concat("</html>"));
-          return dom.window.document.querySelector("body")?.textContent ?? "";
-        })
-        .join(" ");
-    }
-
-    return content;
-  });
-
-  return (await Promise.all(contentPromises)).join(" ");
-};
-
-// Helper function to process Google Docs content
-const processDocsContent = (
-  content: docs_v1.Schema$StructuralElement
-): string => {
-  let result = "";
-  if (content.paragraph?.elements) {
-    result = content.paragraph.elements.reduce((curContent, { textRun }) => {
-      return (curContent += textRun?.content ?? "");
-    }, result);
-  } else if (content.table?.tableRows) {
-    const tableRows = content.table.tableRows;
-
-    tableRows.forEach(({ tableCells }) => {
-      tableCells?.forEach(({ content }) => {
-        const structuralElement = content ?? [];
-        result = structuralElement.reduce((curContent, item) => {
-          return (curContent += processDocsContent(item));
-        }, result);
-      });
-    });
-  }
-
-  return result;
-};
-
-export const searchGmail = async (
-  searchQuery: string,
-  user: UserType
-): Promise<DocumentType[]> => {
-  if (searchQuery.trim().length === 0) return [];
-
-  const oauth2Client = (await getPlatformClient(user, "GMAIL")) as OAuth2Client;
-  const response = await checkAndRefreshToken(user, "GMAIL", oauth2Client);
-
-  const result: DocumentType[] = [];
-  if (!response.success) return result;
-
+  user: UserType,
+  oauth2Client: OAuth2Client,
+  id: string
+) => {
   const gmail = google.gmail({
     version: "v1",
     auth: oauth2Client,
   });
 
-  let pageToken: string | undefined;
+  const message = await gmail.users.messages.get({
+    userId: user.GMAIL.email,
+    id,
+    fields: "payload(headers,parts(mimeType,body)),labelIds",
+  });
+
+  const { payload, labelIds } = message.data;
+  const headers = payload?.headers ?? [];
+
+  // Determine the label (inbox or first available label)
+  const label = labelIds?.includes("INBOX")
+    ? "inbox"
+    : labelIds?.[0]?.toLowerCase() ?? "inbox";
+
+  // Construct email URL
+  const href = `https://mail.google.com/mail/u/${user.GMAIL!.authUser}/#${label}/${id}`;
+
+  // Process email content
+  let content = "";
+  if (user.isAISearch) {
+    const contentPromises = (payload!.parts ?? []).map(
+      async ({ body, mimeType }) => {
+        if (!body?.data) return "";
+
+        let content = Buffer.from(body.data, "base64").toString("utf8");
+
+        if (mimeType === "text/html") {
+          const htmlContent = await textSplitter.splitText(content);
+          content = htmlContent
+            .map((html) => {
+              const dom = new JSDOM(html.concat("</html>"));
+              return (
+                dom.window.document.querySelector("body")?.textContent ?? ""
+              );
+            })
+            .join(" ");
+        }
+
+        return content;
+      }
+    );
+
+    content = (await Promise.all(contentPromises)).join(" ");
+  }
 
   // Helper function to extract header value
   const getHeader = (
@@ -247,6 +258,274 @@ export const searchGmail = async (
     headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ??
     "";
 
+  return {
+    content,
+    href,
+    date: getHeader(headers, "Date"),
+    author: getHeader(headers, "From"),
+    title: getHeader(headers, "Subject"),
+  };
+};
+
+// Helper function to process Google Docs content
+const processDocsContent = async (user: UserType, id: string, oauth2Client: OAuth2Client) => {
+
+  const accumulateDocsContent = (content: docs_v1.Schema$StructuralElement) => {
+    let result = "";
+    if (content.paragraph?.elements) {
+      result = content.paragraph.elements.reduce((curContent, { textRun }) => {
+        return (curContent += textRun?.content ?? "");
+      }, result);
+
+    } else if (content.table?.tableRows) {
+      const tableRows = content.table.tableRows;
+
+      tableRows.forEach(({ tableCells }) => {
+        tableCells?.forEach(({ content }) => {
+          const structuralElement = content ?? [];
+          result = structuralElement.reduce((curContent, item) => {
+            return (curContent += accumulateDocsContent(item));
+          }, result);
+        });
+      });
+    }
+
+    return result;
+  }
+
+  const docs = google.docs({
+    version: "v1",
+    auth: oauth2Client,
+  });
+
+  const document = await docs.documents.get({
+    documentId: id!,
+    fields: "title,tabs(documentTab(body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))))",
+  });
+
+  let content = "";
+  if (document.data.tabs && user.isAISearch) {
+    const structuralElement = document.data.tabs[0].documentTab?.body?.content ?? [];
+    content = structuralElement.reduce((curContent, item) => {
+      curContent += accumulateDocsContent(item);
+      return curContent;
+    }, "");
+  }
+
+  return { 
+    content, 
+    title: document.data.title ?? "" 
+  };
+};
+
+// Helper function to process Google Sheets content
+const processSheetsContent = async (
+  user: UserType,
+  id: string,
+  oauth2Client: OAuth2Client,
+  ranges: string[]
+) => {
+  let content = "";
+  const sheets = google.sheets({
+    version: "v4",
+    auth: oauth2Client,
+  });
+
+  const sheet = await sheets.spreadsheets.get({
+    spreadsheetId: id!,
+    ranges,
+    fields:
+      "properties(title),sheets(properties(sheetId,sheetType,hidden),data(rowData(values(formattedValue)))),spreadsheetUrl",
+  });
+
+  const { data, properties } = sheet.data.sheets![0];
+
+  let title = sheet.data.properties!.title!;
+  let href =
+    sheet.data.spreadsheetUrl! +
+    `?gid=${properties!.sheetId!}#gid=${properties!.sheetId!}`;
+
+  if (
+    properties!.sheetType === "GRID" &&
+    !properties!.hidden &&
+    user.isAISearch
+  ) {
+    data?.forEach(({ rowData }) => {
+      rowData?.forEach(({ values }) => {
+        values?.forEach(({ formattedValue }) => {
+          content += formattedValue! + " ";
+        });
+        content += "\n";
+      });
+    });
+  }
+
+  return {
+    content,
+    title,
+    href,
+  };
+};
+
+const processNotionPageContent = async (notionClient: NotionClient, id: string) => {
+  const getRichText = (richText: RichTextItemResponse[]) => 
+    richText.reduce((text, { plain_text }) => text + plain_text, "");
+
+  const processBlock = async (block: BlockObjectResponse | PartialBlockObjectResponse): Promise<string> => {
+    let content = "";
+
+    if (isFullBlock(block)) {
+      if(hasRichTextObject(block.type) && block.parent.type === "page_id"){
+        const richTextContent = getRichText((block as any)[block.type].rich_text);
+        content += `${block.type}: ${richTextContent}\n`;
+      }
+      
+      // Check if the block has children and process them recursively
+      if (block.has_children) {
+        const childBlocks = await collectPaginatedAPI(notionClient.blocks.children.list, {
+          block_id: block.id
+        });
+        for (const childBlock of childBlocks) {
+          content += await processBlock(childBlock); // Recursively process each child block
+        }
+      }
+    }
+
+    return content; // Return the accumulated content for this block
+  };
+
+  const blocks = await collectPaginatedAPI(notionClient.blocks.children.list, {
+    block_id: id
+  });
+
+  return (await Promise.all(blocks.map(processBlock))).join("");
+}
+
+const processNotionDatabaseContent = async (notionClient: NotionClient, id: string) => {
+  const databaseEntries = await collectPaginatedAPI(notionClient.databases.query, {
+    database_id: id
+  });
+
+  let content = "";
+
+  // Function to extract content from a database entry
+  const extractEntryContent = (entry: PageObjectResponse): string => {
+    return Object.entries(entry.properties).map(([propertyName, property]) => {
+      let value = '';
+
+      switch (property.type) {
+        case 'title':
+          value = property.title.map((text) => text.plain_text).join(' ');
+          break;
+        case 'rich_text':
+          value = property.rich_text.map((text) => text.plain_text).join(' ');
+          break;
+        case 'number':
+          value = property.number?.toString() ?? 'N/A';
+          break;
+        case 'select':
+          value = property.select?.name ?? 'N/A';
+          break;
+        case 'multi_select':
+          value = property.multi_select.map((item: any) => item.name).join(', ') || 'N/A';
+          break;
+        case 'date':
+          value = property.date?.start ? format(property.date.start, "yyyy-dd-MM HH:mm:ss") : "N/A";
+          break;
+        case 'checkbox':
+          value = property.checkbox ? '✔️' : '❌';
+          break;
+        case 'url':
+          value = property.url || 'N/A';
+          break;
+        case 'email':
+          value = property.email ?? 'N/A';
+          break;
+        case 'phone_number':
+          value = property.phone_number ?? 'N/A';
+          break;
+        case 'formula':
+          value = property.formula.type === "boolean" 
+          ? property.formula.boolean?.valueOf.toString() ?? "N/A" 
+          : property.formula.type === "date"
+          ? property.formula.date?.start?.toString() ?? "N/A" 
+          : property.formula.type === "number"
+          ? property.formula.number?.toString() ?? "N/A"
+          : property.formula.string ?? "N/A";
+          
+          break;
+        case 'relation':
+          value = property.relation.map((relation) => relation.id).join(', ') || 'N/A';
+          break;
+        case 'created_time':
+          value = format(property.created_time, "yyyy-dd-MM HH:mm:ss");
+          break;
+        case 'last_edited_time':
+          value = format(property.last_edited_time, "yyyy-dd-MM HH:mm:ss");
+          break;
+        case 'people':
+          value = property.people.map((person) => {
+            return isFullUser(person) 
+            ? person.name ?? person.object 
+            : person.object;
+          }).join(", ")
+           
+          break;
+        case 'files':
+          value = property.files.map((file) => file.name).join(', ') || 'N/A';
+          break;
+        case 'status':
+          value = property.status?.name ?? 'N/A';
+          break;
+        case "created_by":
+          value = isFullUser(property.created_by) 
+                  ? property.created_by.name ?? property.created_by.object 
+                  : property.created_by.object;
+          break;
+        case "last_edited_by":
+          value = isFullUser(property.last_edited_by) 
+                  ? property.last_edited_by.name ?? property.last_edited_by.object 
+                  : property.last_edited_by.object;
+          break;
+        // Add more cases as needed for other property types
+        default:
+          return `${propertyName}: Unsupported type`;
+      }
+
+      return `${propertyName}: ${value}`;
+    }).join('\n'); // Join all property values with a newline
+  };
+
+  // Process each entry and accumulate the content
+  databaseEntries.forEach((entry) => {
+    if (entry.object === "page" && isFullPage(entry)) {
+      content += extractEntryContent(entry) + '\n\n'; // Add a newline after each entry
+    }
+  });
+
+  return content; // Return the accumulated content for the database
+}
+
+export const searchGmail = async (
+  searchQuery: string,
+  user: UserType
+): Promise<TActionResponse<DocumentType[]>> => {
+  const oauth2Client = (await getPlatformClient(user, "GMAIL")) as OAuth2Client;
+  const response = await checkAndRefreshToken(user, "GMAIL", oauth2Client);
+
+  const result: DocumentType[] = [];
+  if (!response.success)
+    return {
+      success: false,
+      error: response.error,
+    };
+
+  const gmail = google.gmail({
+    version: "v1",
+    auth: oauth2Client,
+  });
+
+  let pageToken: string | undefined;
   do {
     // Fetch emails
     const { data } = await gmail.users.messages.list({
@@ -261,33 +540,15 @@ export const searchGmail = async (
     // Process each email
     const emails = await Promise.all(
       data.messages.map(async ({ id }): Promise<DocumentType> => {
-        const message = await gmail.users.messages.get({
-          userId: user.email,
-          id: id!,
-        });
-
-        const { payload, labelIds } = message.data;
-        const headers = payload?.headers ?? [];
-
-        // Determine the label (inbox or first available label)
-        const label = labelIds?.includes("INBOX") ? "inbox" : labelIds?.[0]?.toLowerCase() ?? "inbox";
-
-        // Construct email URL
-        const href = `https://mail.google.com/mail/u/${user.GMAIL!.authUser}/#${label}/${id}`;
-
-        // Process email content
-        let content = "";
-        if (user.isAISearch) {
-          content = redactText(await processEmailContent(payload?.parts));
-        }
+        const { author, content, date, href, title } = await processEmailContent(user, oauth2Client, id!);
 
         return {
           id: id!,
-          date: getHeader(headers, "Date"),
-          author: getHeader(headers, "From"),
-          title: getHeader(headers, "Subject"),
+          date,
+          author,
+          title,
           href,
-          email: user.email,
+          email: user.GMAIL.email,
           logo: LogoMap["GMAIL"],
           content,
           key: "GMAIL",
@@ -303,30 +564,37 @@ export const searchGmail = async (
   } while (pageToken && result.length < 50); // Limit total results to 50
 
   await updateSearchResultCount("GMAIL", result.length);
-  return result;
+  return {
+    success: true,
+    data: result,
+  };
 };
 
-export const searchDocs = async (searchQuery: string, user: UserType) => {
+export const searchDocs = async (
+  searchQuery: string,
+  user: UserType
+): Promise<TActionResponse<DocumentType[]>> => {
   const oauth2Client = (await getPlatformClient(
     user,
     "GOOGLE_DRIVE"
   )) as OAuth2Client;
+
   const response = await checkAndRefreshToken(
     user,
     "GOOGLE_DRIVE",
     oauth2Client
   );
-  if (!response.success) return [];
+
+  if (!response.success)
+    return {
+      success: false,
+      error: response.error,
+    };
 
   // Google Drive client that fetches the list of documents matching the search query
   const drive = google.drive({
     auth: oauth2Client,
     version: "v3",
-  });
-
-  const docs = google.docs({
-    version: "v1",
-    auth: oauth2Client,
   });
 
   const docsIds = await drive.files.list({
@@ -337,30 +605,15 @@ export const searchDocs = async (searchQuery: string, user: UserType) => {
 
   const resultWithPromise = docsIds.data.files?.map(
     async ({ id, createdTime, owners }): Promise<DocumentType> => {
-      const document = await docs.documents.get({
-        documentId: id!,
-        fields:
-          "title,tabs(documentTab(body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))))",
-      });
-
-      let content = "";
-      if (document.data.tabs && user.isAISearch) {
-        const structuralElement =
-          document.data.tabs[0].documentTab?.body?.content ?? [];
-
-        content = structuralElement.reduce((curContent, item) => {
-          curContent += processDocsContent(item);
-          return curContent;
-        }, "");
-      }
-
+      const { content, title } = await processDocsContent(user, id!, oauth2Client);
+      
       return {
         id: id!,
         author: owners![0].emailAddress!,
         content: redactText(content),
         date: createdTime!,
         email: user.email,
-        title: document.data.title!,
+        title,
         logo: LogoMap["GOOGLE_DOCS"],
         href: `https://docs.google.com/document/d/${id!}`,
         key: "GOOGLE_DOCS",
@@ -372,17 +625,31 @@ export const searchDocs = async (searchQuery: string, user: UserType) => {
 
   await updateSearchResultCount("GOOGLE_DOCS", result.length);
 
-  return result;
+  return {
+    success: true,
+    data: result,
+  };
 };
 
 export const searchSheets = async (
   searchQuery: string,
   user: UserType
-): Promise<DocumentType[]> => {
-  const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
-  const {success} = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
+): Promise<TActionResponse<(DocumentType & { ranges: string[] })[]>> => {
+  const oauth2Client = (await getPlatformClient(
+    user,
+    "GOOGLE_DRIVE"
+  )) as OAuth2Client;
+  const response = await checkAndRefreshToken(
+    user,
+    "GOOGLE_DRIVE",
+    oauth2Client
+  );
 
-  if (!success) return [];
+  if (!response.success)
+    return {
+      success: false,
+      error: response.error,
+    };
 
   const [q, ...ranges] = searchQuery.split("_");
 
@@ -391,49 +658,26 @@ export const searchSheets = async (
     auth: oauth2Client,
   });
 
-  const sheets = google.sheets({
-    version: "v4",
-    auth: oauth2Client,
-  });
-
-  const response = await drive.files.list({
+  const fileList = await drive.files.list({
     q,
     fields: "files(id,createdTime,owners(emailAddress))",
     corpus: "user",
   });
 
-  const files = response.data.files || [];
+  const files = fileList.data.files || [];
 
   const resultWithPromise = files.map(
-    async ({ id, createdTime, owners }): Promise<DocumentType> => {
-      const sheet = await sheets.spreadsheets.get({
-        spreadsheetId: id!,
-        ranges,
-        fields:
-          "properties(title),sheets(properties(sheetId,sheetType,hidden),data(rowData(values(formattedValue)))),spreadsheetUrl",
-      });
-
-      const { data, properties } = sheet.data.sheets![0];
-
-      let content = "";
-      let title = sheet.data.properties!.title!;
-      let href =
-        sheet.data.spreadsheetUrl! +
-        `?gid=${properties!.sheetId!}#gid=${properties!.sheetId!}`;
-
-      if (
-        properties!.sheetType === "GRID" &&
-        !properties!.hidden &&
-        user.isAISearch
-      ) {
-        data?.forEach(({ rowData }) => {
-          rowData?.forEach(({ values }) => {
-            values?.forEach(({ formattedValue }) => {
-              content += formattedValue!;
-            });
-          });
-        });
-      }
+    async ({
+      id,
+      createdTime,
+      owners,
+    }): Promise<DocumentType & { ranges: string[] }> => {
+      const { content, href, title } = await processSheetsContent(
+        user,
+        id!,
+        oauth2Client,
+        ranges
+      );
 
       return {
         date: createdTime!,
@@ -445,6 +689,7 @@ export const searchSheets = async (
         key: "GOOGLE_SHEETS",
         logo: LogoMap["GOOGLE_SHEETS"],
         title,
+        ranges,
       };
     }
   );
@@ -453,24 +698,35 @@ export const searchSheets = async (
 
   await updateSearchResultCount("GOOGLE_SHEETS", result.length);
 
-  return result;
+  return {
+    success: true,
+    data: result,
+  };
 };
 
 export const searchSlack = async (
   searchQuery: string,
   user: UserType
-): Promise<DocumentType[]> => {
-  const { success } =  await checkAndRefreshToken(user, 'SLACK');
-  if(!success) return [];
+): Promise<TActionResponse<DocumentType[]>> => {
+  const response = await checkAndRefreshToken(user, "SLACK");
+  if (!response.success)
+    return {
+      success: false,
+      error: response.error,
+    };
 
   const slackClient = (await getPlatformClient(user, "SLACK")) as WebClient;
-  const response = await slackClient.search.messages({
+  const slackMsg = await slackClient.search.messages({
     query: searchQuery,
   });
 
-  if (!response.ok) return [];
+  if (!slackMsg.ok)
+    return {
+      success: false,
+      error: "Slack error, please try again later.",
+    };
 
-  const matches = response.messages?.matches ?? [];
+  const matches = slackMsg.messages?.matches ?? [];
 
   const resultWithPromise = matches.map(
     async ({
@@ -483,9 +739,7 @@ export const searchSlack = async (
       ts,
       user: userId,
     }): Promise<DocumentType> => {
-      const date = new Date(
-        parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))
-      ).toISOString();
+      const date = new Date(parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))).toISOString();
 
       const content = redactText(files ? files[0].title! : text!);
 
@@ -512,10 +766,16 @@ export const searchSlack = async (
   const result = await Promise.all(resultWithPromise);
 
   await updateSearchResultCount("SLACK", result.length);
-  return result;
+  return {
+    success: true,
+    data: result,
+  };
 };
 
-export const searchNotion = async (searchQuery: string, user: UserType) => {
+export const searchNotion = async (
+  searchQuery: string,
+  user: UserType
+): Promise<TActionResponse<(DocumentType & { type: "Page" | "Database" })[]>> => {
   const notionClient = (await getPlatformClient(
     user,
     "NOTION"
@@ -525,8 +785,8 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
   });
 
   const resultWithPromise = response.results.map(
-    async (item): Promise<DocumentType> => {
-      const document: DocumentType = {
+    async (item): Promise<DocumentType & { type: "Page" | "Database" }> => {
+      const document: DocumentType & { type: "Page" | "Database" } = {
         author: "",
         content: "",
         date: "",
@@ -536,6 +796,7 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
         key: "NOTION",
         logo: LogoMap["NOTION"],
         title: "",
+        type: "Page"
       };
 
       if (isFullPageOrDatabase(item)) {
@@ -545,18 +806,20 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
         });
 
         document.author = notionUser.name ?? "";
-        document.email =
-          notionUser.type === "person" ? notionUser.person.email! : "";
+        document.email = notionUser.type === "person" ? notionUser.person.email! : "";
         document.href = item.url;
         document.id = item.id;
         document.date = item.created_time;
-
+        
         if (isFullPage(item)) {
+          document.content = user.isAISearch ? redactText(await processNotionPageContent(notionClient, item.id)) : "";
           document.title =
             item.properties.title.type === "title"
               ? item.properties.title.title[0].plain_text
               : "";
         } else {
+          document.type = "Database";
+          document.content = user.isAISearch ? redactText(await processNotionDatabaseContent(notionClient, item.id)) : "";
           document.title = item.title[0].plain_text;
         }
       }
@@ -569,37 +832,53 @@ export const searchNotion = async (searchQuery: string, user: UserType) => {
 
   await updateSearchResultCount("NOTION", result.length);
 
-  return result;
+  return {
+    success: true,
+    data: result,
+  };
 };
 
-export const searchGitHub = async (searchQuery: string, user: UserType) => {
-  const { success } =  await checkAndRefreshToken(user, 'GITHUB');
-  if(!success) return [];
-  
+export const searchGitHub = async (
+  searchQuery: string,
+  user: UserType
+): Promise<TActionResponse<DocumentType[]>> => {
+  const response = await checkAndRefreshToken(user, "GITHUB");
+  if (!response.success)
+    return {
+      success: false,
+      error: response.error,
+    };
+
   const index = searchQuery.search(/type=/);
   const startIndex = index + 5;
   const str = searchQuery.slice(startIndex);
   const endIndex = str.search(/\s/);
-  const searchSpace = (str.slice(0, endIndex === -1 ? undefined : endIndex)) as ("Repositories" | "Commits" | "PullRequests" | "Issues");
+  const searchSpace = str.slice(0, endIndex === -1 ? undefined : endIndex) as
+    | "Repositories"
+    | "Commits"
+    | "PullRequests"
+    | "Issues";
 
-  const gitHub = (await getPlatformClient(user, 'GITHUB')) as Octokit;
+  const gitHub = (await getPlatformClient(user, "GITHUB")) as Octokit;
 
   const result: DocumentType[] = [];
   const searchParams = {
-    q: searchQuery.replace(`type=${searchSpace}`, ''),
+    q: searchQuery.replace(`type=${searchSpace}`, ""),
     headers: {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
     },
-  }
+  };
 
-  switch(searchSpace){
+  switch (searchSpace) {
     case "Commits":
-      const { data: commitData } = await gitHub.rest.search.commits(searchParams as RestEndpointMethodTypes["search"]["commits"]["parameters"]);      
-      commitData.items.forEach(({ url, commit, node_id }) => {
-        const { author, message } = commit;
+      const { data: commitData } = await gitHub.rest.search.commits(
+        searchParams as RestEndpointMethodTypes["search"]["commits"]["parameters"]
+      );
+      commitData.items.forEach(({ url, commit, node_id,  }) => {
+        const { author, message,  } = commit;
         const { date, email, name } = author;
-    
+
         result.push({
           author: name,
           content: message,
@@ -607,31 +886,37 @@ export const searchGitHub = async (searchQuery: string, user: UserType) => {
           email,
           href: url,
           id: node_id,
-          key: 'GITHUB',
+          key: "GITHUB",
           logo: LogoMap["GITHUB"],
-          title: message
+          title: message,
         });
       });
       break;
     case "Repositories":
-      const { data: repoData } = await gitHub.rest.search.repos(searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]);
-      repoData.items.forEach(({ created_at, description, full_name, id, html_url }) => {
-        result.push({
-          author: full_name,
-          content: description ?? "",
-          date: created_at,
-          email: "",
-          href: html_url,
-          id: id.toString(),
-          key: 'GITHUB',
-          logo: LogoMap["GITHUB"],
-          title: description ?? ""
-        });
-      });
+      const { data: repoData } = await gitHub.rest.search.repos(
+        searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]
+      );
+      repoData.items.forEach(
+        ({ created_at, description, full_name, id, html_url }) => {
+          result.push({
+            author: full_name,
+            content: description ?? "",
+            date: created_at,
+            email: "",
+            href: html_url,
+            id: id.toString(),
+            key: "GITHUB",
+            logo: LogoMap["GITHUB"],
+            title: description ?? "",
+          });
+        }
+      );
       break;
     default:
-      const { data } = await gitHub.rest.search.issuesAndPullRequests(searchParams as RestEndpointMethodTypes["search"]["issuesAndPullRequests"]["parameters"])
-      
+      const { data } = await gitHub.rest.search.issuesAndPullRequests(
+        searchParams as RestEndpointMethodTypes["search"]["issuesAndPullRequests"]["parameters"]
+      );
+
       data.items.forEach(({ html_url, id, title, user, created_at, body }) => {
         result.push({
           author: user?.name ?? "",
@@ -640,13 +925,116 @@ export const searchGitHub = async (searchQuery: string, user: UserType) => {
           email: user?.email ?? "",
           href: html_url,
           id: id.toString(),
-          key: 'GITHUB',
+          key: "GITHUB",
           logo: LogoMap["GITHUB"],
-          title
+          title,
         });
-      })
+      });
   }
 
-  await updateSearchResultCount('GITHUB', result.length);
-  return result;
+  await updateSearchResultCount("GITHUB", result.length);
+  return {
+    success: true,
+    data: result,
+  };
 };
+
+/**
+ * @description This method process the content based on the platform/service.
+ * @param platform Searchable platform/service except for Google Calendar, GitHub, and Google Drive.
+ * @param id Id of the search item.
+ * @param ranges Required, if the platform/service is Google Sheets, otherwise optional.
+ * @param type Required, if the plaform/service is Notion, otherwise optional.
+ */
+export const getProcessedContent = async (
+  platform: Exclude<TSearchableService, "GITHUB" | "SLACK">, 
+  id: string, 
+  type?: "Page" | "Database", 
+  ranges?: string[]
+): Promise<TActionResponse> => {
+  try {
+    const { userId } = await auth();
+    if(!userId) return {
+      success: false,
+      error: "Unauthorized"
+    }
+
+    const user = await User.findOne<UserType>({ userId });
+    if(!user) return {
+      success: false,
+      error: "User not found."
+    }
+
+    let content = "";
+    switch(platform){
+      case "DISCORD":
+        // Implemented soon
+        break;
+      case "GMAIL":
+        const gmailOAuth2Client = (await getPlatformClient(user, platform)) as OAuth2Client;
+        const gmailRefreshTokenResp = await checkAndRefreshToken(user, platform, gmailOAuth2Client);
+
+        if (!gmailRefreshTokenResp.success)
+          return {
+            success: false,
+            error: gmailRefreshTokenResp.error,
+          };
+
+        const { content: emailContent } = await processEmailContent(user, gmailOAuth2Client, id);
+        content = emailContent;
+        break;
+      case "MICROSOFT_TEAMS":
+        // Implemented soon
+        break;
+      case "NOTION":
+        if(!type) return {
+          success: false,
+          error: "'type' paramater is missing when passing 'NOTION' in the 'platform' paramater"
+        }
+
+        const notionClient = (await getPlatformClient(user, platform)) as NotionClient;
+        content = (type === "Database") 
+                  ? await processNotionDatabaseContent(notionClient, id) 
+                  : await processNotionPageContent(notionClient, id);
+        break;
+      default:
+        //Handling in the default case because Google Drive manages all of them, Google Docs, Google Sheets, and Google Slides.
+        const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
+        const refreshTokenResp = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
+      
+        if (!refreshTokenResp.success)
+          return {
+            success: false,
+            error: refreshTokenResp.error,
+          };
+        
+        if(platform === "GOOGLE_DOCS"){
+          const { content: docsContent } = await processDocsContent(user, id, oauth2Client);
+          content = docsContent;
+        }
+        else if(platform === "GOOGLE_SHEETS"){
+          if(!ranges)
+            return {
+              success: false,
+              error: "'ranges' paramater is missing when passing 'GOOGLE_SHEETS' in the 'platform' paramater"
+            }
+          
+          const { content: sheetsContent } = await processSheetsContent(user, id, oauth2Client, ranges);
+          content = sheetsContent;
+        }
+        else {
+          // Implemented soon
+        }
+    }
+
+    return {
+      success: true,
+      data: content
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+}

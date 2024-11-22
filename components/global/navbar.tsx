@@ -7,16 +7,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-import SidebarNav from "./sidebar-nav";
 import { useRef } from "react";
-import { Sparkles } from "lucide-react";
+import { Gem, Sparkles } from "lucide-react";
 
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import Switch from "@/components/ui/switch";
 import HamburgurIcon from "@/components/ui/hamburger-icon";
 
@@ -24,10 +17,12 @@ import useUser from "@/hooks/useUser";
 import { AISearchPreference } from "@/actions/user.actions";
 import { toast } from "sonner";
 import SearchService from "../search-service";
+import { useDrawerSelection } from "@/hooks/useDrawerSelection";
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, dispatch: userDispatch } = useUser();
+  const { drawerDispatch } = useDrawerSelection();
   const { isAISearch } = user;
 
   const prevAISearchPreference = useRef(false);
@@ -75,7 +70,7 @@ export default function Navbar() {
           </span>
           <span className="sm:inline hidden sm:text-2xl text-xl">Nexus</span>
         </Link>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-3 sm:gap-4 items-center">
           {pathname === "/" ? (
             <ul className="hidden relative lg:text-lg md:text-base text-sm md:flex justify-center sm:gap-4">
               <li
@@ -112,17 +107,16 @@ export default function Navbar() {
               </li>
             </ul>
           ) : (
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-3 sm:gap-4 items-center">
               {/* Turn on the service against you want to perform search operation. */}
 
               <SearchService />
-
               <div ref={searchRef} className="relative w-max">
                 {/* AI search button */}
                 <Switch
                   label={
                     <div className="flex gap-2">
-                      <Sparkles className="size-4 fill-btn-primary stroke-btn-primary" />
+                      <Sparkles className="hidden sm:block size-4 fill-btn-primary stroke-btn-primary" />
                       <p className="text-xs font-medium tracking-wide">
                         AI Search
                       </p>
@@ -136,8 +130,11 @@ export default function Navbar() {
               {/* Upgrade button */}
               <Link
                 href="/"
-                className="font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
+                className="hidden sm:flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
               >
+                <span>
+                  <Gem className="size-4 stroke-blue-600" />
+                </span>
                 Upgrade
               </Link>
             </div>
@@ -164,22 +161,18 @@ export default function Navbar() {
             <SignedIn>
               <UserButton appearance={{ baseTheme: dark }} />
               {/* Navigation for smaller devices */}
-              <Drawer drawerDirection="right">
-                <DrawerTrigger>
-                  <HamburgurIcon />
-                </DrawerTrigger>
-                <DrawerContent
-                  direction="right"
-                  containerClassName="h-full mt-0 w-full"
-                  drawerClassName="!w-[60vw]"
-                  handleStyles={{ display: "none" }}
-                >
-                  <SidebarNav className="relative w-full" direction="right" />
-                  <DrawerClose className="z-[9999] right-5 top-5 absolute">
-                    <HamburgurIcon />
-                  </DrawerClose>
-                </DrawerContent>
-              </Drawer>
+              <button
+                type="button"
+                onClick={() => {
+                  drawerDispatch({
+                    type: "onOpen",
+                    payload: "SidebarMenu",
+                    data: { type: "SidebarMenu" },
+                  });
+                }}
+              >
+                <HamburgurIcon />
+              </button>
             </SignedIn>
           </div>
         </div>

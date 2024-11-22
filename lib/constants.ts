@@ -422,7 +422,7 @@ export const LogoMap: {
 };
 
 export const Scopes: Record<FilterKey, string[]> = {
-  GMAIL: ["https://www.googleapis.com/auth/gmail.readonly"],
+  GMAIL: ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/userinfo.email"],
   GOOGLE_DRIVE: ["https://www.googleapis.com/auth/drive.readonly"],
   GOOGLE_CALENDAR: ["https://www.googleapis.com/auth/calendar.events"],
   MICROSOFT_TEAMS: [],

@@ -14,6 +14,7 @@ import { useRef } from "react";
 import useUser from "@/hooks/useUser";
 import { toggleSearchService } from "@/actions/user.actions";
 import { toast } from "sonner";
+import { ShieldCheck, Zap } from "lucide-react";
 
 type TService = Exclude<CombinedFilterKey, "GOOGLE_DRIVE" | "GOOGLE_CALENDAR">;
 
@@ -64,8 +65,11 @@ const SearchService = () => {
     <DropdownMenu>
       <DropdownMenuTrigger
         title="Turn on the service against which you want to perform search operations."
-        className="bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
+        className="flex items-center gap-1 bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
       >
+        <span className="hidden sm:inline">
+          <Zap className="size-4 fill-btn-primary stroke-btn-primary" />
+        </span>
         Enable Service
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-neutral-900 border-none shadow-xl z-[120] rounded-lg">
@@ -74,6 +78,7 @@ const SearchService = () => {
             <Switch
               value={user[service].searchStatus}
               onValueChange={(value) => handleValueChange(service)}
+              disabled={service === "MICROSOFT_TEAMS" || service === "DISCORD"}
               label={
                 <div className="flex items-center gap-2">
                   <div className="relative size-5">

@@ -31,6 +31,7 @@ export const Flipwords = ({
     let i = 0;
     let n = wordsRef.current.length;
     let id: NodeJS.Timeout | undefined = undefined;
+    const loadingDotDisappearDelay = nextWordSpeed / 10;
 
     const animate = () => {
       let j = 0;
@@ -43,8 +44,11 @@ export const Flipwords = ({
         if (j === wordsRef.current[i].length) {
           i = (i + 1) % n;
 
-          setLoadingAnimation(false);
           clearInterval(id);
+
+          setTimeout(() => {
+            setLoadingAnimation(false);
+          }, loadingDotDisappearDelay);
 
           if (!nextWordAnimationStop) {
             setTimeout(() => {

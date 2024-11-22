@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Fullscreen, Ghost, LayoutGrid, Menu } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { CombinedFilterKey, DocumentType, FilterKey } from "@/lib/types";
+import { CombinedFilterKey, FilterKey, TDocumentResponse } from "@/lib/types";
 
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -22,7 +22,8 @@ import Calendar from "@/components/calendar";
 import Document from "@/components/document";
 import Textarea from "@/components/ui/textarea";
 import { Flipwords } from "@/components/ui/flipwords";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { LogoMap } from "@/lib/constants";
+import { useDrawerSelection } from "@/hooks/useDrawerSelection";
 
 type LayoutType = "grid" | "list";
 
@@ -37,17 +38,20 @@ const Page = () => {
   const [userQuery, setUserQuery] = useState("");
   const [aiMessage, setAiMessage] = useState("");
   const [filter, setFilter] = useState<TFilter[]>([]);
-  const [documents, setDocuments] = useState<DocumentType[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<DocumentType[]>(
-    []
-  );
+  const [documents, setDocuments] = useState<TDocumentResponse[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<
+    TDocumentResponse[]
+  >([]);
 
   const { user, dispatch } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [searchCount, setSearchCount] = useState(0);
 
+  const fullScreenBtnRef = useRef<HTMLButtonElement | null>(null);
+
   const { modalDispatch } = useModalSelection();
+  const { drawerDispatch } = useDrawerSelection();
 
   useEffect(() => {
     const uniqueKey = new Set<Omit<CombinedFilterKey, "GOOGLE_CALENDAR">>();
@@ -63,10 +67,22 @@ const Page = () => {
     setFilter(result);
   }, [documents]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+        fullScreenBtnRef.current?.click();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [modalDispatch]);
+
   const handleFormAction = async (formData: FormData) => {
     try {
-      const query = formData.get("search");
-      if (user.isAISearch && query) {
+      const query = formData.get("search")!.toString();
+      setUserQuery(query);
+      if (user.isAISearch) {
         setAiMessage("");
       }
 
@@ -114,7 +130,7 @@ const Page = () => {
           loadingDot={true}
           className="md:text-4xl sm:text-3xl text-2xl font-medium tracking-wide text-neutral-200"
         />
-        <Textarea setIsSearching={setIsLoading} setUserQuery={setUserQuery} />
+        <Textarea setIsSearching={setIsLoading} />
       </form>
 
       <div className="flex items-start justify-between gap-2">
@@ -132,25 +148,29 @@ const Page = () => {
               />
             </div>
             <div className="lg:hidden block">
-              <Drawer drawerDirection="bottom">
-                <DrawerTrigger>
-                  <div className="text-[13px] text-text-primary bg-neutral-800 max-w-max py-2 px-4 flex items-center rounded-lg">
-                    Filter
-                  </div>
-                </DrawerTrigger>
-                <DrawerContent containerClassName="pt-10 px-2 flex items-center">
-                  <Filter
-                    className="h-max"
-                    controlledHeight={true}
-                    documents={documents}
-                    setFilteredDocuments={setFilteredDocuments}
-                    isLoading={isLoading}
-                    setIsLoading={setIsLoading}
-                    filter={filter}
-                    setFilter={setFilter}
-                  />
-                </DrawerContent>
-              </Drawer>
+              <button
+                type="button"
+                onClick={() => {
+                  drawerDispatch({
+                    payload: "FilterResult",
+                    type: "onOpen",
+                    data: {
+                      type: "FilterResult",
+                      data: {
+                        documents,
+                        filter,
+                        isLoading,
+                        setFilter,
+                        setFilteredDocuments,
+                        setIsLoading,
+                      },
+                    },
+                  });
+                }}
+                className="text-[13px] text-text-primary bg-neutral-800 max-w-max py-2 px-4 flex items-center rounded-lg"
+              >
+                Filter
+              </button>
             </div>
           </>
         )}
@@ -301,7 +321,9 @@ const Page = () => {
 
       <div title="Fullscreen" className="fixed right-[4vw] bottom-[5vh]">
         <button
+          ref={fullScreenBtnRef}
           type="button"
+          className="flex gap-1 items-center"
           onClick={() =>
             modalDispatch({
               type: "onOpen",
@@ -314,6 +336,9 @@ const Page = () => {
           }
         >
           <Fullscreen />
+          <kbd className="hidden sm:block text-xs bg-neutral-950 p-1 rounded-md">
+            ctrk + /
+          </kbd>
         </button>
       </div>
 

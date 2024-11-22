@@ -84,6 +84,7 @@ const userSchema = new Schema(
         ...platformSchmea,
         ...optionalPlatformSchmea,
         authUser: defaultStringSchema,
+        email: defaultStringSchema
       },
       default: () => ({}),
     },

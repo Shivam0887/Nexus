@@ -1,25 +1,28 @@
 "use client";
 
 import { format } from "date-fns";
-import { DocumentType } from "@/lib/types";
+import { TDocumentResponse } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
+  AlignLeft,
   CircleArrowOutUpRight,
   Dot,
   EllipsisVertical,
-  Link2,
+  MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
-import React, { useState } from "react";
+import { useState } from "react";
+import { useDrawerSelection } from "@/hooks/useDrawerSelection";
 
 const Document = ({
   layout,
   document,
 }: {
   layout: "grid" | "list";
-  document: DocumentType;
+  document: TDocumentResponse;
 }) => {
-  const [openSideWindow, setOpenSideWindow] = useState(false);
+  const [open, setOpen] = useState(false);
+  const { drawerDispatch } = useDrawerSelection();
 
   const handleDragStart = (e: React.DragEvent<HTMLElement>) => {
     e.dataTransfer.setData("text", document.title);
@@ -55,23 +58,17 @@ const Document = ({
         )}
       >
         <div className="space-y-2">
-          <div className="flex">
-            <span>
-              <Dot />
-            </span>{" "}
-            <p className="line-clamp-1">Title: {document.title}</p>
-          </div>
-          <div className="flex">
-            <span>
-              <Dot />
-            </span>{" "}
-            <p className="line-clamp-1">Author: {document.author}</p>
-          </div>
+          <p className="line-clamp-1">Title: {document.title}</p>
+          <p className="line-clamp-1">Author: {document.author}</p>
         </div>
 
-        <div className="flex items-center">
+        <div
+          className={cn("flex items-center", {
+            "flex-col items-start gap-2": layout === "grid",
+          })}
+        >
           <p className="line-clamp-1">{document.email}</p>
-          <Dot />
+          {document.email && layout === "list" && <Dot />}
           <p className="line-clamp-1">
             {format(document.date, "eee, MMM do, yyyy 'at' hh:mm aaa")}
           </p>
@@ -85,15 +82,62 @@ const Document = ({
             : ""
         }
       >
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           {/* links */}
           <a href={document.href} target="_blank">
             <CircleArrowOutUpRight className="sm:size-5 size-4 text-text-primary" />
           </a>
-          <Link2 className="sm:size-5 size-4 text-text-primary" />
 
-          {/* more options */}
-          <EllipsisVertical className="sm:size-5 size-4 text-text-primary" />
+          <div className="relative">
+            <button
+              type="button"
+              onBlur={() => setOpen(false)}
+              onClick={() => setOpen((prev) => !prev)}
+              className="flex items-center gap-1 bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg p-2 text-xs tracking-wider"
+            >
+              <EllipsisVertical className="sm:size-5 size-4 text-text-primary" />
+            </button>
+
+            <div
+              className={cn(
+                "absolute -left-10 space-y-2 bg-neutral-900 border-none shadow-xl z-[120] rounded-lg p-2 transition-opacity duration-75",
+                { "opacity-0": !open, "opacity-100": open }
+              )}
+            >
+              <button
+                type="button"
+                className="inline-flex text-sm gap-2 items-center"
+                onClick={() => {
+                  drawerDispatch({
+                    data: { type: "SidebarChat", data: document },
+                    payload: "SidebarChat",
+                    type: "onOpen",
+                  });
+                }}
+              >
+                <span title="Open in Sidebar">
+                  <MessageSquare className="size-5" />
+                </span>
+                Chat
+              </button>
+              <button
+                type="button"
+                className="inline-flex text-sm gap-2 items-center"
+                onClick={() => {
+                  drawerDispatch({
+                    data: { type: "SidebarContentSummary", data: document },
+                    payload: "SidebarContentSummary",
+                    type: "onOpen",
+                  });
+                }}
+              >
+                <span title="Open in Sidebar">
+                  <AlignLeft className="size-5" />
+                </span>
+                Summerize
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
     </main>
