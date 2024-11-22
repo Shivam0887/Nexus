@@ -2,7 +2,7 @@
 
 import CalendarModal from "@/components/modals/calendar.modal";
 import FullScreenModal from "@/components/modals/full-screen.modal";
-import DataCollectionModal from "@/components/modals/data-collection.modal";
+import AccountDeletionModal from "@/components/modals/account-deletion.modal";
 import SecurityModal from "@/components/modals/security-modal";
 import { useEffect, useState } from "react";
 
@@ -17,7 +17,7 @@ const ModalProvider = () => {
   return (
     <div>
       <FullScreenModal />
-      <DataCollectionModal />
+      <AccountDeletionModal />
       <CalendarModal />
       <SecurityModal />
     </div>

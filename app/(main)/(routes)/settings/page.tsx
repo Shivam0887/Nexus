@@ -3,16 +3,27 @@
 import { useEffect } from "react";
 import useUser from "@/hooks/useUser";
 import { plans } from "@/lib/constants";
-import { Crown, Dot, KeyRound, UserRound } from "lucide-react";
+import {
+  Crown,
+  Dot,
+  KeyRound,
+  ScanSearch,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 
 import Image from "next/image";
 import { useUser as useClerkUser } from "@clerk/nextjs";
+import { AISearchPreference } from "@/actions/user.actions";
+import { toast } from "sonner";
+import { useModalSelection } from "@/hooks/useModalSelection";
 
 const CurPlan: "Starter" | "Professional" = "Professional";
 
 const Page = () => {
   const { user, dispatch } = useUser();
   const { user: clerkUser, isLoaded } = useClerkUser();
+  const { modalDispatch } = useModalSelection();
 
   useEffect(() => {
     if (isLoaded && clerkUser) {
@@ -26,13 +37,14 @@ const Page = () => {
     <div className="sm:mx-4 mx-0 my-4 h-[calc(100%-2rem)] rounded-2xl [scrollbar-width:none] overflow-auto bg-neutral-900 select-none">
       {/* Cover image */}
       <div className="relative h-[250px]">
-        <div className="h-full relative [mask-image:linear-gradient(black_80%,transparent)] [mask-mode:alpha]">
+        <div className="h-full relative [mask-image:linear-gradient(black_80%,transparent)]">
           <Image
-            src={"/temp/temp2.png"}
+            src={"/settings.jpg"}
             fill
             priority
+            quality={100}
             alt="cover image"
-            className="object-cover object-center rounded-t-2xl"
+            className="object-cover object-center rounded-t-2xl opacity-80"
           />
         </div>
 
@@ -47,9 +59,7 @@ const Page = () => {
             />
           </div>
           <div className="space-y-2">
-            <h2 className="sm:text-3xl text-2xl text capitalize">
-              {user.username}
-            </h2>
+            <h2 className="sm:text-3xl text-2xl capitalize">{user.username}</h2>
             <p className="text-xs text-neutral-500">{user.email}</p>
           </div>
         </div>
@@ -119,13 +129,21 @@ const Page = () => {
           <div className="flex flex-col flex-1 p-4 relative rounded-2xl bg-secondary shadow-[0px_0px_5px_5px_rgb(27,27,27)]">
             <div className="space-y-2 relative flex-1">
               <h2 className="[letter-spacing:1px] flex gap-2 items-center">
-                <KeyRound className="w-4 h-4 text-btn-primary" /> AI-Search
+                <Sparkles className="w-4 h-4 text-btn-primary" /> AI-Search
               </h2>
               <p className="text-[13px] text-btn-secondary">
                 Enable AI-Search to perform context-based searching, allowing
                 for more accurate and relevant results.
               </p>
               <button
+                onClick={async () => {
+                  const response = await AISearchPreference(true);
+                  if (!response.success) {
+                    toast.error(response.error);
+                    return;
+                  }
+                  toast.success(response.data);
+                }}
                 type="button"
                 className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black"
               >
@@ -135,17 +153,18 @@ const Page = () => {
 
             <div className="relative space-y-2 flex-1">
               <h2 className="[letter-spacing:1px] flex gap-2 items-center">
-                <UserRound className="w-4 h-4 text-btn-primary" /> Search Filter
+                <ScanSearch className="w-4 h-4 text-btn-primary" /> Visual
+                Search
               </h2>
               <p className="text-[13px] text-btn-secondary">
-                Manage your search filter settings to customize and refine your
-                search results.
+                Integrate advanced image recognition technology to enable users
+                to upload photos for searching, enhances user experience.
               </p>
               <button
                 type="button"
                 className="absolute bottom-0 right-0 rounded-3xl bg-btn-secondary px-4 py-2 text-xs font-bold text-black"
               >
-                Reset filters
+                Coming soon
               </button>
             </div>
           </div>
@@ -184,6 +203,13 @@ const Page = () => {
                 to access anything.
               </p>
               <button
+                onClick={() => {
+                  modalDispatch({
+                    type: "onOpen",
+                    payload: "AccountDelete",
+                    data: { type: "AccountDelete" },
+                  });
+                }}
                 type="button"
                 className="absolute bottom-0 right-0 rounded-3xl bg-red-700 px-4 py-2 text-xs font-bold"
               >

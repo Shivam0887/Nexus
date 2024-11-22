@@ -65,29 +65,3 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Internal server error", { status: 500 });
   }
 }
-
-export async function PATCH(req: NextRequest) {
-  const { userId } = await auth();
-
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
-
-  try {
-    const platform = platformSchema.parse(
-      req.nextUrl.searchParams.get("platform")
-    );
-
-    await User.findOneAndUpdate(
-      { userId },
-      {
-        $set: {
-          [platform]: {},
-        },
-      }
-    );
-
-    return new NextResponse(null, { status: 200 });
-  } catch (error: any) {
-    console.log(error?.message);
-    return new NextResponse("Internal server error", { status: 500 });
-  }
-}

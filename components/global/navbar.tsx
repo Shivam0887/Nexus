@@ -107,37 +107,39 @@ export default function Navbar() {
               </li>
             </ul>
           ) : (
-            <div className="flex gap-3 sm:gap-4 items-center">
-              {/* Turn on the service against you want to perform search operation. */}
-
-              <SearchService />
-              <div ref={searchRef} className="relative w-max">
-                {/* AI search button */}
-                <Switch
-                  label={
-                    <div className="flex gap-2">
-                      <Sparkles className="hidden sm:block size-4 fill-btn-primary stroke-btn-primary" />
-                      <p className="text-xs font-medium tracking-wide">
-                        AI Search
-                      </p>
-                    </div>
-                  }
-                  value={isAISearch}
-                  onValueChange={handleAISearchToggle}
-                />
+            <SignedIn>
+              <div className="flex gap-3 sm:gap-4 items-center">
+                {/* Turn on the service against you want to perform search operation. */}
+  
+                <SearchService />
+                <div ref={searchRef} className="relative w-max">
+                  {/* AI search button */}
+                  <Switch
+                    label={
+                      <div className="flex gap-2">
+                        <Sparkles className="hidden sm:block size-4 fill-btn-primary stroke-btn-primary" />
+                        <p className="text-xs font-medium tracking-wide">
+                          AI Search
+                        </p>
+                      </div>
+                    }
+                    value={isAISearch}
+                    onValueChange={handleAISearchToggle}
+                  />
+                </div>
+  
+                {/* Upgrade button */}
+                <Link
+                  href="/"
+                  className="hidden sm:flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
+                >
+                  <span>
+                    <Gem className="size-4 stroke-blue-600" />
+                  </span>
+                  Upgrade
+                </Link>
               </div>
-
-              {/* Upgrade button */}
-              <Link
-                href="/"
-                className="hidden sm:flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
-              >
-                <span>
-                  <Gem className="size-4 stroke-blue-600" />
-                </span>
-                Upgrade
-              </Link>
-            </div>
+            </SignedIn>
           )}
 
           {/* If signed out */}
@@ -151,7 +153,7 @@ export default function Navbar() {
                 type="button"
                 className="text-sm text-black bg-btn-primary py-2 px-4 rounded-2xl font-medium"
               >
-                Sign up
+                Sign in
               </button>
             </SignInButton>
           </SignedOut>

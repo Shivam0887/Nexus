@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { FilterKey } from "@/lib/types";
 import { toast } from "sonner";
 import { useModalSelection } from "@/hooks/useModalSelection";
+import { revokeAccessToken } from "@/actions/user.actions";
 
 const IntegrationCard = ({
   src,
@@ -20,7 +21,6 @@ const IntegrationCard = ({
 }) => {
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const previousConnectionStatusRef = useRef(0);
 
   const router = useRouter();
 
@@ -44,19 +44,21 @@ const IntegrationCard = ({
   ) => {
     try {
       e.stopPropagation();
-      previousConnectionStatusRef.current = user[alt].connectionStatus;
       dispatch({
         type: "CONNECTION",
         payload: { connectionStatus: 0, connectionType: platform },
       });
 
-      await axios.patch(`/api/auth?platform=${platform}`);
+      const response = await revokeAccessToken({ onAccountDelete: false, platform });
+      if(!response.success) throw new Error(response.error);
+
+      toast.success(response.data);
     } catch (error: any) {
       toast.error(error.message);
       dispatch({
         type: "CONNECTION",
         payload: {
-          connectionStatus: previousConnectionStatusRef.current,
+          connectionStatus: 1,
           connectionType: platform,
         },
       });

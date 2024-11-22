@@ -130,12 +130,15 @@ export const checkAndRefreshToken = async (
       }
 
       await ConnectToDB();
-      await User.findOneAndUpdate(
+      user = (await User.findOneAndUpdate(
         { userId: user.userId },
         {
           $set: updateQuery,
+        }, 
+        {
+          new: true
         }
-      );
+      ))!;
 
       console.log("Access token refreshed.");
       return {
@@ -147,6 +150,7 @@ export const checkAndRefreshToken = async (
         error?.response && error?.response?.data?.error === "invalid_grant"
           ? `RE_AUTHENTICATE-${platform}`
           : error.message;
+          
       if (errorMessage === `RE_AUTHENTICATE-${platform}`) {
         await User.findOneAndUpdate(
           { userId: user.userId },

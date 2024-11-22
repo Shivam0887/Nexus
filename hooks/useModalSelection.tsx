@@ -6,7 +6,7 @@ import { createContext, useContext, useMemo, useReducer } from "react";
 type ModalType =
   | "CalendarModal"
   | "FullScreenModal"
-  | "DataCollectionModal"
+  | "AccountDelete"
   | "SecurityModal";
 
 type ActionData =
@@ -16,7 +16,7 @@ type ActionData =
         title?: string;
       };
     }
-  | { type: "DataCollectionModal"; data: {} }
+  | { type: "AccountDelete" }
   | { type: "SecurityModal"; data: { url?: string } }
   | {
       type: "FullScreenModal";
