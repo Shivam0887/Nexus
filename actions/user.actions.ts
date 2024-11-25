@@ -42,7 +42,7 @@ export const AISearchPreference = async (
 
     return {
       success: true,
-      data: "",
+      data: "AI Search " + (isAISearch ? "enabled" : "disabled"),
     };
   } catch (error: any) {
     console.log("AI Search Preference Error:", error.message);
@@ -432,7 +432,9 @@ export const revokeAccessToken = async (
   }
 };
 
-export const deleteAccount = async (): Promise<TActionResponse> => {
+export const deleteAccount = async (
+  value: string
+): Promise<TActionResponse> => {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
@@ -465,6 +467,13 @@ export const deleteAccount = async (): Promise<TActionResponse> => {
       }
     );
     if (!user) throw new Error("User not found");
+
+    if (value.toLowerCase() !== "confirm") {
+      return {
+        success: false,
+        error: "Bad request",
+      };
+    }
 
     for (const key in user) {
       const platform = key as keyof typeof user;

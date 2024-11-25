@@ -11,7 +11,7 @@ import {
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, RoundedBox } from "@react-three/drei";
 import { gsap } from "gsap";
-import { Vector3, Group, Object3DEventMap, MathUtils } from "three";
+import { Vector3, Group, Object3DEventMap, MathUtils, Color } from "three";
 
 // Constants
 const CUBE_CONFIG = {
@@ -41,7 +41,11 @@ const SubCube = ({ position }: { position: Vector3 }) => {
       position={position}
       radius={CUBE_CONFIG.radius}
     >
-      <meshStandardMaterial color="#000000" metalness={0} roughness={0.1} />
+      <meshPhongMaterial
+        color={new Color(0x000000)}
+        shininess={250}
+        specular={new Color(0xffffff)}
+      />
     </RoundedBox>
   );
 };

@@ -7,44 +7,26 @@ import { User, UserType } from "@/models/user.model";
 import { ConnectToDB } from "@/lib/utils";
 import { TActionResponse } from "@/lib/types";
 
-const isDigit = (key: string) => key.length === 1 && key >= "0" && key <= "9";
-
-const passkeySchema = z.string().refine(isDigit, "Invalid passkey");
-
-const dataSchema = z.object({
-  passkey0: passkeySchema,
-  passkey1: passkeySchema,
-  passkey2: passkeySchema,
-  passkey3: passkeySchema,
-  passkey4: passkeySchema,
-  passkey5: passkeySchema,
-  remember: z.enum(["on"]).optional(),
-});
+const passkeySchmea = z
+  .string()
+  .length(6, "Must contain 6 digits.")
+  .refine((passkey) => /^\d{6}$/.test(passkey), "Invalid passkey");
 
 export const createPasskey = async (
-  formData: FormData
+  key: string,
+  shouldRemember: boolean
 ): Promise<TActionResponse> => {
   const { userId } = await auth();
 
   if (!userId) {
     return {
-      error: "Unauthenticated user",
+      error: "Unauthenticated",
       success: false,
     };
   }
-
-  const { success, data: safeData } = dataSchema.safeParse(
-    Object.fromEntries(formData)
-  );
+  const { success, data: passkey } = passkeySchmea.safeParse(key);
 
   if (success) {
-    const shouldRemember = safeData.remember ? true : false;
-
-    const passkey = Object.entries(safeData).reduce((prev, [key, val]) => {
-      if (key != "remember") prev += val;
-      return prev;
-    }, "");
-
     const salt = await genSalt(10);
     const passkeyHash = await hash(passkey, salt);
 
@@ -73,34 +55,22 @@ export const createPasskey = async (
 };
 
 export const validatePasskey = async (
-  formData: FormData
+  key: string,
+  shouldRemember: boolean
 ): Promise<TActionResponse> => {
   const { userId } = await auth();
 
   if (!userId) {
     return {
-      error: "Unauthenticated user",
+      error: "Unauthenticated",
       success: false,
     };
   }
 
-  const { success, data: safeData } = dataSchema.safeParse(
-    Object.fromEntries(formData)
-  );
+  const { success, data: passkey } = passkeySchmea.safeParse(key);
 
   if (success) {
-    const shouldRemember = safeData.remember ? true : false;
-
-    const passkey = Object.entries(safeData).reduce((prev, [key, val]) => {
-      if (key != "remember") prev += val;
-      return prev;
-    }, "");
-
-    const salt = await genSalt(10);
-    const passkeyHash = await hash(passkey, salt);
-
     await ConnectToDB();
-
     const user = await User.findOne<Pick<UserType, "passkey">>(
       { userId },
       { passkey: 1, _id: 0 }
@@ -114,7 +84,6 @@ export const validatePasskey = async (
     }
 
     const match = await compare(passkey, user.passkey);
-
     if (!match) {
       return {
         error: "Invalid Passkey",

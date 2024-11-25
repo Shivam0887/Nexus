@@ -367,48 +367,39 @@ body {
   animation: fadeIn 0.5s linear forwards;
 }
 
-.card1 {
-  left: 10%;
-  transform: rotateX(45deg) rotateY(50deg) rotateZ(-50deg);
-
-  @media (min-width: 768px) {
-    left: 20%;
-  }
+.dot-loading-container {
+  width: 1.5rem;
+  height: 0.5rem;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
 }
 
-.card2 {
-  left: 20%;
-  transform: rotateX(40deg) rotateY(45deg) rotateZ(-45deg);
-
-  @media (min-width: 768px) {
-    left: 30%;
-  }
+.dot-loading-container > div,
+.dot-loading-container::after,
+.dot-loading-container::before {
+  content: "";
+  width: 0.25em;
+  height: 0.25em;
+  border-radius: 100%;
+  background-color: white;
+  animation: loading-dot 0.6s 0.2s infinite alternate-reverse;
 }
 
-.card3 {
-  left: 30%;
-  transform: rotateX(35deg) rotateY(40deg) rotateZ(-40deg);
-
-  @media (min-width: 768px) {
-    left: 40%;
-  }
+.dot-loading-container::before {
+  animation-delay: 0s;
 }
 
-.card4 {
-  left: 40%;
-  transform: rotateX(30deg) rotateY(35deg) rotateZ(-35deg);
-
-  @media (min-width: 768px) {
-    left: 50%;
-  }
+.dot-loading-container::after {
+  animation-delay: 0.4s;
 }
 
-.card5 {
-  left: 50%;
-  transform: rotateX(25deg) rotateY(30deg) rotateZ(-30deg);
-
-  @media (min-width: 768px) {
-    left: 60%;
+@keyframes loading-dot {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.1;
   }
 }
 

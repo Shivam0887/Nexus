@@ -38,7 +38,7 @@ export default function Home() {
                 : Your AI-Powered{" "}
                 <span className="relative text-btn-primary">
                   Search
-                  <span className="absolute -right-8 top-6 backdrop-blur-sm rounded-full w-20 h-20 bg-gradient-radial from-[rgba(217,217,217,0.1)] to-[rgba(115,115,115,0.1)] bg-" />
+                  <span className="absolute -right-8 top-6 backdrop-blur-sm rounded-full w-20 h-20 bg-gradient-radial from-[rgba(217,217,217,0.1)] to-[rgba(115,115,115,0.1)]" />
                 </span>{" "}
                 Assistant
               </h1>
