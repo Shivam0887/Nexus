@@ -25,7 +25,9 @@ const Price = () => {
       id="pricing"
       className="px-10 my-32 flex flex-col gap-10 items-center"
     >
-      <h1 className="sm:text-5xl text-4xl text">Pricing</h1>
+      <h1 className="text-4xl sm:text-5xl md:text-6xl text pb-2 inline-block">
+        Pricing
+      </h1>
       <p className="sm:text-base text-sm text">
         Choose the plan that best fits your needs
       </p>

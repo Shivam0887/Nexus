@@ -71,7 +71,7 @@ const SecurityModal = () => {
         <DialogItem>
           <form
             action={validate ? handleValidatePasskey : handleCreatePasskey}
-            className="sm:w-[448px] w-96 p-8 h-80 rounded-2xl flex flex-col"
+            className="sm:w-[448px] w-96 p-8 h-80 rounded-2xl flex flex-col justify-between"
           >
             <div className="space-y-3">
               <div className="flex gap-3 items-center">
@@ -84,7 +84,11 @@ const SecurityModal = () => {
                   : "Set-up a passkey before you start integrating your apps."}
               </p>
             </div>
-            <OTP setOTP={setPasskey} setIsSubmitting={setIsSubmitting} />
+            <OTP
+              setOTP={setPasskey}
+              setIsSubmitting={setIsSubmitting}
+              hideOTP
+            />
 
             <div className="flex justify-between items-center">
               <div className="flex gap-2 items-center">

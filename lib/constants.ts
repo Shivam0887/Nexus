@@ -8,45 +8,15 @@ import {
   PLAN,
   TSortBy,
 } from "./types";
-import { Check, X } from "lucide-react";
+import { Check, Filter, LucideIcon, Mic, X } from "lucide-react";
 import Analytics from "@/components/icons/analytics";
 import Integration from "@/components/icons/integration";
 import Settings from "@/components/icons/settings";
 import Search from "@/components/icons/search";
+import { Icon, IconBinoculars, IconProps } from "@tabler/icons-react";
+import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export const words = ["visual", "contextual", "voice"];
-
-export const features: {
-  title: string;
-  desc: string;
-  src: string;
-}[] = [
-  {
-    title: "smart contextual search",
-    desc: "Nexus's smart contextual search is designed to grasp the nuances of your queries, ensuring a deep understanding of the context, delivers highly relevant results by analyzing the context behind each search. With Nexus, you get precise outcomes that cater specifically to your needs.",
-    src: "/temp/temp1.png",
-  },
-  {
-    title: "voice search",
-    desc: "Search hands-free with Nexus's innovative voice search feature, which allows you to find what you're looking for effortlessly. Simply speak your query, and Nexus will quickly deliver the results you need without the need for typing, making your search experience smoother than ever.",
-    src: "/temp/temp2.png",
-  },
-  {
-    title: "sorting and filtering",
-    desc: "Enhance your search experience with advanced filtering and sorting options. These features allow you to narrow down results based on specific criteria, making it easier to locate the most pertinent information efficiently.",
-    src: "/temp/temp3.png",
-  },
-  {
-    title: "visual search",
-    desc: "Integrate advanced image recognition technology to enable users to upload photos for searching, enhances user experience by providing intuitive and efficient access to the needed data based on visual inputs. By leveraging ML algorithms, it ensures accurate and swift retrieval of related content.",
-    src: "/temp/temp4.png",
-  },
-  {
-    title: "personalized dashboard",
-    desc: "We offer customizable dashboards that aggregate frequently accessed data and recent searches, allowing users to have all their important information in one place. By consolidating key data and search history, we enhance productivity and ensure users can easily access the information they need.",
-    src: "/temp/temp5.png",
-  },
-];
 
 export const images: LogoType[] = [
   {
@@ -193,16 +163,22 @@ export const content = [
     title: "Sign up - Quick Registration",
     desc: "Create your Nexus account with your email and a password, or use your Google account for instant access.",
     content: "",
+    isVideo: true,
+    src: "/sign-in.mp4",
   },
   {
     title: "Connect your Apps - Easy Integration",
     desc: "Link your work apps like Gmail, Slack, OneDrive, and Google Drive through a secure process. Nexus uses safe APIs to ensure your data remains private.",
     content: "",
+    isVideo: true,
+    src: "/integration.mp4",
   },
   {
     title: "Start searching - Instant Access",
     desc: "Type your query into the search bar to quickly find emails, messages, tickets, or documents from all connected apps. Enjoy advanced features like contextual search, voice search, and real-time results.",
     content: "",
+    isVideo: true,
+    src: "/search.mp4",
   },
 ];
 
@@ -422,7 +398,10 @@ export const LogoMap: {
 };
 
 export const Scopes: Record<FilterKey, string[]> = {
-  GMAIL: ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/userinfo.email"],
+  GMAIL: [
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/userinfo.email",
+  ],
   GOOGLE_DRIVE: ["https://www.googleapis.com/auth/drive.readonly"],
   GOOGLE_CALENDAR: ["https://www.googleapis.com/auth/calendar.events"],
   MICROSOFT_TEAMS: [],

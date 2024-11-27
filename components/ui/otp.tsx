@@ -6,7 +6,9 @@ import { useFormStatus } from "react-dom";
 const OTP = ({
   setOTP,
   setIsSubmitting,
+  hideOTP,
 }: {
+  hideOTP?: boolean;
   setOTP: React.Dispatch<React.SetStateAction<string>>;
   setIsSubmitting?: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
@@ -50,8 +52,8 @@ const OTP = ({
 
   useEffect(() => {
     setIsSubmitting?.(pending);
-    if(!pending){
-      setPasskey(new Array(6).fill(""))
+    if (!pending) {
+      setPasskey(new Array(6).fill(""));
     }
   }, [pending, setIsSubmitting]);
 
@@ -68,7 +70,7 @@ const OTP = ({
           ref={(el) => {
             inputRefs.current[i] = el;
           }}
-          type="text"
+          type={hideOTP ? "password" : "text"}
           inputMode="numeric"
           name={`passkey${i}`}
           value={passkey[i]}

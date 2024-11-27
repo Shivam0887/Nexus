@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export const StickyScroll = ({
   content,
@@ -10,6 +11,9 @@ export const StickyScroll = ({
     title: string;
     desc: string;
     content: React.ReactNode;
+    src?: string;
+    isImage?: boolean;
+    isVideo?: boolean;
   }[];
 }) => {
   const [activeCard, setActiveCard] = useState(0);
@@ -139,10 +143,37 @@ export const StickyScroll = ({
         <div
           style={{ background: `var(--background-gradient)` }}
           className={
-            "hidden md:block h-60 w-80 rounded-lg sticky mx-auto top-1/2 -translate-y-1/2"
+            "hidden md:block h-56 w-96 rounded-lg sticky mx-auto top-1/2 -translate-y-1/2"
           }
         >
-          {content[activeCard].content ?? null}
+          {(content[activeCard].isImage || content[activeCard].isVideo) &&
+          content[activeCard].src ? (
+            <>
+              {content[activeCard].isImage ? (
+                <Image
+                  src={content[activeCard].src}
+                  alt={content[activeCard].title}
+                  fill
+                  quality={100}
+                  className="object-cover object-center"
+                />
+              ) : (
+                <video
+                  src={content[activeCard].src}
+                  className="w-full h-full"
+                  preload="none"
+                  autoPlay
+                  loop
+                  muted
+                >
+                  <source type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              )}
+            </>
+          ) : (
+            content[activeCard].content ?? null
+          )}
         </div>
       </div>
     </div>

@@ -24,6 +24,7 @@ import { checkAndRefreshToken, getPlatformClient } from "./utils.actions";
 
 import { Octokit } from "@octokit/rest";
 import { WebClient } from "@slack/web-api";
+import axios from "axios";
 
 export const AISearchPreference = async (
   isAISearch: boolean
@@ -498,6 +499,41 @@ export const deleteAccount = async (
     return {
       success: false,
       error: error.message,
+    };
+  }
+};
+
+export const updateUsername = async (
+  username: string
+): Promise<TActionResponse> => {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return {
+        success: false,
+        error: "Unauthenticated",
+      };
+    }
+
+    const response = await axios.patch(
+      `https://api.clerk.com/v1/users/${userId}`,
+      { username },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.CLERK_SECRET_KEY!}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return {
+      success: true,
+      data: "Username updated",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.response.data?.errors?.[0]?.message,
     };
   }
 };

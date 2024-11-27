@@ -43,7 +43,7 @@ const SubCube = ({ position }: { position: Vector3 }) => {
     >
       <meshPhongMaterial
         color={new Color(0x000000)}
-        shininess={250}
+        shininess={270}
         specular={new Color(0xffffff)}
       />
     </RoundedBox>
