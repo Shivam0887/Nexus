@@ -12,6 +12,7 @@ import { UserProvider } from "@/hooks/useUser";
 import { ModalProvider } from "@/hooks/useModalSelection";
 import { Toaster } from "@/components/ui/sonner";
 import { DrawerProvider } from "@/hooks/useDrawerSelection";
+import DrawerManager from "@/providers/drawer-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -90,6 +91,8 @@ export default async function RootLayout({
                 <div id="drawer-portal"></div>
                 <Navbar />
                 <Toaster />
+                <DrawerManager />
+
                 {children}
               </DrawerProvider>
             </ModalProvider>

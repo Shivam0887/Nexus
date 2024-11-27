@@ -15,6 +15,7 @@ import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { Noto_Sans } from "next/font/google";
 import AnimatedRubiksCube from "@/components/ui/rubiks-cube";
 import FeatureCard from "@/components/feature-card";
+import Footer from "@/components/footer";
 
 const notoSans = Noto_Sans({ subsets: ["latin"] });
 
@@ -22,7 +23,9 @@ export default function Home() {
   return (
     <div className="overflow-hidden">
       <MaxWidthWrapper>
-        <main className={`relative mb-10 space-y-32 ${notoSans.className}`}>
+        <main
+          className={`relative w-full mb-10 space-y-32 ${notoSans.className}`}
+        >
           {/* Hero section */}
 
           <section className="flex md:flex-row flex-col items-center justify-center p-5">
@@ -129,6 +132,8 @@ export default function Home() {
           </section>
         </main>
       </MaxWidthWrapper>
+
+      <Footer />
     </div>
   );
 }

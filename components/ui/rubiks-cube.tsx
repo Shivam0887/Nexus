@@ -17,7 +17,7 @@ import { Vector3, Group, Object3DEventMap, MathUtils, Color } from "three";
 const CUBE_CONFIG = {
   dimensions: { width: 1, height: 1, depth: 1 },
   gap: 1,
-  radius: 0.12,
+  radius: 0.1,
 };
 
 const LIGHT_POSITIONS = [
@@ -43,7 +43,7 @@ const SubCube = ({ position }: { position: Vector3 }) => {
     >
       <meshPhongMaterial
         color={new Color(0x000000)}
-        shininess={270}
+        shininess={300}
         specular={new Color(0xffffff)}
       />
     </RoundedBox>
