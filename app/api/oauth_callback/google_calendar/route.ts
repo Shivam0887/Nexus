@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { Credentials } from "@/lib/types";
 
@@ -56,10 +56,9 @@ export async function GET(req: NextRequest) {
           { userId },
           {
             $set: {
-              "GOOGLE_CALENDAR.accessToken": tokens.access_token,
-              "GOOGLE_CALENDAR.refreshToken": tokens.refresh_token,
-              "GOOGLE_CALENDAR.expiresAt":
-                Date.now() + tokens.expires_in * 1000,
+              "GOOGLE_CALENDAR.accessToken": encrypt(tokens.access_token),
+              "GOOGLE_CALENDAR.refreshToken": encrypt(tokens.refresh_token),
+              "GOOGLE_CALENDAR.expiresAt": Date.now() + tokens.expires_in * 1000,
               "GOOGLE_CALENDAR.authUser": authUser,
               "GOOGLE_CALENDAR.connectionStatus": 1,
             },

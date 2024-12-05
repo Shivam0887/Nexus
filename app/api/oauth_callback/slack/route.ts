@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { TSlackAxiosResponse } from "@/lib/types";
 
@@ -78,11 +78,11 @@ export async function GET(req: NextRequest) {
       {
         $set: {
           "SLACK.authUser": authed_user.id,
-          "SLACK.accessToken": authed_user.access_token,
-          "SLACK.refreshToken": authed_user.refresh_token!,
+          "SLACK.accessToken": encrypt(authed_user.access_token),
+          "SLACK.refreshToken": encrypt(authed_user.refresh_token!),
           "SLACK.expiresAt": Date.now() + authed_user.expires_in! * 1000,
-          "SLACK.teamId": team.id,
-          "SLACK.teamName": team.name,
+          "SLACK.teamId": encrypt(team.id),
+          "SLACK.teamName": encrypt(team.name),
           "SLACK.searchResults": 0,
           "SLACK.connectionStatus": 1,
           "SLACK.searchStatus": false,

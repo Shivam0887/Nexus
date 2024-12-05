@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Linkedin } from "lucide-react";
+import { ArrowRight, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { IconBrandGithub } from "@tabler/icons-react";
@@ -61,41 +61,57 @@ export default function Footer() {
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex items-center gap-8 -ml-10">
+            <nav className="flex items-center gap-8">
               <Link
-                href="/#features"
+                href="/terms-and-conditions"
+                target="_blank"
                 className="text-sm hover:text-gray-300 transition-colors"
               >
-                Features
+                Terms and Conditions
               </Link>
               <Link
-                href="/#pricing"
+                href="/privacy-policy"
+                target="_blank"
                 className="text-sm hover:text-gray-300 transition-colors"
               >
-                Price
+                Privacy Policy
               </Link>
             </nav>
 
             {/* Social Links */}
-            <div className="flex items-center gap-6">
-              <a
-                href="https://www.linkedin.com/in/shivam0887/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300 transition-colors"
-              >
-                <span className="sr-only">LinkedIn</span>
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="https://github.com/Shivam0887"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-gray-300 transition-colors"
-              >
-                <span className="sr-only">GitHub</span>
-                <IconBrandGithub className="w-5 h-5" />
-              </a>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                Contact us:
+                <Link
+                  href="mailto:gguru3073@gmail.com"
+                  className="text-gray-600 hover:underline text-sm"
+                >
+                  <Mail />
+                </Link>
+              </div>
+              <div className="flex items-center gap-6">
+                Follow us:
+                <div className="flex items-center gap-4">
+                  <a
+                    href="https://www.linkedin.com/in/shivam0887/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    <span className="sr-only">LinkedIn</span>
+                    <Linkedin className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://github.com/Shivam0887"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-gray-300 transition-colors"
+                  >
+                    <span className="sr-only">GitHub</span>
+                    <IconBrandGithub className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>

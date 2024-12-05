@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
-import { User, UserType } from "@/models/user.model";
+import { User, TUser } from "@/models/user.model";
 import { Platforms, Scopes } from "@/lib/constants";
 import { getPlatformClient } from "@/actions/utils.actions";
 import { OAuth2Client } from "@/lib/types";
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     );
 
     await ConnectToDB();
-    const user = (await User.findOne<UserType>({ userId }))!;
+    const user = (await User.findOne<TUser>({ userId }))!;
 
     let url = "";
     switch (platform) {

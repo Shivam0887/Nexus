@@ -156,8 +156,10 @@ const Page = () => {
     setIsLoading(true);
 
     const response = await updateUsername(username);
-    if (response.success) toast.success(response.data);
-    else toast.error(response.error);
+    if (response.success) {
+      dispatch({ type: "USERNAME_CHANGE", payload: username! });
+      toast.success(response.data);
+    } else toast.error(response.error);
 
     setIsLoading(false);
   };

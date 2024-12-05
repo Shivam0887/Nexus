@@ -4,11 +4,7 @@ const OtpSchema = new Schema({
   email: { type: String, required: true, unique: true },
   otp: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date, required: true },
-});
-
-// Create a TTL index on the `expiresAt` field
-OtpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+}).index({ createdAt: 1 }, { expireAfterSeconds: 600 });
 
 const OTP = models.OTP || model("OTP", OtpSchema);
 

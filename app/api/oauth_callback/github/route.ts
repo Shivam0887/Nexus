@@ -1,5 +1,6 @@
 import {
   ConnectToDB,
+  encrypt,
   generateGitHubJWT,
   refreshGitHubAccessToken,
 } from "@/lib/utils";
@@ -25,9 +26,9 @@ export async function GET(req: NextRequest) {
       { userId },
       {
         $set: {
-          "GITHUB.accessToken": token,
+          "GITHUB.accessToken": encrypt(token),
           "GITHUB.expiresAt": new Date(expires_at).getTime(),
-          "GITHUB.installationId": installationId,
+          "GITHUB.installationId": encrypt(installationId),
           "GITHUB.searchResults": 0,
           "GITHUB.connectionStatus": 1,
           "GITHUB.searchStatus": false,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { Credentials } from "@/lib/types";
 
@@ -56,15 +56,18 @@ export async function GET(req: NextRequest) {
           { userId },
           {
             $set: {
-              "GOOGLE_DRIVE.accessToken": tokens.access_token,
-              "GOOGLE_DRIVE.refreshToken": tokens.refresh_token,
+              "GOOGLE_DRIVE.accessToken": encrypt(tokens.access_token),
+              "GOOGLE_DRIVE.refreshToken": encrypt(tokens.refresh_token),
               "GOOGLE_DRIVE.expiresAt": Date.now() + tokens.expires_in * 1000,
               "GOOGLE_DRIVE.authUser": authUser,
               "GOOGLE_DRIVE.connectionStatus": 1,
+
               "GOOGLE_DOCS.searchStatus": false,
               "GOOGLE_DOCS.searchResults": 0,
+
               "GOOGLE_SHEETS.searchStatus": false,
               "GOOGLE_SHEETS.searchResults": 0,
+              
               "GOOGLE_SLIDES.searchStatus": false,
               "GOOGLE_SLIDES.searchResults": 0,
             },

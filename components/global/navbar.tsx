@@ -56,7 +56,13 @@ export default function Navbar() {
   };
 
   return (
-    <header className="h-16 flex flex-col justify-center bg-neutral-900/60 backdrop-blur-lg sticky z-[100] top-0 left-0 right-0">
+    <header
+      className={`h-16 flex flex-col justify-center ${
+        pathname === "/terms-and-conditions" || pathname === "/privacy-policy"
+          ? "bg-neutral-900"
+          : "bg-neutral-900/60"
+      } backdrop-blur-lg sticky z-[100] top-0 left-0 right-0`}
+    >
       <nav className="flex py-4 sm:pl-10 pl-5 pr-5 justify-between items-center">
         <Link href="/" className="flex gap-1 items-center">
           <span className="sm:hidden inline relative size-6">
@@ -110,7 +116,7 @@ export default function Navbar() {
             <SignedIn>
               <div className="flex gap-3 sm:gap-4 items-center">
                 {/* Turn on the service against you want to perform search operation. */}
-  
+
                 <SearchService />
                 <div ref={searchRef} className="relative w-max">
                   {/* AI search button */}
@@ -127,7 +133,7 @@ export default function Navbar() {
                     onValueChange={handleAISearchToggle}
                   />
                 </div>
-  
+
                 {/* Upgrade button */}
                 <Link
                   href="/"
@@ -145,7 +151,7 @@ export default function Navbar() {
           {/* If signed out */}
           <SignedOut>
             <SignInButton
-              mode="modal"
+              mode="redirect"
               signUpFallbackRedirectUrl={"/search"}
               fallbackRedirectUrl={"/search"}
             >

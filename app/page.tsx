@@ -46,7 +46,7 @@ export default function Home() {
               <div className="!mt-32 select-none">
                 <SignedOut>
                   <SignInButton
-                    mode="modal"
+                    mode="redirect"
                     signUpFallbackRedirectUrl={"/search"}
                     fallbackRedirectUrl={"/search"}
                   >

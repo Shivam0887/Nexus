@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { User } from "@/models/user.model";
 
 type TAxiosResponse = {
@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
       { userId },
       {
         $set: {
-          "NOTION.accessToken": access_token,
-          "NOTION.workspaceId": workspace_id,
-          "NOTION.botId": bot_id,
+          "NOTION.accessToken": encrypt(access_token),
+          "NOTION.workspaceId": encrypt(workspace_id),
+          "NOTION.botId": encrypt(bot_id),
           "NOTION.searchResults": 0,
           "NOTION.connectionStatus": 1,
           "NOTION.searchStatus": false,

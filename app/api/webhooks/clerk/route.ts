@@ -1,9 +1,8 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { ConnectToDB } from "@/lib/utils";
-import { User, UserType } from "@/models/user.model";
-import { revalidatePath } from "next/cache";
+import { ConnectToDB, encrypt } from "@/lib/utils";
+import { User, TUser } from "@/models/user.model";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -52,32 +51,35 @@ export async function POST(req: Request) {
 
   await ConnectToDB();
   if (eventType === "user.created") {
-    const data = evt.data;
+    const userId = evt.data.id;
+    const imageUrl = encrypt(evt.data.has_image ? evt.data.image_url : "");
+    const username = encrypt(evt.data.username);
+    const email = encrypt(evt.data.email_addresses[0].email_address);
 
-    const userId = data.id;
-    const imageUrl = data.has_image ? data.image_url : "";
-    const username = data.username;
-    const email = data.email_addresses[0].email_address;
+    const birthday = encrypt(
+      evt.data.unsafe_metadata?.birthday as string | undefined
+    );
 
     await User.create({
       userId,
       imageUrl,
       username,
       email,
+      birthday,
     });
   } else if (eventType === "user.deleted") {
     const isDeleted = evt.data.deleted;
     const userId = evt.data.id;
 
     if (isDeleted && userId) {
-      const user = await User.findOne<UserType>({ userId });
+      const user = await User.findOne<TUser>({ userId });
       if (user) {
-        await User.findByIdAndDelete(user._id);
+        await User.findOneAndDelete({ userId });
       }
     }
   } else if (eventType === "user.updated") {
-    const imageUrl = evt.data.image_url;
-    const username = evt.data.username;
+    const imageUrl = encrypt(evt.data.image_url);
+    const username = encrypt(evt.data.username);
     const userId = evt.data.id;
 
     await User.findOneAndUpdate(

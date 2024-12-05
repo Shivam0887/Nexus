@@ -10,7 +10,12 @@ import {
   TNotionPageBlockType,
   TSlackAxiosResponse,
 } from "./types";
-import { UserType } from "@/models/user.model";
+import { createCipheriv, createDecipheriv } from "crypto";
+import { TUser } from "@/models/user.model";
+
+const algorithm = "aes-256-gcm";
+const key = process.env.ENCRYPTION_KEY!;
+const iv = process.env.IV!; // Recommended IV length for GCM
 
 type TResponse = {
   token: string;
@@ -90,7 +95,7 @@ export const isGoogleService = (platform: CombinedFilterKey) => {
   );
 };
 
-export const isSearchableService = (service: keyof UserType) => {
+export const isSearchableService = (service: keyof TUser) => {
   return (
     service === "GMAIL" ||
     service === "NOTION" ||
@@ -138,7 +143,7 @@ export const refreshGitHubAccessToken = async (
   );
 };
 
-export const refreshSlackAccessToken = async (user: UserType) => {
+export const refreshSlackAccessToken = async (user: TUser) => {
   const clientId = process.env.SLACK_CLIENT_ID!;
   const clientSecret = process.env.SLACK_CLIENT_SECRET!;
   const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/slack`;
@@ -176,3 +181,33 @@ export const hasRichTextObject = (type: TNotionPageBlockType) => {
     type === "to_do"
   );
 };
+
+export function encrypt(text: string | null | undefined) {
+  if (!text) return "";
+  const cipher = createCipheriv(
+    algorithm,
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(Buffer.from(iv))
+  );
+
+  const encryptedData =
+    cipher.update(text, "utf8", "hex") + cipher.final("hex");
+  const authTag = cipher.getAuthTag().toString("hex");
+  return `${authTag}:${encryptedData}`;
+}
+
+export function decrypt(data: string | null | undefined) {
+  if (!data) return "";
+
+  const decipher = createDecipheriv(
+    algorithm,
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(Buffer.from(iv))
+  );
+  const [authTag, encryptedData] = data.split(":");
+
+  decipher.setAuthTag(Uint8Array.from(Buffer.from(authTag, "hex")));
+  const decrypted =
+    decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
+  return decrypted;
+}

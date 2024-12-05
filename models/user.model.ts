@@ -59,10 +59,8 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    imageUrl: {
-      type: String,
-      required: true,
-    },
+    birthday: String,
+    imageUrl: String,
     searchCount: {
       type: Map,
       of: searchCountSchema,
@@ -84,7 +82,7 @@ const userSchema = new Schema(
         ...platformSchmea,
         ...optionalPlatformSchmea,
         authUser: defaultStringSchema,
-        email: defaultStringSchema
+        email: defaultStringSchema,
       },
       default: () => ({}),
     },
@@ -152,8 +150,5 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-export type UserType = InferSchemaType<typeof userSchema> & {
-  _id: Schema.Types.ObjectId;
-};
-
+export type TUser = InferSchemaType<typeof userSchema>;
 export const User = models.User || model("User", userSchema);

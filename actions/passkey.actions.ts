@@ -3,8 +3,8 @@
 import { z } from "zod";
 import { genSalt, hash, compare } from "bcrypt";
 import { auth } from "@clerk/nextjs/server";
-import { User, UserType } from "@/models/user.model";
-import { ConnectToDB } from "@/lib/utils";
+import { User, TUser } from "@/models/user.model";
+import { ConnectToDB, decrypt, encrypt } from "@/lib/utils";
 import { TActionResponse } from "@/lib/types";
 
 const passkeySchmea = z
@@ -35,7 +35,7 @@ export const createPasskey = async (
       { userId },
       {
         $set: {
-          passkey: passkeyHash,
+          passkey: encrypt(passkeyHash),
           shouldRemember,
           hasPasskey: true,
         },
@@ -71,7 +71,7 @@ export const validatePasskey = async (
 
   if (success) {
     await ConnectToDB();
-    const user = await User.findOne<Pick<UserType, "passkey">>(
+    const user = await User.findOne<Pick<TUser, "passkey">>(
       { userId },
       { passkey: 1, _id: 0 }
     );
@@ -83,7 +83,7 @@ export const validatePasskey = async (
       };
     }
 
-    const match = await compare(passkey, user.passkey);
+    const match = await compare(passkey, decrypt(user.passkey));
     if (!match) {
       return {
         error: "Invalid Passkey",

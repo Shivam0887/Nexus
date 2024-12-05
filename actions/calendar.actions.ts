@@ -14,7 +14,7 @@ import { ConnectToDB } from "@/lib/utils";
 import { CalendarDateFormat, CalendarTimeFormat } from "@/lib/constants";
 
 import { auth } from "@clerk/nextjs/server";
-import { User, UserType } from "@/models/user.model";
+import { User, TUser } from "@/models/user.model";
 import { checkAndRefreshToken, getPlatformClient } from "./utils.actions";
 import { OAuth2Client } from "@/lib/types";
 
@@ -111,7 +111,7 @@ export const createCalender = async (
   const { userId } = await auth();
 
   await ConnectToDB();
-  const user = await User.findOne<UserType>({ userId });
+  const user = await User.findOne<TUser>({ userId });
 
   if (!user) {
     return {
@@ -205,9 +205,14 @@ export const createCalender = async (
   };
 
   try {
-    const oauth2Client = await (async () => (await getPlatformClient(user, "GOOGLE_CALENDAR")) as OAuth2Client)();
-    const response = await checkAndRefreshToken(user, "GOOGLE_CALENDAR", oauth2Client);
-    if(!response.success) return response;
+    const oauth2Client = await (async () =>
+      (await getPlatformClient(user, "GOOGLE_CALENDAR")) as OAuth2Client)();
+    const response = await checkAndRefreshToken(
+      user,
+      "GOOGLE_CALENDAR",
+      oauth2Client
+    );
+    if (!response.success) return response;
 
     const calendar = google.calendar({
       version: "v3",

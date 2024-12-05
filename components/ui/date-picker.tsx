@@ -21,8 +21,11 @@ import { CalendarDateFormat, CalendarTimeFormat } from "@/lib/constants";
 
 type CustomHeaderProps = {
   date: Date;
+  changeYear: (year: number) => void;
+  changeMonth: (month: number) => void;
   decreaseMonth: () => void;
   increaseMonth: () => void;
+  rangeEndYearAdvance?: number;
   prevMonthButtonDisabled: boolean;
   nextMonthButtonDisabled: boolean;
 };
@@ -46,6 +49,14 @@ type TimeProviderProps = {
 const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "700"] });
 
 const timeInterval = 15;
+
+function range(start: number, end: number, step = 1) {
+  const result = [];
+  for (let i = start; i <= end; i += step) {
+    result.push(i);
+  }
+  return result;
+}
 
 const months = [
   "January",
@@ -81,20 +92,46 @@ const recurrenceEvents = [
   "Every weekday (Monday to Friday)",
 ];
 
-const handleCustomHeader = ({
+export const handleCustomHeader = ({
   date,
   decreaseMonth,
   increaseMonth,
+  changeMonth,
+  changeYear,
+  rangeEndYearAdvance = 0,
   nextMonthButtonDisabled,
   prevMonthButtonDisabled,
 }: CustomHeaderProps) => {
+  const years = range(1960, getYear(new Date()) + rangeEndYearAdvance, 1);
+
   return (
     <div
       className={`mx-3 flex justify-between items-center gap-2 bg-white ${roboto.className}`}
     >
       <div className="flex items-center gap-2 text-base font-medium">
-        <div>{months[getMonth(date)]}</div>
-        <div>{getYear(date)}</div>
+        <select
+          value={getYear(date)}
+          onChange={({ target: { value } }) => changeYear(parseInt(value))}
+        >
+          {years.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={months[getMonth(date)]}
+          onChange={({ target: { value } }) =>
+            changeMonth(months.indexOf(value))
+          }
+        >
+          {months.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-x-2">
@@ -135,7 +172,7 @@ const CalendarProvider = ({
   return (
     <Picker
       dateFormat={CalendarDateFormat}
-      renderCustomHeader={handleCustomHeader}
+      renderCustomHeader={(props) => handleCustomHeader({...props, rangeEndYearAdvance: 10})}
       selectsStart={startDate !== null}
       selectsEnd={endDate !== null}
       autoFocus={endDate !== null}

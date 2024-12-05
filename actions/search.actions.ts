@@ -1,10 +1,9 @@
 "use server";
 
-import { ConnectToDB, isSearchableService } from "@/lib/utils";
+import { ConnectToDB, isSearchableService, redactText } from "@/lib/utils";
 
 import { auth } from "@clerk/nextjs/server";
 
-import { User, UserType } from "@/models/user.model";
 import {
   searchDocs,
   searchGmail,
@@ -32,6 +31,8 @@ import {
 } from "@/lib/types";
 import { createSearchHistoryInstance } from "./user.actions";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { decryptedUserData } from "./security.actions";
+import { TUser } from "@/models/user.model";
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
@@ -62,11 +63,11 @@ const googleGenAI = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
 });
 
-const checkEnabledServices = (user: UserType) => {
+const checkEnabledServices = (user: TUser) => {
   const enabledServices: TSearchableService[] = [];
 
   for (const key in user) {
-    const k = key as keyof UserType;
+    const k = key as keyof TUser;
     if (isSearchableService(k) && user[k].searchStatus) {
       enabledServices.push(k);
     }
@@ -76,7 +77,7 @@ const checkEnabledServices = (user: UserType) => {
 };
 
 const generateSearchResult = async (
-  user: UserType,
+  user: TUser,
   input: string,
   enabledServices: TSearchableService[]
 ): Promise<TActionResponse<TDocumentResponse[]>> => {
@@ -182,11 +183,14 @@ export const searchAction = async (
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated user. Please login first.");
 
-    const query = formData.get("search")?.toString().trim();
-    if (!query) throw new Error("Bad request. Please enter your query.");
+    const data = formData.get("search")?.toString().trim();
+    if (!data) throw new Error("Bad request. Please enter your query.");
+
+    // Trying to remove sensitive information before it is processed
+    const query = redactText(data);
 
     await ConnectToDB();
-    const user = await User.findOne<UserType>({ userId });
+    const user = (await decryptedUserData(userId)) as TUser | undefined;
     if (!user) throw new Error("User not found");
 
     const enabledServices = checkEnabledServices(user);
@@ -197,7 +201,7 @@ export const searchAction = async (
       };
     }
 
-    await createSearchHistoryInstance(query, user.searchCount, user.isAISearch);
+    await createSearchHistoryInstance(query, user.email, user.searchCount, user.isAISearch, userId);
 
     // Search the query against every platform the user is connected to.
     const response = await generateSearchResult(user, query, enabledServices);

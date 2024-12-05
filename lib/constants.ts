@@ -8,13 +8,11 @@ import {
   PLAN,
   TSortBy,
 } from "./types";
-import { Check, Filter, LucideIcon, Mic, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import Analytics from "@/components/icons/analytics";
 import Integration from "@/components/icons/integration";
 import Settings from "@/components/icons/settings";
 import Search from "@/components/icons/search";
-import { Icon, IconBinoculars, IconProps } from "@tabler/icons-react";
-import { ForwardRefExoticComponent, RefAttributes } from "react";
 
 export const words = ["visual", "contextual", "voice"];
 
@@ -413,3 +411,31 @@ export const Scopes: Record<FilterKey, string[]> = {
 
 export const CalendarDateFormat = "EEEE, dd MMMM yy";
 export const CalendarTimeFormat = "h:mmaaa";
+
+export const UserKeys = [
+  "birthday",
+  "imageUrl",
+  "passkey",
+  "hasPasskey",
+  "shouldRemember",
+  "isAISearch",
+  "hasSubscription",
+  "GOOGLE_DOCS",
+  "GOOGLE_SHEETS",
+  "GOOGLE_SLIDES",
+  "userId",
+  "username",
+  "email",
+  "searchCount",
+  "searchHistory",
+  "GMAIL",
+  "GOOGLE_DRIVE",
+  "GOOGLE_CALENDAR",
+  "MICROSOFT_TEAMS",
+  "DISCORD",
+  "GITHUB",
+  "NOTION",
+  "SLACK",
+  "createdAt",
+  "updatedAt",
+];

@@ -1,7 +1,7 @@
 "use server";
 
 import { clerkClient } from "@clerk/nextjs/server";
-import { ConnectToDB, isGoogleService } from "@/lib/utils";
+import { ConnectToDB, decrypt, encrypt, isGoogleService } from "@/lib/utils";
 import {
   CombinedFilterKey,
   FilterKey,
@@ -14,9 +14,10 @@ import {
 
 import { auth } from "@clerk/nextjs/server";
 
-import { User, UserType } from "@/models/user.model";
+import { User, TUser } from "@/models/user.model";
 import {
   SearchHistory,
+  TemporarySearchHistory,
   TSearchHistorySchema,
 } from "@/models/search-history.model";
 import { format } from "date-fns";
@@ -25,6 +26,7 @@ import { checkAndRefreshToken, getPlatformClient } from "./utils.actions";
 import { Octokit } from "@octokit/rest";
 import { WebClient } from "@slack/web-api";
 import axios from "axios";
+import { decryptedUserData } from "./security.actions";
 
 export const AISearchPreference = async (
   isAISearch: boolean
@@ -62,7 +64,26 @@ export const toggleSearchService = async (
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated");
 
-    const user = (await User.findOne<UserType>({ userId }))!;
+    const user = await decryptedUserData(userId, [
+      "DISCORD",
+      "GITHUB",
+      "GMAIL",
+      "GOOGLE_CALENDAR",
+      "GOOGLE_DOCS",
+      "GOOGLE_DRIVE",
+      "GOOGLE_SHEETS",
+      "GOOGLE_SLIDES",
+      "MICROSOFT_TEAMS",
+      "NOTION",
+      "SLACK",
+    ]);
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
 
     if (service !== "GMAIL" && isGoogleService(service)) {
       if (user.GOOGLE_DRIVE.connectionStatus !== 1)
@@ -134,9 +155,10 @@ export const getSearchResultCount = async (): Promise<
     if (!userId) throw new Error("Unauthenticated");
 
     await ConnectToDB();
-    const user = (await User.findOne<
+    // Not need to decrypt the data, as the required fields are not encrypted
+    const user = await User.findOne<
       Pick<
-        UserType,
+        TUser,
         Exclude<CombinedFilterKey, "GOOGLE_CALENDAR" | "GOOGLE_DRIVE">
       >
     >(
@@ -153,7 +175,9 @@ export const getSearchResultCount = async (): Promise<
         SLACK: 1,
         _id: 0,
       }
-    ))!;
+    );
+
+    if (!user) throw new Error("User not found");
 
     const result = {
       DISCORD: user.DISCORD.searchResults,
@@ -187,7 +211,8 @@ export const getSearchCount = async (): Promise<
     if (!userId) throw new Error("Unauthenticated");
 
     await ConnectToDB();
-    const result = (await User.findOne<Pick<UserType, "searchCount">>(
+    // Not need to decrypt the data, as the required fields are not encrypted
+    const result = (await User.findOne<Pick<TUser, "searchCount">>(
       { userId },
       { searchCount: 1, _id: 0 }
     ).lean())!;
@@ -213,30 +238,32 @@ export const getSearchCount = async (): Promise<
 
 export const createSearchHistoryInstance = async (
   searchItem: string,
-  search_count: Map<string, TSearchCount>,
-  isAISearch: boolean
+  email: string,
+  searchCount: Map<string, TSearchCount>,
+  isAISearch: boolean,
+  userId: string
 ) => {
   try {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthenticated");
-
-    await ConnectToDB();
     const now = format(new Date(), "yyyy-MM-dd");
 
     const update = {
       [`searchCount.${now}`]: {
-        "AI Search":
-          Number(isAISearch) + (search_count.get(now)?.["AI Search"] ?? 0),
-        "Keyword Search":
-          Number(!isAISearch) +
-          (search_count.get(now)?.["Keyword Search"] ?? 0),
-        "Total Search": 1 + (search_count.get(now)?.["Total Search"] ?? 0),
+        "AI Search": Number(isAISearch) + (searchCount.get(now)?.["AI Search"] ?? 0),
+        "Keyword Search": Number(!isAISearch) + (searchCount.get(now)?.["Keyword Search"] ?? 0),
+        "Total Search": 1 + (searchCount.get(now)?.["Total Search"] ?? 0),
       },
     };
 
+    const searchQuery = encrypt(searchItem);
     const searchHistory = await SearchHistory.create({
       userId,
-      searchItem,
+      searchItem: searchQuery,
+    });
+
+    await TemporarySearchHistory.create({
+      email,
+      userId,
+      searchItem: searchQuery,
     });
 
     await User.findOneAndUpdate(
@@ -322,7 +349,7 @@ export const getSearchHistory = async (
       .map(({ _id, createdAt, searchItem }) => ({
         id: _id.toString(),
         createdAt,
-        searchItem: searchItem!,
+        searchItem: decrypt(searchItem),
       }));
 
     return {
@@ -356,7 +383,7 @@ export const revokeAccessToken = async (
     if (!userId) throw new Error("Unauthorized");
 
     await ConnectToDB();
-    const user = await User.findOne<UserType>({ userId });
+    const user = (await decryptedUserData(userId)) as TUser | undefined;
     if (!user) throw new Error("User not found");
 
     if (platform !== "NOTION" && !isGoogleService(platform)) {
@@ -443,7 +470,7 @@ export const deleteAccount = async (
     await ConnectToDB();
     const user = await User.findOne<
       Pick<
-        UserType,
+        TUser,
         | "DISCORD"
         | "GITHUB"
         | "GMAIL"
@@ -490,6 +517,7 @@ export const deleteAccount = async (
     const client = await clerkClient();
     await client.users.deleteUser(userId);
     await User.findOneAndDelete({ userId });
+    await SearchHistory.deleteMany({ userId });
 
     return {
       success: true,
@@ -515,7 +543,7 @@ export const updateUsername = async (
       };
     }
 
-    const response = await axios.patch(
+    await axios.patch(
       `https://api.clerk.com/v1/users/${userId}`,
       { username },
       {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { Credentials } from "@/lib/types";
 
@@ -60,14 +60,14 @@ export async function GET(req: NextRequest) {
           { userId },
           {
             $set: {
-              "GMAIL.accessToken": tokens.access_token,
-              "GMAIL.refreshToken": tokens.refresh_token,
+              "GMAIL.accessToken": encrypt(tokens.access_token),
+              "GMAIL.refreshToken": encrypt(tokens.refresh_token),
               "GMAIL.expiresAt": Date.now() + tokens.expires_in * 1000,
               "GMAIL.authUser": authUser,
               "GMAIL.connectionStatus": 1,
               "GMAIL.searchStatus": false,
               "GMAIL.searchResults": 0,
-              "GMAIL.email": data.email
+              "GMAIL.email": encrypt(data.email)
             },
           }
         );

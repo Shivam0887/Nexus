@@ -20,6 +20,9 @@ importers:
       '@clerk/themes':
         specifier: ^2.1.14
         version: 2.1.14
+      '@clerk/types':
+        specifier: ^4.35.0
+        version: 4.35.0
       '@langchain/core':
         specifier: ^0.3.1
         version: 0.3.1(openai@4.61.1(encoding@0.1.13)(zod@3.23.8))
@@ -435,6 +438,10 @@ packages:
 
   '@clerk/types@4.28.0':
     resolution: {integrity: sha512-RPdrUs8HYfhXaZ0MOVBkzy7lilsU9lDVSC88a5o/cEMmTML+BTDfLHMlLG81kgvagSLCKKbl28iocb8y7stm1Q==}
+    engines: {node: '>=18.17.0'}
+
+  '@clerk/types@4.35.0':
+    resolution: {integrity: sha512-sBSYCCIXcwI+JHQRqBtskw10+rQ1NcA9w1G6ndnS48F5C+if6xI9OpYaaDjhhvzLjBeZFydKAOhe35mgC7bmoA==}
     engines: {node: '>=18.17.0'}
 
   '@clerk/types@4.9.1':
@@ -5107,6 +5114,10 @@ snapshots:
       tslib: 2.4.1
 
   '@clerk/types@4.28.0':
+    dependencies:
+      csstype: 3.1.1
+
+  '@clerk/types@4.35.0':
     dependencies:
       csstype: 3.1.1
 

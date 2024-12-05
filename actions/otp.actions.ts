@@ -2,7 +2,7 @@
 
 import { createHash } from "crypto";
 import { ConnectToDB } from "@/lib/utils";
-import { User, UserType } from "@/models/user.model";
+import { User, TUser } from "@/models/user.model";
 import { auth } from "@clerk/nextjs/server";
 import { genSalt, hash } from "bcrypt";
 import nodemailer from "nodemailer";
@@ -46,7 +46,7 @@ export const sendOTP = async (): Promise<TActionResponse> => {
     }
 
     await ConnectToDB();
-    const user = await User.findOne<Pick<UserType, "email">>(
+    const user = await User.findOne<Pick<TUser, "email">>(
       { userId },
       { email: 1, _id: 0 }
     );
@@ -60,8 +60,7 @@ export const sendOTP = async (): Promise<TActionResponse> => {
     const otp = generateOTP();
     const hashedOTP = hashOTP(otp);
 
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    await OTP.create({ email: user.email, otp: hashedOTP, expiresAt });
+    await OTP.create({ email: user.email, otp: hashedOTP });
 
     const emailComponent = createElement(Email, { otp });
     const emailHTML = await render(emailComponent);
@@ -69,7 +68,7 @@ export const sendOTP = async (): Promise<TActionResponse> => {
     // Send OTP to user's email
     await transporter.sendMail({
       from: process.env.EMAIL,
-      to: "shivamsharma0887@gmail.com",
+      to: user.email,
       subject: "Passkey Reset OTP",
       html: emailHTML,
     });
@@ -96,7 +95,7 @@ export const verifyOTP = async (otp: string): Promise<TActionResponse> => {
   }
 
   await ConnectToDB();
-  const user = await User.findOne<Pick<UserType, "email">>(
+  const user = await User.findOne<Pick<TUser, "email">>(
     { userId },
     { email: 1, _id: 0 }
   );

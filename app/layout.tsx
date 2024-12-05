@@ -6,13 +6,14 @@ import Navbar from "@/components/global/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { ConnectToDB } from "@/lib/utils";
-import { User, UserType } from "@/models/user.model";
 import { StateType } from "@/lib/types";
 import { UserProvider } from "@/hooks/useUser";
 import { ModalProvider } from "@/hooks/useModalSelection";
 import { Toaster } from "@/components/ui/sonner";
 import { DrawerProvider } from "@/hooks/useDrawerSelection";
 import DrawerManager from "@/providers/drawer-provider";
+import { decryptedUserData } from "@/actions/security.actions";
+import { TUser } from "@/models/user.model";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,9 +31,7 @@ export default async function RootLayout({
   const { userId } = await auth();
 
   await ConnectToDB();
-  const user = await User.findOne<UserType>({
-    userId,
-  });
+  const user = (await decryptedUserData(userId)) as TUser | undefined;
 
   const userData: StateType = {
     coverImage: "",
