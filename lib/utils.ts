@@ -188,11 +188,12 @@ export function encrypt(text: string | null | undefined) {
   if (!text) return "";
   const cipher = createCipheriv(
     algorithm,
-    key,
-    iv
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(Buffer.from(iv))
   );
 
-  const encryptedData = cipher.update(text, "utf8", "hex") + cipher.final("hex");
+  const encryptedData =
+    cipher.update(text, "utf8", "hex") + cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
   return `${authTag}:${encryptedData}`;
 }
@@ -202,12 +203,13 @@ export function decrypt(data: string | null | undefined) {
 
   const decipher = createDecipheriv(
     algorithm,
-    key,
-    iv
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(Buffer.from(iv))
   );
   const [authTag, encryptedData] = data.split(":");
 
   decipher.setAuthTag(Uint8Array.from(Buffer.from(authTag, "hex")));
-  const decrypted = decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
+  const decrypted =
+    decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
   return decrypted;
 }
