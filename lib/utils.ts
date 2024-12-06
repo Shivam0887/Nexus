@@ -28,7 +28,7 @@ export function cn(...inputs: ClassValue[]) {
 
 let isConnected = false;
 
-export const absoluteUrl = process.env.VERCEL_URL || "http://localhost:3001";
+export const absoluteUrl = "https://nexus.vercel.app";
 
 export async function ConnectToDB() {
   const URI = process.env.MONGODB_URI;
