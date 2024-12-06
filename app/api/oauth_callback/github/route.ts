@@ -10,8 +10,8 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  const installationId = req.nextUrl.searchParams.get("installation_id");
   try {
-    const installationId = req.nextUrl.searchParams.get("installation_id");
     if (!installationId)
       throw new Error("Bad request. No installation_id provided.");
 
