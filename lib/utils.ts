@@ -28,7 +28,7 @@ export function cn(...inputs: ClassValue[]) {
 
 let isConnected = false;
 
-export const absoluteUrl = "https://nexus.vercel.app";
+export const absoluteUrl = "https://nexus-ai-search.vercel.app";
 
 export async function ConnectToDB() {
   const URI = process.env.MONGODB_URI;
