@@ -1,8 +1,9 @@
 import {
+  absoluteUrl,
   ConnectToDB,
   encrypt,
   generateGitHubJWT,
-  refreshGitHubAccessToken,
+  refreshGitHubAccessToken
 } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { auth } from "@clerk/nextjs/server";
@@ -37,12 +38,12 @@ export async function GET(req: NextRequest) {
     );
 
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=true&platform=GITHUB"
+      `${absoluteUrl}/integrations?success=true&platform=GITHUB`
     );
   } catch (error: any) {
     console.log("GitHub error:", error.message);
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=false&platform=GITHUB"
+      `${absoluteUrl}/integrations?success=false&platform=GITHUB`
     );
   }
 }

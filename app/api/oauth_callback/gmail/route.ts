@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
-import { ConnectToDB, encrypt } from "@/lib/utils";
+import { ConnectToDB, encrypt, absoluteUrl } from "@/lib/utils";
 import { User } from "@/models/user.model";
 import { Credentials } from "@/lib/types";
 
@@ -75,12 +75,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=true&platform=GMAIL"
+      `${absoluteUrl}/integrations?success=true&platform=GMAIL`
     );
   } catch (error: any) {
-    console.log(error.message);
+    console.log("Gmail error:", error.message);
     return NextResponse.redirect(
-      "https://qflbv4c3-3001.inc1.devtunnels.ms/integrations?success=false&platform=GMAIL"
+      `${absoluteUrl}/integrations?success=false&platform=GMAIL`
     );
   }
 }

@@ -43,7 +43,7 @@ export const decryptedUserData = async <T extends keyof TUser>(
       NOTION: ["accessToken", "botId", "workspaceId"],
       SLACK: ["accessToken", "refreshToken", "teamId", "teamName"],
       GITHUB: ["accessToken", "refreshToken", "installationId"],
-      GMAIL: ["accessToken", "refreshToken"],
+      GMAIL: ["accessToken", "refreshToken", "email"],
       GOOGLE_DRIVE: ["accessToken", "refreshToken"],
       GOOGLE_CALENDAR: ["accessToken", "refreshToken"],
       MICROSOFT_TEAMS: ["accessToken", "refreshToken"],

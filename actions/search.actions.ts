@@ -33,30 +33,55 @@ import { createSearchHistoryInstance } from "./user.actions";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { decryptedUserData } from "./security.actions";
 import { TUser } from "@/models/user.model";
+import { HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+  },
+]
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/gmailquery-ham7ian0yejt",
+  safetySettings,
 });
 
 const tunedModel_Docs = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/google-docs-data-5u6szrdsitel",
+  safetySettings
 });
 
 const tunedModel_Sheets = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/google-sheets-data-rsvd22fipb8n",
+  safetySettings
 });
 
 const tunedModel_Slack = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/slack-data-oglib9jwnvqj",
+  safetySettings
 });
 
 const tunedModel_GitHub = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/github-data-qw3h8evn8n45",
+  safetySettings
 });
 
 const googleGenAI = createGoogleGenerativeAI({
@@ -282,7 +307,7 @@ export const searchAction = async (
 
     return {
       success: false,
-      error: error.message,
+      error: error.name,
     };
   }
 };

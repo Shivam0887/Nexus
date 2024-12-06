@@ -28,6 +28,8 @@ export function cn(...inputs: ClassValue[]) {
 
 let isConnected = false;
 
+export const absoluteUrl = process.env.VERCEL_URL || "http://localhost:3001";
+
 export async function ConnectToDB() {
   const URI = process.env.MONGODB_URI;
 

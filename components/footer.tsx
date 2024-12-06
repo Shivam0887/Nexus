@@ -80,7 +80,7 @@ export default function Footer() {
 
             {/* Social Links */}
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3" id="contact-us">
                 Contact us:
                 <Link
                   href="mailto:gguru3073@gmail.com"

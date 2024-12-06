@@ -8,6 +8,9 @@ export default function TermsAndConditionsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-6">
             Terms and Conditions
           </h1>
+          <p className="text-sm text-gray-700 mb-6">
+            Last updated November 29, 2024
+          </p>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Agreement to Our Legal Terms
           </h2>
@@ -241,7 +244,7 @@ export default function TermsAndConditionsPage() {
             All purchases are non-refundable. You can cancel your subscription
             at any time by logging into your account. Your cancellation will
             take effect at the end of the current paid term. If you have any
-            questions or are unsatisfied with our Services, please
+            questions or are unsatisfied with our Services, please{" "}
             <Link
               href="/terms-and-conditions/#contact-us"
               className="text-blue-600 hover:underline"
@@ -353,6 +356,31 @@ export default function TermsAndConditionsPage() {
                   regulations.
                 </li>
                 <li>Frame or link to the Services without permission.</li>
+              </ul>
+            </li>
+            <li>
+              <span className="font-semibold">
+                <sup>*</sup>Read the following policies carefully
+              </span>
+              <ul className="list-disc list-inside pl-5 mt-1">
+                <li>
+                  <a
+                    href="https://policies.google.com/terms/generative-ai/use-policy"
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                  >
+                    Generative AI-Prohibited Use Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://ai.google.dev/gemini-api/terms"
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                  >
+                    Gemini API Additional Terms of Service
+                  </a>
+                </li>
               </ul>
             </li>
           </ol>
@@ -813,6 +841,7 @@ export default function TermsAndConditionsPage() {
             <Link
               href="mailto:gguru3073@gmail.com"
               className="text-blue-600 hover:underline"
+              id="contact-us"
             >
               gguru3073@gmail.com
             </Link>

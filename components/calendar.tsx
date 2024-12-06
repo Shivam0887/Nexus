@@ -38,7 +38,7 @@ const Calendar = () => {
               Please connect to your Google Calendar account
               <Link
                 className="p-2 rounded-md bg-primary max-w-fit"
-                href="https://qflbv4c3-3001.inc1.devtunnels.ms/integrations#google_calendar"
+                href="/integrations#google_calendar"
               >
                 Go to integrations
               </Link>

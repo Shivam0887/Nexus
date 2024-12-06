@@ -1,3 +1,4 @@
+import { absoluteUrl } from "@/lib/utils";
 import {
   Body,
   Container,
@@ -95,7 +96,7 @@ export const Email = ({ otp }: { otp: string }) => (
     <Body style={main}>
       <Container style={container}>
         <Img
-          src="https://qflbv4c3-3001.inc1.devtunnels.ms/logo.jpeg"
+          src={`${absoluteUrl}/logo.jpeg`}
           width="150"
           height="150"
           alt="Nexus"
