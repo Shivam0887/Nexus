@@ -50,15 +50,16 @@ export const decryptedUserData = async <T extends keyof TUser>(
       DISCORD: ["accessToken", "refreshToken"],
     } as Record<T, string[]>;
 
-    typedEntries(user).forEach(([_, val]) => {
+    const data = (typedEntries(user)[2][1] as unknown) as any;
+    
+    Object.entries(data).forEach(([_, val]) => {
       const key = _ as T;
-
       // Handle simple fields
       if (isBasicInfo(key)) {
-        user[key] = decrypt(user[key] as string) as any;
+        user[key] = decrypt(val as string) as any;
       }
 
-      // Handle integration fields
+      // // Handle integration fields
       if (isIntegration(key)) {
         const integration = integrationDecryptRules[key];
         integration.forEach((field) => {
@@ -67,7 +68,7 @@ export const decryptedUserData = async <T extends keyof TUser>(
           }
         });
       }
-    })
+    });
 
     return user;
   } catch (error: any) {
