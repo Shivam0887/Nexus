@@ -168,6 +168,7 @@ export const DialogContent = ({
 
   return (
     <dialog
+      style={{ scrollBehavior: "unset" }}
       ref={dialogRef}
       onKeyDown={handleKeyDown}
       className={cn(

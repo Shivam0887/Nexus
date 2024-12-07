@@ -1,5 +1,4 @@
 import {
-  COLOR_PALETTES,
   CombinedFilterKey,
   DrawerDirection,
   FAQ,
@@ -8,7 +7,7 @@ import {
   PLAN,
   TSortBy,
 } from "./types";
-import { Check, X } from "lucide-react";
+import { CalendarCheck, Check, X } from "lucide-react";
 import Analytics from "@/components/icons/analytics";
 import Integration from "@/components/icons/integration";
 import Settings from "@/components/icons/settings";
@@ -83,79 +82,6 @@ export const images: LogoType[] = [
   },
 ];
 
-export const colorPalettes: COLOR_PALETTES = {
-  "Radiant Orchid Dream": {
-    linearGradient1: {
-      stop1: "#e36dd7",
-      stop2: "#dfbed3",
-    },
-    linearGradient2: {
-      stop1: "#8a20d5",
-      stop2: "#e36dd7",
-    },
-    radialGradient: {
-      stop1: "#e56ebd",
-      stop2: "#6636da",
-    },
-  },
-  "Velvet Night": {
-    linearGradient1: {
-      stop1: "#667eea",
-      stop2: "#764ba2",
-    },
-    linearGradient2: {
-      stop1: "#8e2de2",
-      stop2: "#4a00e0",
-    },
-    radialGradient: {
-      stop1: "#667eea",
-      stop2: "#764ba2",
-    },
-  },
-  "Oceanic Dream": {
-    linearGradient1: {
-      stop1: "#00c6ff",
-      stop2: "#0072ff",
-    },
-    linearGradient2: {
-      stop1: "#00c6ff",
-      stop2: "#0072ff",
-    },
-    radialGradient: {
-      stop1: "#00d2ff",
-      stop2: "#357ee4",
-    },
-  },
-  "Ocean Depths": {
-    linearGradient1: {
-      stop1: "#4ca1af",
-      stop2: "#2c3e50",
-    },
-    linearGradient2: {
-      stop1: "#4ca1af",
-      stop2: "#2c3e50",
-    },
-    radialGradient: {
-      stop1: "#2c3e50",
-      stop2: "#4ca1af",
-    },
-  },
-  "Midnight Velvet": {
-    linearGradient1: {
-      stop1: "#212529",
-      stop2: "#343a40",
-    },
-    linearGradient2: {
-      stop1: "#212529",
-      stop2: "#343a40",
-    },
-    radialGradient: {
-      stop1: "#343a40",
-      stop2: "#212529",
-    },
-  },
-};
-
 export const content = [
   {
     title: "Sign up - Quick Registration",
@@ -163,6 +89,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/sign-in.mp4",
+    videoPreviewImage: "/sign-in-preview.png"
   },
   {
     title: "Connect your Apps - Easy Integration",
@@ -170,6 +97,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/integration.mp4",
+    videoPreviewImage: "/integration-preview.png"
   },
   {
     title: "Start searching - Instant Access",
@@ -177,6 +105,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/search.mp4",
+    videoPreviewImage: "/search-preview.png"
   },
 ];
 
@@ -192,14 +121,15 @@ export const plans: PLAN[] = [
         available: true,
       },
       {
-        content: "50 credits for AI chat, translate, and summarize",
+        content: "50 credits for AI chat, and summarize",
         icon: Check,
         available: true,
       },
       {
-        content: "10 credits for visual search",
-        icon: Check,
-        available: true,
+        content: "2 credits for visual search",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true
       },
       {
         content: "Multiple account integrations",
@@ -229,14 +159,15 @@ export const plans: PLAN[] = [
         available: true,
       },
       {
-        content: "Unlimited credits for AI chat, translate, and summarize",
+        content: "Unlimited credits for AI chat, and summarize",
         icon: Check,
         available: true,
       },
       {
-        content: "100 credits for visual search",
-        icon: Check,
-        available: true,
+        content: "10 credits for visual search",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true
       },
       {
         content: "Multiple account integrations",

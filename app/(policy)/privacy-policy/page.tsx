@@ -19,18 +19,6 @@ export default function PrivacyPolicyPage() {
             services (collectively, referred as <q>Services</q>), including when
             you:
           </p>
-          <ul className="list-disc list-inside text-gray-700 mb-6 pl-4">
-            <li>
-              Visit our website at{" "}
-              <Link
-                href="https://qflbv4c3-3001.inc1.devtunnels.ms"
-                className="text-blue-600 hover:underline"
-              >
-                https://qflbv4c3-3001.inc1.devtunnels.ms
-              </Link>{" "}
-              , or any website of ours that links to this Privacy Notice.
-            </li>
-          </ul>
           <p className="text-gray-700 mb-6">
             Questions or concerns? Reading this Privacy Policy will help you
             understand your privacy rights and choices. We are responsible for

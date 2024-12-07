@@ -49,17 +49,23 @@ const PricingCard = ({ options }: { options: PLAN }) => {
       <div className="w-full h-[1px] bg-neutral-500" />
 
       <div className="space-y-2">
-        {options.features.map(({ available, content, icon: Icon }, i) => (
-          <div
-            key={i}
-            className={`flex text-sm gap-4 ${available ? "" : "text-gray-600"}`}
-          >
-            <span>
-              <Icon />
-            </span>
-            <p>{content}</p>
-          </div>
-        ))}
+        {options.features.map(
+          ({ available, content, icon: Icon, comingSoon }, i) => (
+            <div
+              key={i}
+              className={`flex text-sm gap-4 ${
+                available ? "" : "text-gray-600"
+              }`}
+            >
+              <span>
+                <Icon />
+              </span>
+              <p>
+                {content} {comingSoon && <span>(Coming Soon)</span>}
+              </p>
+            </div>
+          )
+        )}
       </div>
 
       <AnimatedModal

@@ -16,31 +16,47 @@ const FullScreenModal = () => {
 
   if (!modalState.data || modalState.data.type !== "FullScreenModal")
     return null;
-  const { aiMessage, documents, layout } = modalState.data.data;
 
   return (
-    <div className="absolute lg:right-20 right-5 lg:bottom-20 bottom-5">
-      <Dialog
-        open={isModalOpen}
-        onOpenChange={() => modalDispatch({ type: "onClose" })}
+    <Dialog
+      open={isModalOpen}
+      onOpenChange={() => modalDispatch({ type: "onClose" })}
+    >
+      <DialogContent
+        className="!h-[80vh] max-w-screen-lg p-4"
+        disableXCloseButton={modalState.data.data.type === "Element"}
       >
-        <DialogContent className="!h-[80vh] max-w-screen-lg p-4">
-          <div
-            className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
-              "lg:grid-cols-3 md:grid-cols-2 grid-cols-1": layout === "grid",
-            })}
-          >
-            {documents.map((doc) => (
-              <Document key={doc.href} layout={layout} document={doc} />
-            ))}
-          </div>
+        {modalState.data.data.type === "Message" ? (
+          <>
+            <div
+              className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
+                "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
+                  modalState.data.data.layout === "grid",
+              })}
+            >
+              {modalState.data.data.documents.map((doc) => {
+                const layout =
+                  modalState.data?.type === "FullScreenModal" &&
+                  modalState.data.data.type === "Message"
+                    ? modalState.data.data.layout
+                    : "list";
+                return (
+                  <Document key={doc.href} layout={layout} document={doc} />
+                );
+              })}
+            </div>
 
-          <div className="markdown overflow-auto space-y-5">
-            <ReactMarkdown className="char">{aiMessage}</ReactMarkdown>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <div className="markdown overflow-auto space-y-5">
+              <ReactMarkdown className="char">
+                {modalState.data.data.aiMessage}
+              </ReactMarkdown>
+            </div>
+          </>
+        ) : (
+          <div className="relative">{modalState.data.data.element}</div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 };
 

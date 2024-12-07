@@ -1,30 +1,5 @@
 import { Auth } from "googleapis";
 import { LucideIcon } from "lucide-react";
-import { Types } from "mongoose";
-
-export type PALETTE_NAME =
-  | "Radiant Orchid Dream"
-  | "Velvet Night"
-  | "Oceanic Dream"
-  | "Ocean Depths"
-  | "Midnight Velvet";
-
-type COLOR_THEME = {
-  linearGradient1: {
-    stop1: string;
-    stop2: string;
-  };
-  linearGradient2: {
-    stop1: string;
-    stop2: string;
-  };
-  radialGradient: {
-    stop1: string;
-    stop2: string;
-  };
-};
-
-export type COLOR_PALETTES = Record<PALETTE_NAME, COLOR_THEME>;
 
 export type PLAN = {
   plan: "Starter" | "Professional";
@@ -34,6 +9,7 @@ export type PLAN = {
     content: string;
     icon: LucideIcon;
     available: boolean;
+    comingSoon?: boolean;
   }[];
 };
 
@@ -261,110 +237,3 @@ export type TNotionPageBlockType =
   | "toggle"
   | "unsupported"
   | "video";
-
-// export type TUser = {
-//   createdAt: NativeDate;
-//   updatedAt: NativeDate;
-// } & {
-//   passkey: string;
-//   hasPasskey: boolean;
-//   shouldRemember: boolean;
-//   isAISearch: boolean;
-//   hasSubscription: boolean;
-//   userId: string;
-//   username: string;
-//   email: string;
-//   birthday?: string | null | undefined;
-//   imageUrl?: string | null | undefined;
-//   searchCount: Map<
-//     string,
-//     {
-//       "Total Search": number;
-//       "AI Search": number;
-//       "Keyword Search": number;
-//     }
-//   >;
-//   searchHistory: Types.ObjectId[];
-//   GOOGLE_DOCS: {
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   GOOGLE_SHEETS: {
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   GOOGLE_SLIDES: {
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   GITHUB: {
-//     installationId: string;
-//     searchResults: number;
-//     searchStatus: boolean;
-//     refreshToken: string;
-//     expiresAt: number;
-//     accessToken: string;
-//     connectionStatus: number;
-//   };
-
-//   GMAIL: {
-//     email: string;
-//     authUser: string;
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   NOTION: {
-//     accessToken: string;
-//     connectionStatus: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//     workspaceId?: string | null | undefined;
-//     botId?: string | null | undefined;
-//   };
-//   SLACK: {
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//     teamId?: string | null | undefined;
-//     teamName?: string | null | undefined;
-//   };
-//   DISCORD: {
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   GOOGLE_DRIVE: {
-//     authUser: string;
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-//   GOOGLE_CALENDAR: {
-//     authUser: string;
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//   };
-//   MICROSOFT_TEAMS: {
-//     accessToken: string;
-//     connectionStatus: number;
-//     refreshToken: string;
-//     expiresAt: number;
-//     searchResults: number;
-//     searchStatus: boolean;
-//   };
-// };

@@ -330,7 +330,7 @@ const Page = () => {
               payload: "FullScreenModal",
               data: {
                 type: "FullScreenModal",
-                data: { aiMessage, documents, layout },
+                data: {type: "Message", aiMessage, documents, layout },
               },
             })
           }

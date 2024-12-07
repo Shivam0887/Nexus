@@ -1,7 +1,7 @@
 "use server";
 
 import { UserKeys } from "@/lib/constants";
-import { ConnectToDB, decrypt } from "@/lib/utils";
+import { ConnectToDB, decrypt, typedEntries } from "@/lib/utils";
 import { User, TUser } from "@/models/user.model";
 
 export const decryptedUserData = async <T extends keyof TUser>(
@@ -14,10 +14,10 @@ export const decryptedUserData = async <T extends keyof TUser>(
     const queryOptions = Array.from(new Set(options));
 
     await ConnectToDB();
-    const user = (await User.findOne(
+    const user = await User.findOne(
       { userId },
       queryOptions.reduce((acc, key) => ({ ...acc, [key]: 1 }), { _id: 0 })
-    )) as any;
+    );
 
     if (!user) throw new Error("User not found");
 
@@ -50,8 +50,9 @@ export const decryptedUserData = async <T extends keyof TUser>(
       DISCORD: ["accessToken", "refreshToken"],
     } as Record<T, string[]>;
 
-    for (const _ in user) {
+    typedEntries(user).forEach(([_, val]) => {
       const key = _ as T;
+
       // Handle simple fields
       if (isBasicInfo(key)) {
         user[key] = decrypt(user[key] as string) as any;
@@ -66,10 +67,10 @@ export const decryptedUserData = async <T extends keyof TUser>(
           }
         });
       }
-    }
+    })
 
     return user;
   } catch (error: any) {
-    console.log("Error at decryptedUserData", error.message);
+    console.log("Error at decryptedUserData:", error.message);
   }
 };

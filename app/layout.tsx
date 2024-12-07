@@ -12,6 +12,7 @@ import { ModalProvider } from "@/hooks/useModalSelection";
 import { Toaster } from "@/components/ui/sonner";
 import { DrawerProvider } from "@/hooks/useDrawerSelection";
 import DrawerManager from "@/providers/drawer-provider";
+import ModalManager from "@/providers/modal-provider";
 import { decryptedUserData } from "@/actions/security.actions";
 import { TUser } from "@/models/user.model";
 
@@ -91,7 +92,7 @@ export default async function RootLayout({
                 <Navbar />
                 <Toaster />
                 <DrawerManager />
-
+                <ModalManager />
                 {children}
               </DrawerProvider>
             </ModalProvider>

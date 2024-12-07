@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useModalSelection } from "@/hooks/useModalSelection";
+import { Fullscreen } from "lucide-react";
 
 export const StickyScroll = ({
   content,
@@ -14,9 +16,11 @@ export const StickyScroll = ({
     src?: string;
     isImage?: boolean;
     isVideo?: boolean;
+    videoPreviewImage: string;
   }[];
 }) => {
   const [activeCard, setActiveCard] = useState(0);
+  const { modalDispatch } = useModalSelection();
   const ref = useRef<HTMLDivElement>(null);
 
   const cardsBreakpoints = useMemo(() => {
@@ -92,6 +96,31 @@ export const StickyScroll = ({
 
   const backgroundColors = ["#1B1B1B", "#000000", "#171717"];
 
+  const handleClick = () =>
+    modalDispatch({
+      type: "onOpen",
+      payload: "FullScreenModal",
+      data: {
+        type: "FullScreenModal",
+        data: {
+          type: "Element",
+          element: (
+            <video
+              src={content[activeCard].src}
+              className="w-full h-full"
+              preload="none"
+              autoPlay
+              loop
+              muted
+            >
+              <source type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          ),
+        },
+      },
+    });
+
   return (
     <div
       className="h-[30rem] w-full mx-auto [scrollbar-width:none] overflow-y-auto flex relative px-3 rounded-lg transition duration-500 ease-linear"
@@ -141,9 +170,16 @@ export const StickyScroll = ({
           ))}
         </div>
         <div
-          style={{ background: `var(--background-gradient)` }}
+          style={{
+            background: `${
+              (content[activeCard].isImage || content[activeCard].isVideo) &&
+              content[activeCard].src
+                ? ""
+                : "var(--background-gradient)"
+            }`,
+          }}
           className={
-            "hidden md:block h-56 w-96 rounded-lg sticky mx-auto top-1/2 -translate-y-1/2"
+            "hidden md:block h-56 w-96 rounded-2xl overflow-hidden sticky mx-auto top-1/2 -translate-y-1/2"
           }
         >
           {(content[activeCard].isImage || content[activeCard].isVideo) &&
@@ -158,17 +194,27 @@ export const StickyScroll = ({
                   className="object-cover object-center"
                 />
               ) : (
-                <video
-                  src={content[activeCard].src}
-                  className="w-full h-full"
-                  preload="none"
-                  autoPlay
-                  loop
-                  muted
-                >
-                  <source type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+                <div className="h-full w-full relative">
+                  <video
+                    src={content[activeCard].src}
+                    className="w-full h-full"
+                    preload="none"
+                    autoPlay
+                    loop
+                    muted
+                    poster={content[activeCard].videoPreviewImage}
+                  >
+                    <source type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                  <button
+                    type="button"
+                    className="absolute bottom-2 right-2"
+                    onClick={handleClick}
+                  >
+                    <Fullscreen className="size-4" />
+                  </button>
+                </div>
               )}
             </>
           ) : (

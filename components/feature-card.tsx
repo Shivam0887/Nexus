@@ -6,7 +6,6 @@ import { ScanSearch, Filter, LucideIcon, Mic } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 import { Flipwords } from "./ui/flipwords";
 import { words } from "@/lib/constants";
-import { PinContainer } from "./ui/3d-pin";
 
 export const features: {
   title: string;
@@ -59,15 +58,13 @@ const FeatureCard = () => {
         </h1>
       </div>
 
-      <div className="flex-1 shrink-0 grid md:grid-cols-2 grid-rows-[repeat(4,192px)] md:grid-rows-[repeat(2,192px)] gap-6">
-        {features.map(({ desc, icon: Icon, title, longDesc }, index) => (
-          <PinContainer
-            key={index}
-            title={longDesc}
-            className="w-full h-full border border-neutral-700"
-            containerClassName="h-full"
+      <div className="flex-1 relative shrink-0 grid md:grid-cols-2 grid-rows-[repeat(4,192px)] md:grid-rows-[repeat(2,192px)] gap-6">
+        {features.map(({ icon: Icon, title, longDesc }) => (
+          <div
+            key={title}
+            className="w-full h-full rounded-2xl border-none overflow-hidden"
           >
-            <Card className="h-full p-6 relative overflow-hidden group bg-accent/50 border-none bg-black bg-gradient-to-bl from-neutral-900 from-10% via-neutral-900/50 via-70% to-neutral-950 rounded-lg">
+            <Card className="h-full p-6 relative overflow-hidden group bg-accent/50 border border-neutral-700 bg-black bg-gradient-to-bl from-neutral-900 from-10% via-neutral-900/50 via-70% to-neutral-950 rounded-lg">
               <div className="h-full relative z-10">
                 <div className="w-12 h-12 flex items-center justify-center mb-4 rounded-lg  transition-colors duration-300">
                   <Icon className="w-6 h-6 group-hover:text-text-primary text-neutral-500" />
@@ -75,10 +72,10 @@ const FeatureCard = () => {
                 <h3 className="text-xl font-semibold mb-2 capitalize">
                   {title}
                 </h3>
-                <p className="text-sm">{desc}</p>
+                <p className="text-sm">{longDesc}</p>
               </div>
             </Card>
-          </PinContainer>
+          </div>
         ))}
       </div>
     </section>

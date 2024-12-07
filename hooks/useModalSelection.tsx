@@ -21,10 +21,11 @@ type ActionData =
   | {
       type: "FullScreenModal";
       data: {
+        type: "Message"
         aiMessage: string;
         documents: DocumentType[];
         layout: "grid" | "list";
-      };
+      } | { type: "Element", element: React.ReactNode };
     };
 
 type ActionType =
