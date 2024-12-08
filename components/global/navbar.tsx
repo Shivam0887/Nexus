@@ -75,6 +75,9 @@ export default function Navbar() {
             />
           </span>
           <span className="sm:inline hidden sm:text-2xl text-xl">Nexus</span>
+          <sup className="bg-green-900 tracking-wider text-[10px] font-semibold rounded-lg p-2">
+            {user.hasSubscription ? "Pro" : "Free"}
+          </sup>
         </Link>
         <div className="flex gap-3 sm:gap-4 items-center">
           {pathname === "/" ? (
@@ -135,15 +138,17 @@ export default function Navbar() {
                 </div>
 
                 {/* Upgrade button */}
-                <Link
-                  href="/"
-                  className="hidden sm:flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
-                >
-                  <span>
-                    <Gem className="size-4 stroke-blue-600" />
-                  </span>
-                  Upgrade
-                </Link>
+                {!user.hasSubscription && (
+                  <Link
+                    href="/settings?plan=Professional&tab=billing"
+                    className="hidden sm:flex items-center gap-1 font-medium bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg py-2 px-4 text-xs tracking-wider"
+                  >
+                    <span>
+                      <Gem className="size-4 stroke-blue-600" />
+                    </span>
+                    Upgrade
+                  </Link>
+                )}
               </div>
             </SignedIn>
           )}

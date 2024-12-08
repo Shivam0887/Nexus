@@ -16,13 +16,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-} from "@/components/ui/chart";
+import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { useEffect, useState } from "react";
+import useUser from "@/hooks/useUser";
+
+const MAX_CREDITS = 50;
 
 const chartConfig = {
   "AI Search": {
@@ -36,8 +34,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const UsageGraph = () => {
-  const [chartData, setChartData] = useState([
-    { "AI Search": 10, "AI Chat": 5 },
+  const { user } = useUser();
+  const [chartData] = useState([
+    { "AI Search": user.credits.search, "AI Chat": user.credits.ai },
   ]);
 
   const [isMobile, setIsMobile] = useState(false);
@@ -55,6 +54,21 @@ const UsageGraph = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const searchCreditsAngle =
+    user.plan === "Starter" ? chartData[0]["AI Search"] / MAX_CREDITS : 0;
+  const chatCreditsAngle =
+    user.plan === "Starter" ? chartData[0]["AI Chat"] / MAX_CREDITS : 0;
+
+  const searchCredits =
+    user.plan === "Starter"
+      ? `${chartData[0]["AI Search"].toString()} / ${MAX_CREDITS}`
+      : "Unlimited";
+
+  const chatCredits =
+    user.plan === "Starter"
+      ? `${chartData[0]["AI Chat"].toString()} / ${MAX_CREDITS}`
+      : "Unlimited";
+
   return (
     <Card className="flex flex-col bg-neutral-900 border-none">
       <CardHeader className="items-center pb-0">
@@ -71,7 +85,7 @@ const UsageGraph = () => {
           <RadialBarChart
             data={chartData}
             startAngle={0}
-            endAngle={-(360 * (10 / 20))}
+            endAngle={-(360 * searchCreditsAngle)}
             innerRadius={isMobile ? 55 : 80}
             outerRadius={isMobile ? 90 : 140}
           >
@@ -98,17 +112,17 @@ const UsageGraph = () => {
                           x={viewBox.cx}
                           y={viewBox.cy}
                           className={`fill-[#C4D7FF] ${
-                            isMobile ? "text-xl" : "text-4xl"
+                            isMobile ? "text-xl" : "text-3xl"
                           } font-bold`}
                         >
-                          {chartData[0]["AI Search"].toString()} / 20
+                          {searchCredits}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-white text-xs"
                         >
-                          credits used
+                          credits left
                         </tspan>
                       </text>
                     );
@@ -126,7 +140,7 @@ const UsageGraph = () => {
           <RadialBarChart
             data={chartData}
             startAngle={0}
-            endAngle={-(360 * (5 / 20))}
+            endAngle={-(360 * chatCreditsAngle)}
             innerRadius={isMobile ? 55 : 80}
             outerRadius={isMobile ? 90 : 140}
           >
@@ -153,17 +167,17 @@ const UsageGraph = () => {
                           x={viewBox.cx}
                           y={viewBox.cy}
                           className={`fill-[#C4D7FF] ${
-                            isMobile ? "text-xl" : "text-4xl"
+                            isMobile ? "text-xl" : "text-3xl"
                           } font-bold`}
                         >
-                          {chartData[0]["AI Chat"].toString()} / 20
+                          {chatCredits}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-white text-xs"
                         >
-                          credits used
+                          credits left
                         </tspan>
                       </text>
                     );

@@ -131,9 +131,8 @@ const IntegrationGraph = () => {
         )}
       </CardContent>
       <CardFooter>
-        {/* WIP: change the link for production */}
         <Link
-          href="http://localhost:3001/integrations"
+          href="/integrations"
           className="py-2 px-4 bg-neutral-950 rounded-lg text-sm transition-colors hover:bg-neutral-950/90"
         >
           Go to Integrations

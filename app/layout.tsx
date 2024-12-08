@@ -42,6 +42,10 @@ export default async function RootLayout({
     imageUrl: user?.imageUrl ?? "",
     isAISearch: Boolean(user?.isAISearch),
     plan: "Starter",
+    credits: {
+      ai: user?.credits?.ai ?? 0,
+      search: user?.credits?.search ?? 0
+    },
     shouldRemember: Boolean(user?.shouldRemember),
     username: user?.username ?? "",
     GOOGLE_CALENDAR: {

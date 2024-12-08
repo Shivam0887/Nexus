@@ -77,6 +77,23 @@ const userSchema = new Schema(
     shouldRemember: defaultBooleanSchema,
     isAISearch: defaultBooleanSchema,
     hasSubscription: defaultBooleanSchema,
+    plan: {
+      type: String,
+      default: () => "Starter",
+    },
+    credits: {
+      type: {
+        search: {
+          type: Number,
+          default: () => 50,
+        },
+        ai: {
+          type: Number,
+          default: () => 50,
+        },
+      },
+      default: () => ({ search: 50, ai: 50 }),
+    },
     GMAIL: {
       type: {
         ...platformSchmea,

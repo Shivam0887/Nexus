@@ -57,7 +57,7 @@ export default function Footer() {
                   className="w-full h-full"
                 />
               </div>
-              <div className="text-lg font-semibold">Nexus</div>
+              <div className="text-xl sm:text-2xl font-semibold">Nexus</div>
             </div>
 
             {/* Navigation Links */}
@@ -80,6 +80,9 @@ export default function Footer() {
 
             {/* Social Links */}
             <div className="flex flex-col gap-4">
+              <div className="sapce-x-3 max-w-40">
+                Address: Panipat, Haryana, India (132102)
+              </div>
               <div className="flex items-center gap-3" id="contact-us">
                 Contact us:
                 <Link

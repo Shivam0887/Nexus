@@ -89,7 +89,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/sign-in.mp4",
-    videoPreviewImage: "/sign-in-preview.png"
+    videoPreviewImage: "/sign-in-preview.png",
   },
   {
     title: "Connect your Apps - Easy Integration",
@@ -97,7 +97,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/integration.mp4",
-    videoPreviewImage: "/integration-preview.png"
+    videoPreviewImage: "/integration-preview.png",
   },
   {
     title: "Start searching - Instant Access",
@@ -105,7 +105,7 @@ export const content = [
     content: "",
     isVideo: true,
     src: "/search.mp4",
-    videoPreviewImage: "/search-preview.png"
+    videoPreviewImage: "/search-preview.png",
   },
 ];
 
@@ -126,31 +126,32 @@ export const plans: PLAN[] = [
         available: true,
       },
       {
-        content: "2 credits for visual search",
-        icon: CalendarCheck,
-        available: false,
-        comingSoon: true
-      },
-      {
-        content: "Multiple account integrations",
-        icon: X,
-        available: false,
-      },
-      {
         content: "Workspace analytics",
         icon: X,
         available: false,
       },
       {
-        content: "Intregration Passkey",
+        content: "Integration Passkey",
         icon: X,
         available: false,
+      },
+      {
+        content: "Multiple account integrations",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true,
+      },
+      {
+        content: "2 credits for visual search",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true,
       },
     ],
   },
   {
     plan: "Professional",
-    price: "19",
+    price: "499",
     desc: "For professional, get everything in free plus something extra.",
     features: [
       {
@@ -164,25 +165,26 @@ export const plans: PLAN[] = [
         available: true,
       },
       {
-        content: "10 credits for visual search",
-        icon: CalendarCheck,
-        available: false,
-        comingSoon: true
-      },
-      {
-        content: "Multiple account integrations",
-        icon: Check,
-        available: true,
-      },
-      {
         content: "Workspace analytics",
         icon: Check,
         available: true,
       },
       {
-        content: "Intregration Passkey",
+        content: "Integration Passkey",
         icon: Check,
         available: true,
+      },
+      {
+        content: "Multiple account integrations",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true,
+      },
+      {
+        content: "10 credits for visual search",
+        icon: CalendarCheck,
+        available: false,
+        comingSoon: true,
       },
     ],
   },

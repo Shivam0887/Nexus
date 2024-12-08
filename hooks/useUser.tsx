@@ -18,6 +18,10 @@ const InitialState: StateType = {
   shouldRemember: false,
   username: "",
   plan: "Starter",
+  credits: {
+    ai: 0,
+    search: 0
+  },
   GOOGLE_DRIVE: {
     connectionStatus: 0,
   },
@@ -89,6 +93,22 @@ const reducer = (state: StateType, action: ActionType): StateType => {
           searchStatus: action.payload.searchStatus,
         },
       };
+    case "CREDIT_DESC_AI":
+      return {
+        ...state,
+        credits: {
+          search: state.credits.search,
+          ai: state.credits.ai - 1
+        }
+      }
+    case "CREDIT_DESC_SEARCH":
+      return {
+        ...state,
+        credits: {
+          search: state.credits.search - 1,
+          ai: state.credits.ai
+        }
+      }
     default:
       throw new Error("Invalid action");
   }

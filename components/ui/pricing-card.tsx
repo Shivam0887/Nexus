@@ -1,7 +1,7 @@
 import { PLAN } from "@/lib/types";
 import { Inter } from "next/font/google";
 import AnimatedModal from "./animated-modal";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, IndianRupee } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,7 +39,9 @@ const PricingCard = ({ options }: { options: PLAN }) => {
 
       <div className="space-y-6">
         <p>
-          <sup style={{ fontSize: "18px", verticalAlign: "20px" }}>$</sup>
+          <sup style={{ fontSize: "18px", verticalAlign: "20px" }}>
+            <IndianRupee className="inline-block" />
+          </sup>
           <span className="text-5xl font-bold ">{options.price}</span>{" "}
           {options.plan === "Starter" ? "Free forever" : "/month"}
         </p>
@@ -69,7 +71,7 @@ const PricingCard = ({ options }: { options: PLAN }) => {
       </div>
 
       <AnimatedModal
-        href={`/billing?plan=${options.plan}`}
+        href={`/settings?plan=${options.plan}&tab=billing`}
         icon={<ChevronRight />}
         className={`!w-full text-sm ${
           options.plan === "Starter" ? "!bg-btn-primary" : "!bg-sky-500"

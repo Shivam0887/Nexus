@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Sparkles, UserRound, CreditCard } from "lucide-react";
+import { Sparkles, IndianRupee } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -26,92 +25,43 @@ import { useUser as useClerkUser } from "@clerk/nextjs";
 import { useModalSelection } from "@/hooks/useModalSelection";
 import { sendOTP } from "@/actions/otp.actions";
 import { AISearchPreference, updateUsername } from "@/actions/user.actions";
+import { plans } from "@/lib/constants";
 
-const plans = [
-  {
-    plan: "Professional",
-    price: 29,
-    features: [
-      { available: true, content: "Unlimited searches", icon: Crown },
-      { available: true, content: "Advanced AI features", icon: Sparkles },
-      { available: true, content: "Priority support", icon: UserRound },
-    ],
-  },
-];
-const CurPlan: "Starter" | "Professional" = "Professional";
+type TActiveTab = "account" | "billing" | "security";
+const MAX_CREDITS = 50;
 
-const Page = () => {
-  // return (
-  //       <div className="flex flex-wrap gap-8 my-12 mx-5">
-  //         {/* Subscription Plans */}
-  //         <div className="space-y-4 h-[300px] md:w-96 w-full shrink-0 flex flex-col">
-  //           <h1 className="text-xl font-bold whitespace-nowrap text-btn-secondary">
-  //             Subscription Plans
-  //           </h1>
-  //           <div className="flex-1 relative rounded-2xl bg-secondary shadow-[0px_0px_5px_5px_rgb(27,27,27)] flex flex-col justify-between p-4">
-  //             <div className="flex items-center justify-between">
-  //               <div className="flex items-center gap-2 [letter-spacing:1px]">
-  //                 <Crown className="w-4 h-4 text-btn-primary" />
-  //                 Professional
-  //               </div>
-  //               <span className="inline-flex text-black font-bold text-sm py-1 pr-4 rounded-lg bg-btn-secondary items-center">
-  //                 <Dot />
-  //                 Current Plan
-  //               </span>
-  //             </div>
-
-  //             <div>
-  //               {plans.map(({ features, plan, price }) => (
-  //                 <div key={plan}>
-  //                   {plan === CurPlan && (
-  //                     <div className="flex justify-between">
-  //                       <div className="flex flex-col gap-2 max-w-96">
-  //                         {features.map(
-  //                           ({ available, content, icon: Icon }) => (
-  //                             <div
-  //                               key={content}
-  //                               className={`flex gap-2 text-[13px] ${
-  //                                 available
-  //                                   ? "text-btn-secondary"
-  //                                   : "text-gray-600"
-  //                               }`}
-  //                             >
-  //                               <span>
-  //                                 <Icon className="w-4 h-4" />
-  //                               </span>
-  //                               {content}
-  //                             </div>
-  //                           )
-  //                         )}
-  //                       </div>
-
-  //                       <div className="flex flex-col items-center justify-between">
-  //                         <p>${price} /month</p>
-  //                         <button
-  //                           type="button"
-  //                           className="py-2 px-6 rounded-lg bg-btn-secondary font-extrabold text-sm text-black"
-  //                         >
-  //                           {plan === "Professional" ? "Manage" : "Upgrade"}
-  //                         </button>
-  //                       </div>
-  //                     </div>
-  //                   )}
-  //                 </div>
-  //               ))}
-  //             </div>
-  //           </div>
-  //         </div>
-
-  const { user, dispatch } = useUser();
-  const { user: clerkUser, isLoaded } = useClerkUser();
-  const { modalDispatch } = useModalSelection();
+const Page = ({
+  searchParams,
+}: {
+  searchParams: { [param: string]: string };
+}) => {
   const router = useRouter();
-
-  const [activeTab, setActiveTab] = useState("account");
-  const prevAISearchPreferenceRef = useRef(false);
+  const { user, dispatch } = useUser();
+  const { modalDispatch } = useModalSelection();
+  const { user: clerkUser, isLoaded } = useClerkUser();
 
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TActiveTab>("account");
+
+  const prevAISearchPreferenceRef = useRef(false);
+
+  const curPlan = user.hasSubscription
+    ? "Professional"
+    : searchParams?.plan === "Starter" || searchParams.plan === "Professional"
+    ? searchParams.plan
+    : user.plan;
+
+  useEffect(() => {
+    const tab =
+      searchParams?.tab === "account" ||
+      searchParams.tab === "billing" ||
+      searchParams.tab === "security"
+        ? searchParams.tab
+        : "account";
+
+    setActiveTab(tab);
+  }, [searchParams.tab]);
 
   useEffect(() => {
     if (isLoaded && clerkUser) {
@@ -164,6 +114,8 @@ const Page = () => {
     setIsLoading(false);
   };
 
+  const handlePurchase = () => {};
+
   return (
     <div className="sm:mx-4 mx-0 my-4 h-[calc(100%-2rem)] rounded-2xl overflow-y-auto bg-neutral-900 select-none space-y-8 [scrollbar-width:none]">
       <Card className="border-none">
@@ -193,7 +145,7 @@ const Page = () => {
 
       <Tabs
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={(val) => setActiveTab(val as TActiveTab)}
         className="space-y-4"
       >
         <TabsList className="ml-4 bg-neutral-950">
@@ -317,64 +269,118 @@ const Page = () => {
             <CardContent className="space-y-4">
               {plans.map(
                 ({ features, plan, price }) =>
-                  plan === CurPlan && (
+                  plan === curPlan && (
                     <div key={plan} className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-semibold">{plan}</h3>
-                        <Badge variant="secondary">Current Plan</Badge>
+                        {user.plan === curPlan && (
+                          <Badge variant="secondary">Current Plan</Badge>
+                        )}
                       </div>
-                      <p className="text-3xl font-bold">
-                        ${price}{" "}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          /month
+                      <p className="text-3xl font-bold flex items-center gap-1">
+                        <IndianRupee
+                          className="inline-block"
+                          style={{ strokeWidth: "2.5" }}
+                        />{" "}
+                        {price}{" "}
+                        <span className="text-sm font-normal self-end">
+                          / month
                         </span>
                       </p>
-                      <Progress value={75} className="w-full" />
-                      <p className="text-sm text-muted-foreground">
+                      <>
+                        {curPlan === "Starter" && (
+                          <div className="flex sm:flex-row flex-col sm:items-center gap-2">
+                            <div className="w-full space-y-2">
+                              <p className="text-sm">AI Search Credits</p>
+                              <Progress
+                                value={Math.round(
+                                  ((MAX_CREDITS - user.credits.ai) /
+                                    MAX_CREDITS) *
+                                    100
+                                )}
+                                className="flex-1"
+                              >
+                                {user.credits.search + " / " + MAX_CREDITS}
+                              </Progress>
+                            </div>
+                            <div className="w-full space-y-2">
+                              <p className="text-sm">AI Chat Credits</p>
+                              <Progress
+                                value={Math.round(
+                                  ((MAX_CREDITS - user.credits.ai) /
+                                    MAX_CREDITS) *
+                                    100
+                                )}
+                                className="flex-1"
+                              >
+                                {user.credits.search + " / " + MAX_CREDITS}
+                              </Progress>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                      {/* <p className="text-sm text-muted-foreground">
                         Next billing cycle in 7 days
-                      </p>
+                      </p> */}
                       <ul className="space-y-2">
-                        {features.map(({ available, content, icon: Icon }) => (
-                          <li
-                            key={content}
-                            className={`flex items-center gap-2 ${
-                              available
-                                ? "text-foreground"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            <Icon className="h-4 w-4 flex-shrink-0" />
-                            <span className="text-sm">{content}</span>
-                          </li>
-                        ))}
+                        {features.map(
+                          ({ available, content, icon: Icon, comingSoon }) => (
+                            <li
+                              key={content}
+                              className={`flex items-center gap-2 ${
+                                available
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4 flex-shrink-0" />
+                              <span className="text-sm">
+                                {content}{" "}
+                                {comingSoon && <span>(Coming Soon)</span>}
+                              </span>
+                            </li>
+                          )
+                        )}
                       </ul>
-                      <Button className="w-full">Manage Subscription</Button>
+                      {user.hasSubscription ? (
+                        <button
+                          type="button"
+                          className="w-full rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
+                        >
+                          Manage Subscription
+                        </button>
+                      ) : (
+                        <>
+                          {curPlan === "Starter" ? (
+                            <button
+                              onClick={() => {
+                                router.push(
+                                  "/settings?plan=Professional&tab=billing"
+                                );
+                              }}
+                              type="button"
+                              className="w-full rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
+                            >
+                              Upgrade to Professional
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handlePurchase}
+                              type="button"
+                              className="w-full rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
+                            >
+                              Yet to implement, until Razorpay verifies the
+                              website <br />
+                              (To implement subscription mode logic, first I
+                              need to create the subscription object which can
+                              only be available after verification)
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   )
               )}
-            </CardContent>
-          </Card>
-          <Card className="border-none bg-neutral-950 mx-4">
-            <CardHeader>
-              <CardTitle>Payment Method</CardTitle>
-              <CardDescription>Manage your payment methods.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <CreditCard className="h-6 w-6" />
-                  <div>
-                    <p className="font-medium">Visa ending in 1234</p>
-                    <p className="text-sm text-muted-foreground">
-                      Expires 12/2024
-                    </p>
-                  </div>
-                </div>
-                <Button variant="ghost">Edit</Button>
-              </div>
-              <Button variant="outline" className="w-full">
-                Add Payment Method
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>

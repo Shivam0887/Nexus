@@ -65,6 +65,10 @@ export type StateType = Connection & {
   shouldRemember: boolean;
   hasSubscription: boolean;
   plan: PLAN["plan"];
+  credits: {
+    search: number;
+    ai: number;
+  };
 };
 
 export type ActionType =
@@ -91,6 +95,12 @@ export type ActionType =
   | {
       type: "PLAN_CHANGE";
       payload: PLAN["plan"];
+    }
+  | {
+      type: "CREDIT_DESC_SEARCH";
+    }
+  | {
+      type: "CREDIT_DESC_AI";
     }
   | {
       type: "CONNECTION";
