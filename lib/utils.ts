@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto"
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { sign } from "jsonwebtoken";
@@ -15,7 +16,6 @@ import { TUser } from "@/models/user.model";
 
 const algorithm = "aes-256-gcm";
 const key = process.env.ENCRYPTION_KEY!;
-const iv = process.env.IV!; // Recommended IV length for GCM
 
 type TResponse = {
   token: string;
@@ -186,26 +186,29 @@ export const hasRichTextObject = (type: TNotionPageBlockType) => {
 
 export function encrypt(text: string | null | undefined) {
   if (!text) return "";
+
+  const iv = randomBytes(16);
   const cipher = createCipheriv(
     algorithm,
-    Uint8Array.from(Buffer.from(key, "hex")),
-    Uint8Array.from(Buffer.from(iv, "hex"))
+    Uint8Array.from(Buffer.from(key, 'hex')),
+    Uint8Array.from(iv)
   );
 
   const encryptedData = cipher.update(text, "utf8", "hex") + cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
-  return `${authTag}:${encryptedData}`;
+  return `${authTag}:${encryptedData}:${iv.toString('hex')}`;
 }
 
 export function decrypt(data: string | null | undefined) {
   if (!data) return "";
+
+  const [authTag, encryptedData, iv] = data.split(":");
 
   const decipher = createDecipheriv(
     algorithm,
     Uint8Array.from(Buffer.from(key, "hex")),
     Uint8Array.from(Buffer.from(iv, "hex"))
   );
-  const [authTag, encryptedData] = data.split(":");
 
   decipher.setAuthTag(Uint8Array.from(Buffer.from(authTag, "hex")));
   const decrypted = decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
