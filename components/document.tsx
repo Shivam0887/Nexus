@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { useDrawerSelection } from "@/hooks/useDrawerSelection";
+import Link from "next/link";
 
 const Document = ({
   layout,
@@ -22,7 +22,6 @@ const Document = ({
   document: TDocumentResponse;
 }) => {
   const [open, setOpen] = useState(false);
-  const { drawerDispatch } = useDrawerSelection();
 
   const handleDragStart = (e: React.DragEvent<HTMLElement>) => {
     e.dataTransfer.setData("text", document.title);
@@ -33,7 +32,7 @@ const Document = ({
       draggable
       onDragStart={handleDragStart}
       className={cn(
-        "px-5 py-2 w-full h-24 grid grid-cols-[auto_1fr_auto] items-center gap-6 mx-auto bg-neutral-800 rounded-lg",
+        "px-5 py-2 w-full h-24 grid grid-cols-[auto_1fr_auto] relative items-center gap-6 mx-auto bg-neutral-800 lg:bg-neutral-900 rounded-lg",
         {
           "max-w-sm h-auto": layout === "grid",
         }
@@ -88,58 +87,41 @@ const Document = ({
             <CircleArrowOutUpRight className="sm:size-5 size-4 text-text-primary" />
           </a>
 
-          <div className="relative">
-            <button
-              type="button"
-              onBlur={() => setOpen(false)}
-              onClick={() => setOpen((prev) => !prev)}
-              className="flex items-center gap-1 bg-neutral-800 hover:bg-neutral-700 transition-colors rounded-lg p-2 text-xs tracking-wider"
-            >
-              <EllipsisVertical className="sm:size-5 size-4 text-text-primary" />
-            </button>
-
-            <div
-              className={cn(
-                "absolute -left-10 space-y-2 bg-neutral-900 border-none shadow-xl z-[120] rounded-lg p-2 transition-opacity duration-75",
-                { "opacity-0": !open, "opacity-100": open }
-              )}
-            >
-              <button
-                type="button"
-                className="inline-flex text-sm gap-2 items-center"
-                onClick={() => {
-                  drawerDispatch({
-                    data: { type: "SidebarChat", data: document },
-                    payload: "SidebarChat",
-                    type: "onOpen",
-                  });
-                }}
-              >
-                <span title="Open in Sidebar">
-                  <MessageSquare className="size-5" />
-                </span>
-                Chat
-              </button>
-              <button
-                type="button"
-                className="inline-flex text-sm gap-2 items-center"
-                onClick={() => {
-                  drawerDispatch({
-                    data: { type: "SidebarContentSummary", data: document },
-                    payload: "SidebarContentSummary",
-                    type: "onOpen",
-                  });
-                }}
-              >
-                <span title="Open in Sidebar">
-                  <AlignLeft className="size-5" />
-                </span>
-                Summerize
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(prev => !prev)}
+            className="flex items-center gap-1 hover:bg-neutral-800 transition-colors rounded-lg p-2 text-xs tracking-wider"
+          >
+            <EllipsisVertical className="sm:size-5 size-4 text-text-primary" />
+          </button>
         </div>
       </aside>
+
+      <div
+        className={cn(
+          "absolute right-16 top-1/2 -translate-y-1/2 space-y-2 flex flex-col text-white bg-neutral-900 lg:bg-neutral-800 border-none shadow-xl z-[120] rounded-lg p-2 transition-all duration-75",
+          { invisible: !open, visible: open }
+        )}
+      >
+        <Link
+          href={`/chat/${document.id}`}
+          className="inline-flex text-sm gap-2 items-center"
+        >
+          <span title="Open in Sidebar">
+            <MessageSquare className="size-5" />
+          </span>
+          Chat
+        </Link>
+        <Link
+          href={`/summary/${document.id}`}
+          className="inline-flex text-sm gap-2 items-center"
+        >
+          <span title="Open in Sidebar">
+            <AlignLeft className="size-5" />
+          </span>
+          Summerize
+        </Link>
+      </div>
     </main>
   );
 };

@@ -30,7 +30,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const IntegrationGraph = () => {
+const IntegrationGraph = ({
+  hasSubscription,
+}: {
+  hasSubscription: boolean;
+}) => {
   const [isMounted, setIsMounted] = useState(false);
 
   const [chartData, setChartData] = useState<
@@ -41,7 +45,6 @@ const IntegrationGraph = () => {
   useEffect(() => {
     let integrations = 0;
     const {
-      coverImage,
       email,
       hasPasskey,
       hasSubscription,
@@ -75,7 +78,7 @@ const IntegrationGraph = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        {isMounted && (
+        {isMounted && hasSubscription && (
           <ChartContainer
             config={chartConfig}
             className="aspect-square w-[250px] mx-auto"

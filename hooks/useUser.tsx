@@ -9,7 +9,6 @@ const platformStatus = {
 };
 
 const InitialState: StateType = {
-  coverImage: "",
   email: "",
   hasPasskey: false,
   hasSubscription: false,
@@ -20,7 +19,7 @@ const InitialState: StateType = {
   plan: "Starter",
   credits: {
     ai: 0,
-    search: 0
+    search: 0,
   },
   GOOGLE_DRIVE: {
     connectionStatus: 0,
@@ -48,11 +47,6 @@ const reducer = (state: StateType, action: ActionType): StateType => {
       return {
         ...state,
         isAISearch: action.payload,
-      };
-    case "COVER_IMAGE_CHANGE":
-      return {
-        ...state,
-        coverImage: action.payload,
       };
     case "PASSKEY_CREATE":
       return {
@@ -98,17 +92,17 @@ const reducer = (state: StateType, action: ActionType): StateType => {
         ...state,
         credits: {
           search: state.credits.search,
-          ai: state.credits.ai - 1
-        }
-      }
+          ai: state.credits.ai - 1,
+        },
+      };
     case "CREDIT_DESC_SEARCH":
       return {
         ...state,
         credits: {
           search: state.credits.search - 1,
-          ai: state.credits.ai
-        }
-      }
+          ai: state.credits.ai,
+        },
+      };
     default:
       throw new Error("Invalid action");
   }

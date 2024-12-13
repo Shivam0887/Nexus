@@ -16,12 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useEffect, useState } from "react";
-import {
-  CombinedFilterKey,
-  FilterKey,
-  TActionResponse,
-  TSearchResult,
-} from "@/lib/types";
+import { CombinedFilterKey, TActionResponse, TSearchResult } from "@/lib/types";
 import { toast } from "sonner";
 
 const chartConfig: {
@@ -70,8 +65,10 @@ const chartConfig: {
 
 const SearchResultGraph = ({
   searchResultCount,
+  hasSubscription,
 }: {
   searchResultCount: TActionResponse<TSearchResult>;
+  hasSubscription: boolean;
 }) => {
   const [chartData, setChartData] = useState<
     {
@@ -109,38 +106,46 @@ const SearchResultGraph = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 shrink-0">
-        <ChartContainer config={chartConfig} className="w-full h-full">
-          <BarChart
-            accessibilityLayer
-            data={chartData}
-            layout="vertical"
-            margin={{
-              left: 0,
-            }}
-          >
-            <YAxis
-              dataKey="platform"
-              type="category"
-              tickLine={false}
-              tickMargin={1}
-              axisLine={false}
-              tickFormatter={(value) =>
-                chartConfig[value as keyof typeof chartConfig]?.label
-              }
-            />
-            <XAxis dataKey="results" type="number" hide />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  indicator="line"
-                  className="bg-neutral-950 border-none"
-                />
-              }
-            />
-            <Bar dataKey="results" layout="vertical" radius={5} />
-          </BarChart>
-        </ChartContainer>
+        {hasSubscription && (
+          <ChartContainer config={chartConfig} className="w-full h-full">
+            <BarChart
+              accessibilityLayer
+              data={chartData}
+              layout="vertical"
+              margin={{
+                left: 0,
+              }}
+            >
+              <YAxis
+                dataKey="platform"
+                type="category"
+                tickLine={false}
+                tickMargin={30}
+                axisLine={false}
+                width={130}
+                tickFormatter={(value) =>
+                  chartConfig[value as keyof typeof chartConfig]?.label
+                }
+              />
+              <XAxis
+                dataKey="results"
+                type="number"
+                hide
+                padding={{ left: -30 }}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    indicator="line"
+                    className="bg-neutral-950 border-none"
+                  />
+                }
+              />
+              <Bar dataKey="results" layout="vertical" radius={5} />
+            </BarChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

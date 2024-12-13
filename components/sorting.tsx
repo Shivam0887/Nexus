@@ -23,8 +23,8 @@ import React, { useState } from "react";
 type TSortingProps = {
   filteredDocuments: DocumentType[];
   setFilteredDocuments: React.Dispatch<React.SetStateAction<DocumentType[]>>;
-  isLoading: boolean;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  isSubmitting: boolean;
+  setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 type TOrder = "ascending" | "descending";
@@ -32,14 +32,14 @@ type TOrder = "ascending" | "descending";
 const Sorting = ({
   filteredDocuments,
   setFilteredDocuments,
-  isLoading,
-  setIsLoading,
+  isSubmitting,
+  setIsSubmitting
 }: TSortingProps) => {
   const [order, setOrder] = useState<TOrder>("ascending");
   const [sortBy, setSortBy] = useState<TSortBy>("");
 
   const sortDocuments = (_order: TOrder, sortBy: TSortBy) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     setTimeout(() => {
       const curDate = new Date().toISOString();
@@ -64,7 +64,7 @@ const Sorting = ({
         }
       });
 
-      setIsLoading(false);
+      setIsSubmitting(false);
       setFilteredDocuments(sortedDocuments);
     }, 0);
   };
@@ -85,7 +85,7 @@ const Sorting = ({
 
   return (
     <Select
-      disabled={isLoading}
+      disabled={isSubmitting}
       value={sortBy}
       onValueChange={handleSortValueChange}
     >
@@ -105,7 +105,7 @@ const Sorting = ({
 
         <div className="mt-1">
           <RadioGroup
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="ml-2"
             value={order}
             onValueChange={handleOrderValueChange}

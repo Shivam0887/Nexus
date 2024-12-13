@@ -1,4 +1,5 @@
 import SidebarNav from "@/components/global/sidebar-nav";
+import SearchDocumentProvider from "@/hooks/useSearchDocument";
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -7,7 +8,7 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <SidebarNav direction="right" />
       </div>
       <div className="flex-1 h-full">
-        {children}
+        <SearchDocumentProvider>{children}</SearchDocumentProvider>
       </div>
     </div>
   );

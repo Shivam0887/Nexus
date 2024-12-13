@@ -24,6 +24,26 @@ export const createPasskey = async (
       success: false,
     };
   }
+
+  const user = await User.findOne<Pick<TUser, "hasSubscription">>(
+    { userId },
+    { hasSubscription: 1, _id: 0 }
+  );
+
+  if (!user) {
+    return {
+      success: false,
+      error: "User not found",
+    };
+  }
+
+  if (!user.hasSubscription) {
+    return {
+      success: false,
+      error: "Bad request",
+    };
+  }
+
   const { success, data: passkey } = passkeySchmea.safeParse(key);
 
   if (success) {
@@ -64,6 +84,25 @@ export const validatePasskey = async (
     return {
       error: "Unauthenticated",
       success: false,
+    };
+  }
+
+  const user = await User.findOne<Pick<TUser, "hasSubscription">>(
+    { userId },
+    { hasSubscription: 1, _id: 0 }
+  );
+
+  if (!user) {
+    return {
+      success: false,
+      error: "User not found",
+    };
+  }
+
+  if (!user.hasSubscription) {
+    return {
+      success: false,
+      error: "Bad request",
     };
   }
 

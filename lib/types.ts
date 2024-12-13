@@ -59,11 +59,10 @@ export type StateType = Connection & {
   username: string;
   email: string;
   imageUrl: string;
-  coverImage: string;
   hasPasskey: boolean;
+  hasSubscription: boolean;
   isAISearch: boolean;
   shouldRemember: boolean;
-  hasSubscription: boolean;
   plan: PLAN["plan"];
   credits: {
     search: number;
@@ -72,10 +71,6 @@ export type StateType = Connection & {
 };
 
 export type ActionType =
-  | {
-      type: "COVER_IMAGE_CHANGE";
-      payload: string;
-    }
   | {
       type: "PASSKEY_CREATE";
       payload: boolean;
@@ -247,3 +242,5 @@ export type TNotionPageBlockType =
   | "toggle"
   | "unsupported"
   | "video";
+
+export type TChat = { role: "user" | "assistant"; content: string };

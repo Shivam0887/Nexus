@@ -12,10 +12,10 @@ const FilterDrawer = () => {
   const {
     documents,
     filter,
-    isLoading,
     setFilter,
     setFilteredDocuments,
-    setIsLoading,
+    isSubmitting,
+    setIsSubmitting,
   } = drawerState.data.data;
 
   const isOpen = drawerState.isOpen && drawerState.type === "FilterResult";
@@ -28,8 +28,8 @@ const FilterDrawer = () => {
           controlledHeight={true}
           documents={documents}
           setFilteredDocuments={setFilteredDocuments}
-          isLoading={isLoading}
-          setIsLoading={setIsLoading}
+          isSubmitting={isSubmitting}
+          setIsSubmitting={setIsSubmitting}
           filter={filter}
           setFilter={setFilter}
         />

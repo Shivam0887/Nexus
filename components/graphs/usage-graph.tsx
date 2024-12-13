@@ -33,7 +33,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-const UsageGraph = () => {
+const UsageGraph = ({ hasSubscription }: { hasSubscription: boolean }) => {
   const { user } = useUser();
   const [chartData] = useState([
     { "AI Search": user.credits.search, "AI Chat": user.credits.ai },
@@ -78,115 +78,119 @@ const UsageGraph = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 shrink-0 items-center pb-0">
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square w-full max-w-[250px]"
-        >
-          <RadialBarChart
-            data={chartData}
-            startAngle={0}
-            endAngle={-(360 * searchCreditsAngle)}
-            innerRadius={isMobile ? 55 : 80}
-            outerRadius={isMobile ? 90 : 140}
-          >
-            <PolarGrid
-              gridType="circle"
-              radialLines={false}
-              stroke="none"
-              polarRadius={isMobile ? [60, 50] : [88, 75]}
-              className="first:fill-neutral-800 last:fill-neutral-900"
-            />
-            <RadialBar dataKey="AI Search" fill="var(--chart4-curve1)" />
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text
-                        x={viewBox.cx}
-                        y={viewBox.cy}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        <tspan
-                          x={viewBox.cx}
-                          y={viewBox.cy}
-                          className={`fill-[#C4D7FF] ${
-                            isMobile ? "text-xl" : "text-3xl"
-                          } font-bold`}
-                        >
-                          {searchCredits}
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 24}
-                          className="fill-white text-xs"
-                        >
-                          credits left
-                        </tspan>
-                      </text>
-                    );
-                  }
-                }}
-              />
-            </PolarRadiusAxis>
-          </RadialBarChart>
-        </ChartContainer>
+        {hasSubscription && (
+          <>
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square w-full max-w-[250px]"
+            >
+              <RadialBarChart
+                data={chartData}
+                startAngle={0}
+                endAngle={-(360 * searchCreditsAngle)}
+                innerRadius={isMobile ? 55 : 80}
+                outerRadius={isMobile ? 90 : 140}
+              >
+                <PolarGrid
+                  gridType="circle"
+                  radialLines={false}
+                  stroke="none"
+                  polarRadius={isMobile ? [60, 50] : [88, 75]}
+                  className="first:fill-neutral-800 last:fill-neutral-900"
+                />
+                <RadialBar dataKey="AI Search" fill="var(--chart4-curve1)" />
+                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className={`fill-[#C4D7FF] ${
+                                isMobile ? "text-xl" : "text-3xl"
+                              } font-bold`}
+                            >
+                              {searchCredits}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-white text-xs"
+                            >
+                              credits left
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </PolarRadiusAxis>
+              </RadialBarChart>
+            </ChartContainer>
 
-        <ChartContainer
-          config={chartConfig}
-          className="mx-auto aspect-square w-full max-w-[250px]"
-        >
-          <RadialBarChart
-            data={chartData}
-            startAngle={0}
-            endAngle={-(360 * chatCreditsAngle)}
-            innerRadius={isMobile ? 55 : 80}
-            outerRadius={isMobile ? 90 : 140}
-          >
-            <PolarGrid
-              gridType="circle"
-              radialLines={false}
-              stroke="none"
-              polarRadius={isMobile ? [60, 50] : [88, 75]}
-              className="first:fill-neutral-800 last:fill-neutral-900"
-            />
-            <RadialBar dataKey="AI Chat" fill="var(--chart4-curve2)" />
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text
-                        x={viewBox.cx}
-                        y={viewBox.cy}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                      >
-                        <tspan
-                          x={viewBox.cx}
-                          y={viewBox.cy}
-                          className={`fill-[#C4D7FF] ${
-                            isMobile ? "text-xl" : "text-3xl"
-                          } font-bold`}
-                        >
-                          {chatCredits}
-                        </tspan>
-                        <tspan
-                          x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 24}
-                          className="fill-white text-xs"
-                        >
-                          credits left
-                        </tspan>
-                      </text>
-                    );
-                  }
-                }}
-              />
-            </PolarRadiusAxis>
-          </RadialBarChart>
-        </ChartContainer>
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square w-full max-w-[250px]"
+            >
+              <RadialBarChart
+                data={chartData}
+                startAngle={0}
+                endAngle={-(360 * chatCreditsAngle)}
+                innerRadius={isMobile ? 55 : 80}
+                outerRadius={isMobile ? 90 : 140}
+              >
+                <PolarGrid
+                  gridType="circle"
+                  radialLines={false}
+                  stroke="none"
+                  polarRadius={isMobile ? [60, 50] : [88, 75]}
+                  className="first:fill-neutral-800 last:fill-neutral-900"
+                />
+                <RadialBar dataKey="AI Chat" fill="var(--chart4-curve2)" />
+                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className={`fill-[#C4D7FF] ${
+                                isMobile ? "text-xl" : "text-3xl"
+                              } font-bold`}
+                            >
+                              {chatCredits}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-white text-xs"
+                            >
+                              credits left
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </PolarRadiusAxis>
+              </RadialBarChart>
+            </ChartContainer>
+          </>
+        )}
       </CardContent>
       <CardFooter className="flex justify-around">
         <div className="py-2 px-4 bg-neutral-950 rounded-lg text-sm transition-colors hover:bg-neutral-950/90">

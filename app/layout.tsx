@@ -35,10 +35,9 @@ export default async function RootLayout({
   const user = (await decryptedUserData(userId)) as TUser | undefined;
 
   const userData: StateType = {
-    coverImage: "",
     email: user?.email ?? "",
     hasPasskey: Boolean(user?.hasPasskey),
-    hasSubscription: false,
+    hasSubscription: Boolean(user?.hasSubscription),
     imageUrl: user?.imageUrl ?? "",
     isAISearch: Boolean(user?.isAISearch),
     plan: "Starter",

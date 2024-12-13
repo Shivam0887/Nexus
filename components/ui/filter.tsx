@@ -14,39 +14,37 @@ type TFilter = {
 
 export type TFilterProps = {
   className?: string;
-  controlledHeight?: boolean;
   documents: DocumentType[];
-  isLoading: boolean;
+  isSubmitting: boolean;
   filter: TFilter[];
   setFilter: React.Dispatch<React.SetStateAction<TFilter[]>>;
   setFilteredDocuments: React.Dispatch<React.SetStateAction<DocumentType[]>>;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const Filter = ({
   className,
-  controlledHeight = false,
   documents,
-  isLoading,
+  isSubmitting,
   filter,
   setFilter,
   setFilteredDocuments,
-  setIsLoading,
+  setIsSubmitting,
 }: TFilterProps) => {
   const [isExpand, setIsExpand] = useState(false);
 
   const filterKeyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const div = filterKeyRef.current;
-
-    if (div && !controlledHeight) {
-      div.style.height = isExpand ? `${div.scrollHeight}px` : "28px";
+    if (filterKeyRef.current) {
+      filterKeyRef.current.style.height = isExpand
+        ? `${filterKeyRef.current.scrollHeight}px`
+        : "28px";
     }
-  }, [isExpand, controlledHeight]);
+  }, [isExpand]);
 
   const handleClick = (key: Omit<FilterKey, "GOOGLE_CALENDAR">) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     setTimeout(() => {
       for (let i = 0; i < filter.length; i++) {
@@ -67,24 +65,22 @@ const Filter = ({
         filteredDocuments.length === 0 ? documents : filteredDocuments
       );
       setFilter([...filter]);
-      setIsLoading(false);
+      setIsSubmitting(false);
     }, 0);
   };
 
   return (
-    <div className="rounded-lg bg-neutral-800 grid gap-3 items-center grid-cols-[auto_1fr_auto] max-w-[756px] w-full py-2 px-4">
-      <p className="text-[13px] text-text-primary tracking-wide">Filter by: </p>
-
+    <div className="rounded-lg bg-neutral-800 gap-3 items-center flex w-full py-2 px-4">
       <div
         ref={filterKeyRef}
         className={cn(
-          "h-7 transition-all duration-300 overflow-hidden w-full flex-1 flex flex-wrap items-center gap-2 md:[grid-column:2/3] md:[grid-row:1/span1] [grid-row:2/span1] [grid-column:1/3]",
+          "h-7 transition-all duration-300 overflow-hidden w-full flex-1 flex flex-wrap items-center gap-2",
           className
         )}
       >
         {filter.map(({ key, logo, isSelected }, i) => (
           <button
-            disabled={isLoading}
+            disabled={isSubmitting}
             type="button"
             key={`${key.toString()}_key`}
             onClick={() => handleClick(key)}
@@ -105,12 +101,8 @@ const Filter = ({
       </div>
 
       {/* expand, save */}
-      <div className="flex gap-4 items-center [grid-row:1/1] md:[grid-column:3/span1] [grid-column:2/span1]">
-        <button
-          type="button"
-          className="md:inline hidden"
-          onClick={() => setIsExpand((prev) => !prev)}
-        >
+      <div className="flex gap-4 items-center">
+        <button type="button" onClick={() => setIsExpand((prev) => !prev)}>
           {isExpand ? (
             <ChevronUp className="size-4" />
           ) : (

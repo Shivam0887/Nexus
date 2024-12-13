@@ -57,10 +57,7 @@ const refreshAccessToken = async (
   switch (platform) {
     case "GITHUB":
       const encodedJwt = generateGitHubJWT();
-      const gitHubResponse = await refreshGitHubAccessToken(
-        encodedJwt,
-        user.GITHUB.installationId
-      );
+      const gitHubResponse = await refreshGitHubAccessToken(encodedJwt, user.GITHUB.installationId);
       return {
         accessToken: gitHubResponse.data.token,
         expiresAt: new Date(gitHubResponse.data.expires_at).getTime(),
@@ -71,8 +68,7 @@ const refreshAccessToken = async (
       return { accessToken: "", expiresAt: 0 };
     case "SLACK":
       const slackResponse = await refreshSlackAccessToken(user);
-      const { access_token, expires_in, refresh_token } =
-        slackResponse.data.authed_user;
+      const { access_token, expires_in, refresh_token } = slackResponse.data.authed_user;
       return {
         accessToken: access_token,
         expiresAt: expires_in!,
@@ -82,6 +78,7 @@ const refreshAccessToken = async (
       oauth2Client!.setCredentials({
         refresh_token: user[platform].refreshToken,
       });
+
       const { credentials } = await oauth2Client!.refreshAccessToken();
       oauth2Client!.setCredentials({
         access_token: credentials.access_token,
@@ -123,11 +120,7 @@ export const checkAndRefreshToken = async (
     };
   } else {
     try {
-      const {
-        accessToken,
-        expiresAt,
-        refreshToken: refresh_token,
-      } = await refreshAccessToken(user, platform, oauth2Client);
+      const { accessToken, expiresAt, refreshToken: refresh_token } = await refreshAccessToken(user, platform, oauth2Client);
       const updateQuery = {
         [`${platform}.accessToken`]: encrypt(accessToken),
         [`${platform}.expiresAt`]: expiresAt,
@@ -178,11 +171,6 @@ export const checkAndRefreshToken = async (
 };
 
 export const getPlatformClient = async (user: TUser, platform: FilterKey) => {
-  const clientId = process.env[`${platform}_CLIENT_ID`]!;
-  const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
-  const redirectUri = `${process.env
-    .OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
-
   const dbUser = (await decryptedUserData(user.userId)) as TUser | undefined;
   if (!dbUser) return;
 
@@ -196,6 +184,9 @@ export const getPlatformClient = async (user: TUser, platform: FilterKey) => {
     case "GITHUB":
       return new Octokit({ auth: dbUser?.[platform].accessToken });
     default:
+      const clientId = process.env[`${platform}_CLIENT_ID`]!;
+      const clientSecret = process.env[`${platform}_CLIENT_SECRET`]!;
+      const redirectUri = `${process.env.OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}`;
       return new google.auth.OAuth2({
         clientId,
         clientSecret,
@@ -226,13 +217,11 @@ const processEmailContent = async (
 
   // Determine the label (inbox or first available label)
   const label = labelIds?.includes("INBOX")
-    ? "inbox"
-    : labelIds?.[0]?.toLowerCase() ?? "inbox";
+                ? "inbox"
+                : labelIds?.[0]?.toLowerCase() ?? "inbox";
 
   // Construct email URL
-  const href = `https://mail.google.com/mail/u/${
-    user.GMAIL!.authUser
-  }/#${label}/${id}`;
+  const href = `https://mail.google.com/mail/u/${user.GMAIL!.authUser}/#${label}/${id}`;
 
   // Process email content
   let content = "";
@@ -248,9 +237,7 @@ const processEmailContent = async (
           content = htmlContent
             .map((html) => {
               const dom = new JSDOM(html.concat("</html>"));
-              return (
-                dom.window.document.querySelector("body")?.textContent ?? ""
-              );
+              return (dom.window.document.querySelector("body")?.textContent ?? "");
             })
             .join(" ");
         }
@@ -266,9 +253,7 @@ const processEmailContent = async (
   const getHeader = (
     headers: gmail_v1.Schema$MessagePartHeader[],
     name: string
-  ): string =>
-    headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ??
-    "";
+  ): string => headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
 
   return {
     content,
@@ -288,18 +273,15 @@ const processDocsContent = async (
   const accumulateDocsContent = (content: docs_v1.Schema$StructuralElement) => {
     let result = "";
     if (content.paragraph?.elements) {
-      result = content.paragraph.elements.reduce((curContent, { textRun }) => {
-        return (curContent += textRun?.content ?? "");
-      }, result);
+      result = content.paragraph.elements.reduce((curContent, { textRun }) => (curContent += textRun?.content ?? ""), result);
+
     } else if (content.table?.tableRows) {
       const tableRows = content.table.tableRows;
 
       tableRows.forEach(({ tableCells }) => {
         tableCells?.forEach(({ content }) => {
           const structuralElement = content ?? [];
-          result = structuralElement.reduce((curContent, item) => {
-            return (curContent += accumulateDocsContent(item));
-          }, result);
+          result = structuralElement.reduce((curContent, item) => (curContent += accumulateDocsContent(item)), result);
         });
       });
     }
@@ -314,18 +296,13 @@ const processDocsContent = async (
 
   const document = await docs.documents.get({
     documentId: id!,
-    fields:
-      "title,tabs(documentTab(body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))))",
+    fields: "title,tabs(documentTab(body(content(paragraph(elements(textRun(content))),table(tableRows(tableCells(content)))))))",
   });
 
   let content = "";
   if (document.data.tabs && user.isAISearch) {
-    const structuralElement =
-      document.data.tabs[0].documentTab?.body?.content ?? [];
-    content = structuralElement.reduce((curContent, item) => {
-      curContent += accumulateDocsContent(item);
-      return curContent;
-    }, "");
+    const structuralElement = document.data.tabs[0].documentTab?.body?.content ?? [];
+    content = structuralElement.reduce((curContent, item) => (curContent += accumulateDocsContent(item)), "");
   }
 
   return {
@@ -350,16 +327,13 @@ const processSheetsContent = async (
   const sheet = await sheets.spreadsheets.get({
     spreadsheetId: id!,
     ranges,
-    fields:
-      "properties(title),sheets(properties(sheetId,sheetType,hidden),data(rowData(values(formattedValue)))),spreadsheetUrl",
+    fields: "properties(title),sheets(properties(sheetId,sheetType,hidden),data(rowData(values(formattedValue)))),spreadsheetUrl",
   });
 
   const { data, properties } = sheet.data.sheets![0];
 
   let title = sheet.data.properties!.title!;
-  let href =
-    sheet.data.spreadsheetUrl! +
-    `?gid=${properties!.sheetId!}#gid=${properties!.sheetId!}`;
+  let href = sheet.data.spreadsheetUrl! + `?gid=${properties!.sheetId!}#gid=${properties!.sheetId!}`;
 
   if (
     properties!.sheetType === "GRID" &&
@@ -387,8 +361,7 @@ const processNotionPageContent = async (
   notionClient: NotionClient,
   id: string
 ) => {
-  const getRichText = (richText: RichTextItemResponse[]) =>
-    richText.reduce((text, { plain_text }) => text + plain_text, "");
+  const getRichText = (richText: RichTextItemResponse[]) => richText.reduce((text, { plain_text }) => text + plain_text, "");
 
   const processBlock = async (
     block: BlockObjectResponse | PartialBlockObjectResponse
@@ -397,9 +370,7 @@ const processNotionPageContent = async (
 
     if (isFullBlock(block)) {
       if (hasRichTextObject(block.type) && block.parent.type === "page_id") {
-        const richTextContent = getRichText(
-          (block as any)[block.type].rich_text
-        );
+        const richTextContent = getRichText((block as any)[block.type].rich_text);
         content += `${block.type}: ${richTextContent}\n`;
       }
 
@@ -411,6 +382,7 @@ const processNotionPageContent = async (
             block_id: block.id,
           }
         );
+
         for (const childBlock of childBlocks) {
           content += await processBlock(childBlock); // Recursively process each child block
         }
@@ -460,14 +432,12 @@ const processNotionDatabaseContent = async (
             value = property.select?.name ?? "N/A";
             break;
           case "multi_select":
-            value =
-              property.multi_select.map((item: any) => item.name).join(", ") ||
-              "N/A";
+            value = property.multi_select.map((item: any) => item.name).join(", ") || "N/A";
             break;
           case "date":
             value = property.date?.start
-              ? format(property.date.start, "yyyy-dd-MM HH:mm:ss")
-              : "N/A";
+                    ? format(property.date.start, "yyyy-dd-MM HH:mm:ss")
+                    : "N/A";
             break;
           case "checkbox":
             value = property.checkbox ? "✔️" : "❌";
@@ -482,20 +452,17 @@ const processNotionDatabaseContent = async (
             value = property.phone_number ?? "N/A";
             break;
           case "formula":
-            value =
-              property.formula.type === "boolean"
-                ? property.formula.boolean?.valueOf.toString() ?? "N/A"
-                : property.formula.type === "date"
-                ? property.formula.date?.start?.toString() ?? "N/A"
-                : property.formula.type === "number"
-                ? property.formula.number?.toString() ?? "N/A"
-                : property.formula.string ?? "N/A";
+            value = property.formula.type === "boolean"
+                    ? property.formula.boolean?.valueOf.toString() ?? "N/A"
+                    : property.formula.type === "date"
+                    ? property.formula.date?.start?.toString() ?? "N/A"
+                    : property.formula.type === "number"
+                    ? property.formula.number?.toString() ?? "N/A"
+                    : property.formula.string ?? "N/A";
 
             break;
           case "relation":
-            value =
-              property.relation.map((relation) => relation.id).join(", ") ||
-              "N/A";
+            value = property.relation.map((relation) => relation.id).join(", ") || "N/A";
             break;
           case "created_time":
             value = format(property.created_time, "yyyy-dd-MM HH:mm:ss");
@@ -505,11 +472,7 @@ const processNotionDatabaseContent = async (
             break;
           case "people":
             value = property.people
-              .map((person) => {
-                return isFullUser(person)
-                  ? person.name ?? person.object
-                  : person.object;
-              })
+              .map((person) => (isFullUser(person) ? person.name ?? person.object : person.object))
               .join(", ");
 
             break;
@@ -521,13 +484,13 @@ const processNotionDatabaseContent = async (
             break;
           case "created_by":
             value = isFullUser(property.created_by)
-              ? property.created_by.name ?? property.created_by.object
-              : property.created_by.object;
+                    ? property.created_by.name ?? property.created_by.object
+                    : property.created_by.object;
             break;
           case "last_edited_by":
             value = isFullUser(property.last_edited_by)
-              ? property.last_edited_by.name ?? property.last_edited_by.object
-              : property.last_edited_by.object;
+                    ? property.last_edited_by.name ?? property.last_edited_by.object
+                    : property.last_edited_by.object;
             break;
           // Add more cases as needed for other property types
           default:
@@ -583,8 +546,7 @@ export const searchGmail = async (
     // Process each email
     const emails = await Promise.all(
       data.messages.map(async ({ id }): Promise<DocumentType> => {
-        const { author, content, date, href, title } =
-          await processEmailContent(user, oauth2Client, id!);
+        const { author, content, date, href, title } = await processEmailContent(user, oauth2Client, id!);
 
         return {
           id: id!,
@@ -618,16 +580,8 @@ export const searchDocs = async (
   searchQuery: string,
   user: TUser
 ): Promise<TActionResponse<DocumentType[]>> => {
-  const oauth2Client = (await getPlatformClient(
-    user,
-    "GOOGLE_DRIVE"
-  )) as OAuth2Client;
-
-  const response = await checkAndRefreshToken(
-    user,
-    "GOOGLE_DRIVE",
-    oauth2Client
-  );
+  const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
+  const response = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
 
   if (!response.success)
     return {
@@ -683,15 +637,8 @@ export const searchSheets = async (
   searchQuery: string,
   user: TUser
 ): Promise<TActionResponse<(DocumentType & { ranges: string[] })[]>> => {
-  const oauth2Client = (await getPlatformClient(
-    user,
-    "GOOGLE_DRIVE"
-  )) as OAuth2Client;
-  const response = await checkAndRefreshToken(
-    user,
-    "GOOGLE_DRIVE",
-    oauth2Client
-  );
+  const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
+  const response = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
 
   if (!response.success)
     return {
@@ -715,11 +662,7 @@ export const searchSheets = async (
   const files = fileList.data.files || [];
 
   const resultWithPromise = files.map(
-    async ({
-      id,
-      createdTime,
-      owners,
-    }): Promise<DocumentType & { ranges: string[] }> => {
+    async ({id, createdTime, owners }): Promise<DocumentType & { ranges: string[] }> => {
       const { content, href, title } = await processSheetsContent(
         user,
         id!,
@@ -764,9 +707,7 @@ export const searchSlack = async (
     };
 
   const slackClient = (await getPlatformClient(user, "SLACK")) as WebClient;
-  const slackMsg = await slackClient.search.messages({
-    query: searchQuery,
-  });
+  const slackMsg = await slackClient.search.messages({ query: searchQuery });
 
   if (!slackMsg.ok)
     return {
@@ -787,9 +728,7 @@ export const searchSlack = async (
       ts,
       user: userId,
     }): Promise<DocumentType> => {
-      const date = new Date(
-        parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))
-      ).toISOString();
+      const date = new Date(parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))).toISOString();
 
       const content = redactText(files ? files[0].title! : text!);
 
@@ -799,13 +738,7 @@ export const searchSlack = async (
         content,
         date,
         href: `https://app.slack.com/client/${team!}/${channel!.id}`,
-        email:
-          (
-            await slackClient.users.info({
-              user: userId!,
-              token: user.SLACK.accessToken,
-            })
-          ).user?.profile?.email ?? "",
+        email: (await slackClient.users.info({ user: userId!, token: user.SLACK.accessToken })).user?.profile?.email ?? "",
         key: "SLACK",
         logo: LogoMap["SLACK"],
         title: content,
@@ -825,19 +758,11 @@ export const searchSlack = async (
 export const searchNotion = async (
   searchQuery: string,
   user: TUser
-): Promise<
-  TActionResponse<(DocumentType & { type: "Page" | "Database" })[]>
-> => {
-  const notionClient = (await getPlatformClient(
-    user,
-    "NOTION"
-  )) as NotionClient;
-  const response = await notionClient.search({
-    query: searchQuery,
-  });
+): Promise<TActionResponse<(DocumentType & { type: "Page" | "Database" })[]>> => {
+  const notionClient = (await getPlatformClient(user, "NOTION")) as NotionClient;
+  const response = await notionClient.search({ query: searchQuery });
 
-  const resultWithPromise = response.results.map(
-    async (item): Promise<DocumentType & { type: "Page" | "Database" }> => {
+  const resultWithPromise = response.results.map(async (item) => {
       const document: DocumentType & { type: "Page" | "Database" } = {
         author: "",
         content: "",
@@ -858,28 +783,24 @@ export const searchNotion = async (
         });
 
         document.author = notionUser.name ?? "";
-        document.email =
-          notionUser.type === "person" ? notionUser.person.email! : "";
+        document.email = notionUser.type === "person" ? notionUser.person.email! : "";
         document.href = item.url;
         document.id = item.id;
         document.date = item.created_time;
 
         if (isFullPage(item)) {
           document.content = user.isAISearch
-            ? redactText(await processNotionPageContent(notionClient, item.id))
-            : "";
-          document.title =
-            item.properties.title.type === "title"
-              ? item.properties.title.title[0].plain_text
-              : "";
+                             ? redactText(await processNotionPageContent(notionClient, item.id))
+                             : "";
+          document.title = item.properties?.title?.type === "title"
+                           ? item.properties.title.title[0].plain_text
+                           : "No title found";
         } else {
           document.type = "Database";
-          document.content = user.isAISearch
-            ? redactText(
-                await processNotionDatabaseContent(notionClient, item.id)
-              )
-            : "";
           document.title = item.title[0].plain_text;
+          document.content = user.isAISearch
+                             ? redactText(await processNotionDatabaseContent(notionClient, item.id))
+                             : "";
         }
       }
 
@@ -912,11 +833,7 @@ export const searchGitHub = async (
   const startIndex = index + 5;
   const str = searchQuery.slice(startIndex);
   const endIndex = str.search(/\s/);
-  const searchSpace = str.slice(0, endIndex === -1 ? undefined : endIndex) as
-    | "Repositories"
-    | "Commits"
-    | "PullRequests"
-    | "Issues";
+  const searchSpace = str.slice(0, endIndex === -1 ? undefined : endIndex) as ("Repositories" | "Commits" | "PullRequests" | "Issues");
 
   const gitHub = (await getPlatformClient(user, "GITHUB")) as Octokit;
 
@@ -955,6 +872,7 @@ export const searchGitHub = async (
       const { data: repoData } = await gitHub.rest.search.repos(
         searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]
       );
+
       repoData.items.forEach(
         ({ created_at, description, full_name, id, html_url }) => {
           result.push({
@@ -1032,15 +950,8 @@ export const getProcessedContent = async (
         // Implemented soon
         break;
       case "GMAIL":
-        const gmailOAuth2Client = (await getPlatformClient(
-          user,
-          platform
-        )) as OAuth2Client;
-        const gmailRefreshTokenResp = await checkAndRefreshToken(
-          user,
-          platform,
-          gmailOAuth2Client
-        );
+        const gmailOAuth2Client = (await getPlatformClient(user, platform)) as OAuth2Client;
+        const gmailRefreshTokenResp = await checkAndRefreshToken(user, platform, gmailOAuth2Client);
 
         if (!gmailRefreshTokenResp.success)
           return {
@@ -1048,11 +959,7 @@ export const getProcessedContent = async (
             error: gmailRefreshTokenResp.error,
           };
 
-        const { content: emailContent } = await processEmailContent(
-          user,
-          gmailOAuth2Client,
-          id
-        );
+        const { content: emailContent } = await processEmailContent(user, gmailOAuth2Client, id);
         content = emailContent;
         break;
       case "MICROSOFT_TEAMS":
@@ -1062,30 +969,18 @@ export const getProcessedContent = async (
         if (!type)
           return {
             success: false,
-            error:
-              "'type' paramater is missing when passing 'NOTION' in the 'platform' paramater",
+            error: "'type' paramater is missing when passing 'NOTION' in the 'platform' paramater",
           };
 
-        const notionClient = (await getPlatformClient(
-          user,
-          platform
-        )) as NotionClient;
-        content =
-          type === "Database"
-            ? await processNotionDatabaseContent(notionClient, id)
-            : await processNotionPageContent(notionClient, id);
+        const notionClient = (await getPlatformClient(user, platform)) as NotionClient;
+        content = type === "Database"
+                  ? await processNotionDatabaseContent(notionClient, id)
+                  : await processNotionPageContent(notionClient, id);
         break;
       default:
         //Handling in the default case because Google Drive manages all of them, Google Docs, Google Sheets, and Google Slides.
-        const oauth2Client = (await getPlatformClient(
-          user,
-          "GOOGLE_DRIVE"
-        )) as OAuth2Client;
-        const refreshTokenResp = await checkAndRefreshToken(
-          user,
-          "GOOGLE_DRIVE",
-          oauth2Client
-        );
+        const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
+        const refreshTokenResp = await checkAndRefreshToken(user, "GOOGLE_DRIVE", oauth2Client);
 
         if (!refreshTokenResp.success)
           return {
@@ -1094,26 +989,16 @@ export const getProcessedContent = async (
           };
 
         if (platform === "GOOGLE_DOCS") {
-          const { content: docsContent } = await processDocsContent(
-            user,
-            id,
-            oauth2Client
-          );
+          const { content: docsContent } = await processDocsContent(user, id, oauth2Client);
           content = docsContent;
         } else if (platform === "GOOGLE_SHEETS") {
           if (!ranges)
             return {
               success: false,
-              error:
-                "'ranges' paramater is missing when passing 'GOOGLE_SHEETS' in the 'platform' paramater",
+              error: "'ranges' paramater is missing when passing 'GOOGLE_SHEETS' in the 'platform' paramater",
             };
 
-          const { content: sheetsContent } = await processSheetsContent(
-            user,
-            id,
-            oauth2Client,
-            ranges
-          );
+          const { content: sheetsContent } = await processSheetsContent(user, id, oauth2Client, ranges);
           content = sheetsContent;
         } else {
           // Implemented soon

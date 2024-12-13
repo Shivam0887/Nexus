@@ -30,7 +30,7 @@ const groupSearchHistory = (data: TSearchHistory[]) => {
   const now = format(new Date(), "yyyy-MM-dd HH:mm:ss");
 
   data.forEach(({ createdAt, searchItem, id }) => {
-    const diffInDays = Math.trunc(differenceInHours(now, createdAt)/24)|0;
+    const diffInDays = Math.trunc(differenceInHours(now, createdAt) / 24) | 0;
     const diffInYears = getYear(now) - getYear(createdAt);
 
     const item = { id, createdAt, searchItem };
@@ -69,7 +69,7 @@ const getSearchTime = (group: string, createdAt: Date) => {
   return format(createdAt, "yyyy-MM-dd");
 };
 
-const SearchHistory = () => {
+const SearchHistory = ({ hasSubscription }: { hasSubscription: boolean }) => {
   const [selected, setSelected] = useState<{ [key: string]: boolean }>({}); //track of the selected history by Id
   const [selectCount, setSelectCount] = useState(0);
 
@@ -208,50 +208,52 @@ const SearchHistory = () => {
           </button>
         )}
       </div>
-      <div
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto space-y-5 pr-4"
-      >
-        {searchHistoryGroupBy.map(([group, item]) => (
-          <div key={group} className="space-y-1">
-            <p className="text-sm text">
-              {group[0] === "_" ? group.slice(1) : group}
-            </p>
-            {item.map(({ id, createdAt, searchItem }) => (
-              <div
-                key={id}
-                onClick={() => handleSelectChange(id)}
-                className="text-neutral-300 text-sm flex items-center gap-2 group hover:bg-neutral-950 p-1 rounded-sm cursor-pointer"
-              >
-                <input
-                  id={id}
-                  checked={!!selected[id]}
-                  onChange={() => {}}
-                  type="checkbox"
-                  className="select-search text-base text-white customCheckbox !border-neutral-500"
-                />
-                <span>{getSearchTime(group, createdAt)}</span>
-                <p className="flex-1 line-clamp-1">{searchItem}</p>
-                {selected[id] && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleHistoryDelete([id]);
-                    }}
-                    type="button"
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Trash className="size-4 text-red-600" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
-        {isLoading && (
-          <Loader className="size-4 text-neutral-500 animate-spin mx-auto" />
-        )}
-      </div>
+      {hasSubscription && (
+        <div
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto space-y-5 pr-4"
+        >
+          {searchHistoryGroupBy.map(([group, item]) => (
+            <div key={group} className="space-y-1">
+              <p className="text-sm text">
+                {group[0] === "_" ? group.slice(1) : group}
+              </p>
+              {item.map(({ id, createdAt, searchItem }) => (
+                <div
+                  key={id}
+                  onClick={() => handleSelectChange(id)}
+                  className="text-neutral-300 text-sm flex items-center gap-2 group hover:bg-neutral-950 p-1 rounded-sm cursor-pointer"
+                >
+                  <input
+                    id={id}
+                    checked={!!selected[id]}
+                    onChange={() => {}}
+                    type="checkbox"
+                    className="select-search text-base text-white customCheckbox !border-neutral-500"
+                  />
+                  <span>{getSearchTime(group, createdAt)}</span>
+                  <p className="flex-1 line-clamp-1">{searchItem}</p>
+                  {selected[id] && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleHistoryDelete([id]);
+                      }}
+                      type="button"
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <Trash className="size-4 text-red-600" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+          {isLoading && (
+            <Loader className="size-4 text-neutral-500 animate-spin mx-auto" />
+          )}
+        </div>
+      )}
     </div>
   );
 };

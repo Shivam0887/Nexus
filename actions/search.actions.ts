@@ -52,7 +52,7 @@ const safetySettings = [
     category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
     threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
   },
-]
+];
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
@@ -63,25 +63,25 @@ const tunedModel_Gmail = new ChatGoogleGenerativeAI({
 const tunedModel_Docs = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/google-docs-data-5u6szrdsitel",
-  safetySettings
+  safetySettings,
 });
 
 const tunedModel_Sheets = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/google-sheets-data-rsvd22fipb8n",
-  safetySettings
+  safetySettings,
 });
 
 const tunedModel_Slack = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/slack-data-oglib9jwnvqj",
-  safetySettings
+  safetySettings,
 });
 
 const tunedModel_GitHub = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/github-data-qw3h8evn8n45",
-  safetySettings
+  safetySettings,
 });
 
 const googleGenAI = createGoogleGenerativeAI({
@@ -124,33 +124,25 @@ const generateSearchResult = async (
             // Implemented soon;
             break;
           case "GITHUB":
-            const githubQuery = (
-              await tunedModel_GitHub.invoke(input)
-            ).content.toString();
+            const githubQuery = (await tunedModel_GitHub.invoke(input)).content.toString();
             const githubResponse = await searchGitHub(githubQuery.trim(), user);
             if (githubResponse.success) githubResult = githubResponse.data;
             else throw new Error(githubResponse.error);
             break;
           case "GMAIL":
-            const emailQuery = (
-              await tunedModel_Gmail.invoke(input)
-            ).content.toString();
+            const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
             const gmailResponse = await searchGmail(emailQuery.trim(), user);
             if (gmailResponse.success) gmailResult = gmailResponse.data;
             else throw new Error(gmailResponse.error);
             break;
           case "GOOGLE_DOCS":
-            const docsQuery = (
-              await tunedModel_Docs.invoke(input)
-            ).content.toString();
+            const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
             const docsResponse = await searchDocs(docsQuery.trim(), user);
             if (docsResponse.success) docsResult = docsResponse.data;
             else throw new Error(docsResponse.error);
             break;
           case "GOOGLE_SHEETS":
-            const sheetsQuery = (
-              await tunedModel_Sheets.invoke(input)
-            ).content.toString();
+            const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
             const sheetsResponse = await searchSheets(sheetsQuery.trim(), user);
             if (sheetsResponse.success) sheetsResult = sheetsResponse.data;
             else throw new Error(sheetsResponse.error);
@@ -167,9 +159,7 @@ const generateSearchResult = async (
             else throw new Error(notionResponse.error);
             break;
           default:
-            const slackQuery = (
-              await tunedModel_Slack.invoke(input)
-            ).content.toString();
+            const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
             const slackResponse = await searchSlack(slackQuery.trim(), user);
             if (slackResponse.success) slackResult = slackResponse.data;
             else throw new Error(slackResponse.error);
@@ -200,7 +190,7 @@ const generateSearchResult = async (
 };
 
 export const searchAction = async (
-  formData: FormData
+  data: string
 ): Promise<
   TActionResponse<TDocumentResponse[] | StreamableValue<string, any>>
 > => {
@@ -208,7 +198,6 @@ export const searchAction = async (
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated user. Please login first.");
 
-    const data = formData.get("search")?.toString().trim();
     if (!data) throw new Error("Bad request. Please enter your query.");
 
     // Trying to remove sensitive information before it is processed
@@ -226,7 +215,13 @@ export const searchAction = async (
       };
     }
 
-    await createSearchHistoryInstance(query, user.email, user.searchCount, user.isAISearch, userId);
+    await createSearchHistoryInstance(
+      query,
+      user.email,
+      user.searchCount,
+      user.isAISearch,
+      userId
+    );
 
     // Search the query against every platform the user is connected to.
     const response = await generateSearchResult(user, query, enabledServices);
@@ -309,24 +304,5 @@ export const searchAction = async (
       success: false,
       error: error.name,
     };
-  }
-};
-
-export const chatAction = async (
-  data: { role: "user" | "assistant"; content: string }[]
-): Promise<TActionResponse<StreamableValue<string, any>>> => {
-  try {
-    const streamResult = await streamText({
-      model: googleGenAI("gemini-1.5-flash"),
-      messages: data as CoreMessage[],
-      temperature: 1,
-    });
-
-    return {
-      success: true,
-      data: createStreamableValue(streamResult.textStream).value,
-    };
-  } catch (error: any) {
-    return { success: false, error: error.name };
   }
 };

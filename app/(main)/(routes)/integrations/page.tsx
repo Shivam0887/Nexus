@@ -1,68 +1,13 @@
-"use client";
-
-import { z } from "zod";
-import { toast } from "sonner";
 import Image from "next/image";
-import { useEffect } from "react";
-import { images } from "@/lib/constants";
+import IntegrationWrapper from "./_integration-wrapper";
+import { decryptedUserData } from "@/actions/security.actions";
+import { auth } from "@clerk/nextjs/server";
 
-import useUser from "@/hooks/useUser";
-import { useModalSelection } from "@/hooks/useModalSelection";
-import { Platforms } from "@/lib/constants";
-
-import IntegrationCard from "@/components/integration-card";
-import { useSearchParams } from "next/navigation";
-
-const searchParamsSchema = z.object({
-  success: z.enum(["true", "false"]),
-  platform: z.enum(Platforms),
-});
-
-const Page = () => {
-  const { user } = useUser();
-  const { modalDispatch } = useModalSelection();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const isSucceed = searchParams.get("success");
-    const platform = searchParams.get("platform");
-
-    if (isSucceed && platform) {
-      console.log({ searchParams });
-      const { success, data } = searchParamsSchema.safeParse({
-        success: isSucceed,
-        platform,
-      });
-
-      if (success) {
-        if (data.success === "true")
-          toast.success(
-            `${data.platform.replace("_", " ")} connected successfully.`
-          );
-        else
-          toast.error(
-            `Failed to connect with ${data.platform.replace(
-              "_",
-              " "
-            )}. Please try again later.`
-          );
-      } else {
-        toast.error(
-          "Not able to connect to the service, please try again later."
-        );
-      }
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!user.hasPasskey) {
-      modalDispatch({
-        type: "onOpen",
-        payload: "SecurityModal",
-        data: { type: "SecurityModal", data: {} },
-      });
-    }
-  }, [modalDispatch, user.hasPasskey]);
+const Page = async () => {
+  const { userId } = await auth();
+  const hasSubscription = !!(
+    await decryptedUserData(userId, ["hasSubscription"])
+  )?.hasSubscription;
 
   return (
     <div className="relative select-none sm:mx-4 my-4 mx-0 h-[calc(100%-2rem)] flex lg:flex-row flex-col overflow-y-auto bg-neutral-900 rounded-2xl">
@@ -109,11 +54,7 @@ const Page = () => {
         </div>
       </div>
 
-      <div className="relative z-50 flex flex-col lg:overflow-y-auto items-center py-10 gap-10 flex-1">
-        {images.map(({ alt, desc, src, key }) => (
-          <IntegrationCard alt={alt} src={src} desc={desc} key={key} />
-        ))}
-      </div>
+      <IntegrationWrapper hasSubscription={hasSubscription} />
     </div>
   );
 };

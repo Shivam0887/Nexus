@@ -26,8 +26,10 @@ type TSearchGraphData = {
 
 const SearchGraph = ({
   searchCount,
+  hasSubscription,
 }: {
   searchCount: TActionResponse<TSearchGraphData[]>;
+  hasSubscription: boolean;
 }) => {
   const [chartData, setChartData] = useState<TSearchGraphData[]>([]);
 
@@ -55,7 +57,7 @@ const SearchGraph = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 shrink-0">
-        {chartData.length === 0 ? (
+        {!hasSubscription || chartData.length === 0 ? (
           <div className="w-full h-full flex items-center justify-center gap-2">
             <Ghost className="size-4" />
             No data available

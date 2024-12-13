@@ -61,20 +61,27 @@ export default function Footer() {
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex items-center gap-8">
+            <nav className="grid grid-rows-2 grid-cols-2 items-center gap-4">
               <Link
                 href="/terms-and-conditions"
                 target="_blank"
-                className="text-sm hover:text-gray-300 transition-colors"
+                className="text-sm hover:text-gray-300 transition-colors justify-self-start"
               >
-                Terms and Conditions
+                Terms & Conditions
               </Link>
               <Link
                 href="/privacy-policy"
                 target="_blank"
-                className="text-sm hover:text-gray-300 transition-colors"
+                className="text-sm hover:text-gray-300 transition-colors justify-self-end"
               >
                 Privacy Policy
+              </Link>
+              <Link
+                href="/refund-policy"
+                target="_blank"
+                className="text-sm hover:text-gray-300 transition-colors [grid-column:1/span2] justify-self-center"
+              >
+                Cancellation/Refund Policy
               </Link>
             </nav>
 

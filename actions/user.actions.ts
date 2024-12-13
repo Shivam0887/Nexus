@@ -159,7 +159,8 @@ export const getSearchResultCount = async (): Promise<
     const user = await User.findOne<
       Pick<
         TUser,
-        Exclude<CombinedFilterKey, "GOOGLE_CALENDAR" | "GOOGLE_DRIVE">
+        | Exclude<CombinedFilterKey, "GOOGLE_CALENDAR" | "GOOGLE_DRIVE">
+        | "hasSubscription"
       >
     >(
       { userId },
@@ -173,6 +174,7 @@ export const getSearchResultCount = async (): Promise<
         MICROSOFT_TEAMS: 1,
         NOTION: 1,
         SLACK: 1,
+        hasSubscription: 1,
         _id: 0,
       }
     );
@@ -180,15 +182,21 @@ export const getSearchResultCount = async (): Promise<
     if (!user) throw new Error("User not found");
 
     const result = {
-      DISCORD: user.DISCORD.searchResults,
-      GITHUB: user.GITHUB.searchResults,
-      GMAIL: user.GMAIL.searchResults,
-      GOOGLE_DOCS: user.GOOGLE_DOCS.searchResults,
-      GOOGLE_SHEETS: user.GOOGLE_SHEETS.searchResults,
-      GOOGLE_SLIDES: user.GOOGLE_SLIDES.searchResults,
-      MICROSOFT_TEAMS: user.MICROSOFT_TEAMS.searchResults,
-      NOTION: user.NOTION.searchResults,
-      SLACK: user.SLACK.searchResults,
+      DISCORD: user.hasSubscription ? user.DISCORD.searchResults : 0,
+      GITHUB: user.hasSubscription ? user.GITHUB.searchResults : 0,
+      GMAIL: user.hasSubscription ? user.GMAIL.searchResults : 0,
+      GOOGLE_DOCS: user.hasSubscription ? user.GOOGLE_DOCS.searchResults : 0,
+      GOOGLE_SHEETS: user.hasSubscription
+        ? user.GOOGLE_SHEETS.searchResults
+        : 0,
+      GOOGLE_SLIDES: user.hasSubscription
+        ? user.GOOGLE_SLIDES.searchResults
+        : 0,
+      MICROSOFT_TEAMS: user.hasSubscription
+        ? user.MICROSOFT_TEAMS.searchResults
+        : 0,
+      NOTION: user.hasSubscription ? user.NOTION.searchResults : 0,
+      SLACK: user.hasSubscription ? user.SLACK.searchResults : 0,
     };
 
     return {
@@ -212,17 +220,25 @@ export const getSearchCount = async (): Promise<
 
     await ConnectToDB();
     // Not need to decrypt the data, as the required fields are not encrypted
-    const result = (await User.findOne<Pick<TUser, "searchCount">>(
-      { userId },
-      { searchCount: 1, _id: 0 }
-    ).lean())!;
+    const result = (await User.findOne<
+      Pick<TUser, "searchCount" | "hasSubscription">
+    >({ userId }, { searchCount: 1, hasSubscription: 1, _id: 0 }).lean())!;
 
-    const searchCount = (
-      Object.entries(result.searchCount) as [string, TSearchCount][]
-    ).map(([key, val]) => ({
-      ...val,
-      date: key,
-    }));
+    let searchCount: {
+      date: string;
+      "Total Search": number;
+      "AI Search": number;
+      "Keyword Search": number;
+    }[] = [];
+
+    if (result.hasSubscription) {
+      searchCount = (
+        Object.entries(result.searchCount) as [string, TSearchCount][]
+      ).map(([key, val]) => ({
+        ...val,
+        date: key,
+      }));
+    }
 
     return {
       success: true,
@@ -248,8 +264,10 @@ export const createSearchHistoryInstance = async (
 
     const update = {
       [`searchCount.${now}`]: {
-        "AI Search": Number(isAISearch) + (searchCount.get(now)?.["AI Search"] ?? 0),
-        "Keyword Search": Number(!isAISearch) + (searchCount.get(now)?.["Keyword Search"] ?? 0),
+        "AI Search":
+          Number(isAISearch) + (searchCount.get(now)?.["AI Search"] ?? 0),
+        "Keyword Search":
+          Number(!isAISearch) + (searchCount.get(now)?.["Keyword Search"] ?? 0),
         "Total Search": 1 + (searchCount.get(now)?.["Total Search"] ?? 0),
       },
     };
@@ -327,6 +345,28 @@ export const getSearchHistory = async (
     if (!userId) throw new Error("Unauthenticated");
 
     await ConnectToDB();
+
+    const user = await User.findOne<Pick<TUser, "hasSubscription">>(
+      { userId },
+      { hasSubscription: 1, _id: 0 }
+    );
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    if (!user.hasSubscription) {
+      return {
+        success: true,
+        data: {
+          nextPageToken: null,
+          searchHistory: [],
+        },
+      };
+    }
 
     const query: { [key: string]: any } = { userId };
     if (pageToken) {

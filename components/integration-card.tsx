@@ -10,15 +10,19 @@ import { toast } from "sonner";
 import { useModalSelection } from "@/hooks/useModalSelection";
 import { revokeAccessToken } from "@/actions/user.actions";
 
+type IntegrationCardProps = {
+  src: string;
+  alt: FilterKey;
+  desc: string;
+  hasSubscription: boolean;
+};
+
 const IntegrationCard = ({
   src,
   alt,
   desc,
-}: {
-  src: string;
-  alt: FilterKey;
-  desc: string;
-}) => {
+  hasSubscription,
+}: IntegrationCardProps) => {
   const [isClicked, setIsClicked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,8 +53,11 @@ const IntegrationCard = ({
         payload: { connectionStatus: 0, connectionType: platform },
       });
 
-      const response = await revokeAccessToken({ onAccountDelete: false, platform });
-      if(!response.success) throw new Error(response.error);
+      const response = await revokeAccessToken({
+        onAccountDelete: false,
+        platform,
+      });
+      if (!response.success) throw new Error(response.error);
 
       toast.success(response.data);
     } catch (error: any) {
@@ -71,7 +78,7 @@ const IntegrationCard = ({
   ) => {
     try {
       e.stopPropagation();
-      if (!user.hasPasskey || !user.shouldRemember) {
+      if (hasSubscription && (!user.hasPasskey || !user.shouldRemember)) {
         const url = user.shouldRemember
           ? undefined
           : `/api/auth?platform=${platform}`;
