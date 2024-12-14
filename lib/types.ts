@@ -63,6 +63,7 @@ export type StateType = Connection & {
   hasSubscription: boolean;
   isAISearch: boolean;
   shouldRemember: boolean;
+  aiModel: "gemini" | "ollama";
   plan: PLAN["plan"];
   credits: {
     search: number;
@@ -96,6 +97,10 @@ export type ActionType =
     }
   | {
       type: "CREDIT_DESC_AI";
+    }
+  | {
+      type: "CHANGE_AI_MODEL";
+      payload: "gemini" | "ollama";
     }
   | {
       type: "CONNECTION";

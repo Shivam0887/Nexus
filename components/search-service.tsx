@@ -14,7 +14,7 @@ import { useRef } from "react";
 import useUser from "@/hooks/useUser";
 import { toggleSearchService } from "@/actions/user.actions";
 import { toast } from "sonner";
-import { ShieldCheck, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 
 type TService = Exclude<CombinedFilterKey, "GOOGLE_DRIVE" | "GOOGLE_CALENDAR">;
 
@@ -74,11 +74,22 @@ const SearchService = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-neutral-900 border-none shadow-xl z-[120] rounded-lg">
         {SERVICES.map((service) => (
-          <DropdownMenuItem key={service} className="p-0.5">
+          <DropdownMenuItem
+            key={service}
+            className="p-0.5"
+            onSelect={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <Switch
               value={user[service].searchStatus}
-              onValueChange={(value) => handleValueChange(service)}
-              disabled={service === "MICROSOFT_TEAMS" || service === "DISCORD"}
+              onValueChange={() => handleValueChange(service)}
+              disabled={
+                service === "MICROSOFT_TEAMS" ||
+                service === "DISCORD" ||
+                service === "GOOGLE_SLIDES"
+              }
               label={
                 <div className="flex items-center gap-2">
                   <div className="relative size-5">

@@ -3,8 +3,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Document from "@/components/document";
 
-import ReactMarkdown from "react-markdown";
-
 import { cn } from "@/lib/utils";
 import { useModalSelection } from "@/hooks/useModalSelection";
 
@@ -27,31 +25,21 @@ const FullScreenModal = () => {
         disableXCloseButton={modalState.data.data.type === "Element"}
       >
         {modalState.data.data.type === "Message" ? (
-          <>
-            <div
-              className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
-                "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
-                  modalState.data.data.layout === "grid",
-              })}
-            >
-              {modalState.data.data.documents.map((doc) => {
-                const layout =
-                  modalState.data?.type === "FullScreenModal" &&
-                  modalState.data.data.type === "Message"
-                    ? modalState.data.data.layout
-                    : "list";
-                return (
-                  <Document key={doc.href} layout={layout} document={doc} />
-                );
-              })}
-            </div>
-
-            <div className="markdown overflow-auto space-y-5">
-              <ReactMarkdown className="char">
-                {modalState.data.data.aiMessage}
-              </ReactMarkdown>
-            </div>
-          </>
+          <div
+            className={cn("grid gap-4 px-4 sm:px-6 lg:px-8", {
+              "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
+                modalState.data.data.layout === "grid",
+            })}
+          >
+            {modalState.data.data.documents.map((doc) => {
+              const layout =
+                modalState.data?.type === "FullScreenModal" &&
+                modalState.data.data.type === "Message"
+                  ? modalState.data.data.layout
+                  : "list";
+              return <Document key={doc.href} layout={layout} document={doc} />;
+            })}
+          </div>
         ) : (
           <div className="relative">{modalState.data.data.element}</div>
         )}

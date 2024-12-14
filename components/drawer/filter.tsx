@@ -25,7 +25,6 @@ const FilterDrawer = () => {
       <DrawerContent containerClassName="pt-10 px-2 flex items-center">
         <Filter
           className="h-max"
-          controlledHeight={true}
           documents={documents}
           setFilteredDocuments={setFilteredDocuments}
           isSubmitting={isSubmitting}

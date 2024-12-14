@@ -31,8 +31,30 @@ import { decryptedUserData } from "./security.actions";
 export const AISearchPreference = async (
   isAISearch: boolean
 ): Promise<TActionResponse> => {
+  const { userId } = await auth();
   try {
-    const { userId } = await auth();
+    if(!userId){
+      return {
+        success: false,
+        error: "Unauthorized"
+      }
+    }
+
+    const user = await User.findOne<Pick<TUser, "hasSubscription">>({ userId }, { _id: 0, hasSubscription: 1 });
+    if(!user){
+      return {
+        success: false, 
+        error: "User not found"
+      }
+    }
+
+    if(!user.hasSubscription){
+      return {
+        success: false, 
+        error: "Upgrade to Professional plan"
+      }
+    }
+
     await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },

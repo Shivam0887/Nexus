@@ -9,7 +9,7 @@ export type TSearchChat = { [id: string]: TChat[] };
 export type TSearchChatHistory = {
   [chatId: string]: {
     userInput: string,
-    searchResults: TDocumentResponse[] | string
+    searchResults: TDocumentResponse[]
   } 
 }
 

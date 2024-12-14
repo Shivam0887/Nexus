@@ -7,27 +7,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-import { useRef } from "react";
-import { Gem, Sparkles } from "lucide-react";
+import { Gem } from "lucide-react";
 
-import Switch from "@/components/ui/switch";
 import HamburgurIcon from "@/components/ui/hamburger-icon";
 
 import useUser from "@/hooks/useUser";
-import { AISearchPreference } from "@/actions/user.actions";
-import { toast } from "sonner";
-import SearchService from "../search-service";
 import { useDrawerSelection } from "@/hooks/useDrawerSelection";
+
+import SearchAI from "@/components/search-ai";
+import SearchService from "@/components/search-service";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, dispatch: userDispatch } = useUser();
+  const { user } = useUser();
   const { drawerDispatch } = useDrawerSelection();
-  const { isAISearch } = user;
-
-  const prevAISearchPreference = useRef(false);
-
-  const searchRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
     (
@@ -39,20 +32,6 @@ export default function Navbar() {
     (
       document.getElementById("productList") as HTMLDivElement
     ).style.visibility = "hidden";
-  };
-
-  const handleAISearchToggle = async (isChecked: boolean) => {
-    prevAISearchPreference.current = isAISearch;
-    userDispatch({ type: "AI_SEARCH_CHANGE", payload: isChecked });
-
-    const response = await AISearchPreference(isChecked);
-    if (!response.success) {
-      toast.error(response.error);
-      userDispatch({
-        type: "AI_SEARCH_CHANGE",
-        payload: prevAISearchPreference.current,
-      });
-    }
   };
 
   return (
@@ -75,9 +54,9 @@ export default function Navbar() {
             />
           </span>
           <span className="sm:inline hidden sm:text-2xl text-xl">Nexus</span>
-          <sup className="bg-green-900 tracking-wider text-[10px] font-semibold rounded-lg p-2">
+          {/* <sup className="bg-green-900 tracking-wider text-[10px] font-semibold rounded-lg p-2">
             {user.hasSubscription ? "Pro" : "Free"}
-          </sup>
+          </sup> */}
         </Link>
         <div className="flex gap-3 sm:gap-4 items-center">
           {pathname === "/" ? (
@@ -117,25 +96,11 @@ export default function Navbar() {
             </ul>
           ) : (
             <SignedIn>
-              <div className="flex gap-3 sm:gap-4 items-center">
+              <div className="flex gap-3 sm:gap-4 items-center relative">
                 {/* Turn on the service against you want to perform search operation. */}
 
                 <SearchService />
-                <div ref={searchRef} className="relative w-max">
-                  {/* AI search button */}
-                  <Switch
-                    label={
-                      <div className="flex gap-2">
-                        <Sparkles className="hidden sm:block size-4 fill-btn-primary stroke-btn-primary" />
-                        <p className="text-xs font-medium tracking-wide">
-                          AI Search
-                        </p>
-                      </div>
-                    }
-                    value={isAISearch}
-                    onValueChange={handleAISearchToggle}
-                  />
-                </div>
+                <SearchAI />
 
                 {/* Upgrade button */}
                 {!user.hasSubscription && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { v4 as uuidv4 } from "uuid";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -16,8 +17,6 @@ import { cn, typedEntries } from "@/lib/utils";
 import { CombinedFilterKey, FilterKey, TDocumentResponse } from "@/lib/types";
 
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import { readStreamableValue } from "ai/rsc";
 import { searchAction } from "@/actions/search.actions";
 
 import useUser from "@/hooks/useUser";
@@ -31,16 +30,15 @@ import Document from "@/components/document";
 import Textarea from "@/components/ui/textarea";
 import { Flipwords } from "@/components/ui/flipwords";
 import {
-  TSearchChatHistory,
-  TSearchDocument,
-  useSearchDocument,
-} from "@/hooks/useSearchDocument";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { v4 as uuidv4 } from "uuid";
+import {
+  TSearchChatHistory,
+  TSearchDocument,
+  useSearchDocument,
+} from "@/hooks/useSearchDocument";
 
 type LayoutType = "grid" | "list";
 
@@ -65,64 +63,59 @@ const ShowUserQuery = ({
   setFilteredDocuments,
   setIsPreviousChat,
 }: TShowUserQueryProps) => {
-  const [isCopied, setIsCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState<{[key: string]: boolean}>({});
   const { user } = useUser();
 
   return (
     <div className="flex flex-col gap-2 overflow-y-auto mt-2">
-      {typedEntries(searchContextChatHistory).map(([key, { userInput }]) => (
-        <div
-          className="cursor-pointer"
-          key={key.toString()}
-          onClick={() => {
-            const id = key.toString().trim();
-            if (id && searchContextChatHistory[id]) {
-              setIsPreviousChat(true);
-              setDocuments(
-                searchContextChatHistory[id]
-                  .searchResults as TDocumentResponse[]
-              );
-              setFilteredDocuments(
-                searchContextChatHistory[id]
-                  .searchResults as TDocumentResponse[]
-              );
-            }
-          }}
-        >
-          <div className="w-full">
-            <div className="flex gap-2 justify-end items-center w-full max-w-5xl px-4 sm:px-6 lg:px-8 ">
-              <div className="relative size-7">
-                <Image
-                  src={user.imageUrl}
-                  alt="user profile photo"
-                  fill
-                  className="rounded-full"
-                />
-              </div>
-              <div className="flex items-center gap-3 bg-neutral-900 p-2 rounded-lg">
-                {userInput}
+      {typedEntries(searchContextChatHistory).map(([key, { userInput }]) => {
+        const id = key.toString().trim();
+        return (
+          <div
+            className="cursor-pointer"
+            key={id}
+            onClick={() => {
+              if (id && searchContextChatHistory[id]) {
+                setIsPreviousChat(true);
+                setDocuments(searchContextChatHistory[id].searchResults);
+                setFilteredDocuments(searchContextChatHistory[id].searchResults);
+              }
+            }}
+          >
+            <div className="w-full">
+              <div className="flex gap-2 justify-end items-center w-full max-w-5xl px-4 sm:px-6 lg:px-8 ">
+                <div className="relative size-7">
+                  <Image
+                    src={user.imageUrl}
+                    alt="user profile photo"
+                    fill
+                    className="rounded-full"
+                  />
+                </div>
+                <div className="flex items-center gap-3 bg-neutral-900 p-2 rounded-lg">
+                  {userInput}
 
-                <button
-                  onClick={() => {
-                    setIsCopied(true);
-                    window.navigator.clipboard.writeText(userInput);
+                  <button
+                    onClick={() => {
+                      setIsCopied((prev) => ({...prev, [id]: true}));
+                      window.navigator.clipboard.writeText(userInput);
 
-                    setTimeout(() => {
-                      setIsCopied(false);
-                    }, 3000);
-                  }}
-                >
-                  {isCopied ? (
-                    <Check className="size-4" />
-                  ) : (
-                    <Copy className="size-4" />
-                  )}
-                </button>
+                      setTimeout(() => {
+                        setIsCopied((prev) => ({...prev, [id]: false}));
+                      }, 3000);
+                    }}
+                  >
+                    {isCopied[id] ? (
+                      <Check className="size-4" />
+                    ) : (
+                      <Copy className="size-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      ))}
+      )})}
     </div>
   );
 };
@@ -130,7 +123,6 @@ const ShowUserQuery = ({
 const SearchPage = () => {
   const [layout, setLayout] = useState<LayoutType>("list");
   const [userQuery, setUserQuery] = useState("");
-  const [aiMessage, setAiMessage] = useState("");
   const [filter, setFilter] = useState<TFilter[]>([]);
 
   const [isDesktop, setIsDesktop] = useState(false);
@@ -142,17 +134,13 @@ const SearchPage = () => {
   } = useSearchDocument();
 
   const [documents, setDocuments] = useState<TDocumentResponse[]>([]);
-  const [filteredDocuments, setFilteredDocuments] = useState<
-    TDocumentResponse[]
-  >([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<TDocumentResponse[]>([]);
 
-  const { dispatch } = useUser();
+  const { user, dispatch } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isPreviousChat, setIsPreviousChat] = useState(false);
-  const [searchCount, setSearchCount] = useState(
-    Object.entries(searchContextChatHistory).length
-  );
+  const [searchCount, setSearchCount] = useState(Object.entries(searchContextChatHistory).length);
 
   const chatIdRef = useRef("");
   const searchDivContainerRef = useRef<HTMLDivElement | null>(null);
@@ -232,10 +220,9 @@ const SearchPage = () => {
       setIsPreviousChat(false);
       setSearchCount((prev) => prev + 1);
       setIsSubmitting(true);
-      setAiMessage("");
       setUserQuery("");
 
-      const response = await searchAction(query);
+      const response = await searchAction(query, user.aiModel);
       if (!response.success) {
         toast.error(response.error);
         if (response.error.split("-")[0] === "RE_AUTHENTICATE") {
@@ -248,17 +235,8 @@ const SearchPage = () => {
         return;
       }
 
-      setIsSubmitting(false);
-      if (Array.isArray(response.data)) {
-        setDocuments(response.data);
-        setFilteredDocuments(response.data);
-      } else {
-        for await (const content of readStreamableValue(response.data)) {
-          if (content) {
-            setAiMessage(content);
-          }
-        }
-      }
+      setDocuments(response.data);
+      setFilteredDocuments(response.data);
 
       setSearchContextChatHistory((prev) => ({
         ...prev,
@@ -266,6 +244,7 @@ const SearchPage = () => {
       }));
     } catch (error: any) {
       toast.error(error?.message);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -334,58 +313,54 @@ const SearchPage = () => {
               </DropdownMenu>
             )}
 
-            {(documents.length > 0 || aiMessage.length > 0) && (
+            {documents.length > 0 && (
               <div className="flex items-center gap-3">
                 {/* calendar */}
                 <Calendar />
 
-                {documents.length > 0 && (
-                  <>
-                    {/* sorting */}
-                    <Sorting
-                      filteredDocuments={filteredDocuments}
-                      setFilteredDocuments={setFilteredDocuments}
-                      isSubmitting={isSubmitting}
-                      setIsSubmitting={setIsSubmitting}
-                    />
+                {/* sorting */}
+                <Sorting
+                  filteredDocuments={filteredDocuments}
+                  setFilteredDocuments={setFilteredDocuments}
+                  isSubmitting={isSubmitting}
+                  setIsSubmitting={setIsSubmitting}
+                />
 
-                    {/* layout buttons*/}
-                    <div className="px-4 flex gap-x-4 h-9 bg-neutral-800 rounded-lg">
-                      {(["grid", "list"] as LayoutType[]).map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => setLayout(item)}
-                          className="relative"
-                        >
-                          <span>
-                            {item === "grid" ? (
-                              <LayoutGrid
-                                className={`relative z-20 size-4 ${
-                                  layout === "grid"
-                                    ? "fill-neutral-800 stroke-neutral-800"
-                                    : "fill-text-primary stroke-text-primary"
-                                }`}
-                              />
-                            ) : (
-                              <Menu
-                                className={`relative z-20 stroke-[3] size-4 ${
-                                  layout === "list"
-                                    ? "stroke-neutral-800"
-                                    : "stroke-text-primary"
-                                }`}
-                              />
-                            )}
-                          </span>
+                {/* layout buttons*/}
+                <div className="px-4 flex gap-x-4 h-9 bg-neutral-800 rounded-lg">
+                  {(["grid", "list"] as LayoutType[]).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setLayout(item)}
+                      className="relative"
+                    >
+                      <span>
+                        {item === "grid" ? (
+                          <LayoutGrid
+                            className={`relative z-20 size-4 ${
+                              layout === "grid"
+                                ? "fill-neutral-800 stroke-neutral-800"
+                                : "fill-text-primary stroke-text-primary"
+                            }`}
+                          />
+                        ) : (
+                          <Menu
+                            className={`relative z-20 stroke-[3] size-4 ${
+                              layout === "list"
+                                ? "stroke-neutral-800"
+                                : "stroke-text-primary"
+                            }`}
+                          />
+                        )}
+                      </span>
 
-                          {layout === item && (
-                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 rounded-full bg-text-primary pointer-events-none z-0"></span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                      {layout === item && (
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 rounded-full bg-text-primary pointer-events-none z-0"></span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -429,36 +404,26 @@ const SearchPage = () => {
             </div>
           ) : (
             <>
-              {filteredDocuments.length || aiMessage.length ? (
-                <div className="h-full space-y-4">
-                  {filteredDocuments.length ? (
-                    <div
-                      className={cn(
-                        "w-full mx-auto grid gap-4 px-4 sm:px-6 lg:px-8 overflow-hidden",
-                        {
-                          "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
-                            layout === "grid",
-                        }
-                      )}
-                    >
-                      {filteredDocuments.map((doc) => (
-                        <Document
-                          key={doc.href}
-                          layout={layout}
-                          document={doc}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div>
-                      {/* If AI-Search enabled */}
-                      <div className="markdown overflow-auto space-y-5">
-                        <ReactMarkdown className="char">
-                          {aiMessage}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  )}
+              {filteredDocuments.length ? (
+                <div className="relative h-full space-y-4">
+                  <div
+                    className={cn(
+                      "w-full mx-auto grid gap-4 px-4 sm:px-6 lg:px-8 overflow-hidden",
+                      {
+                        "lg:grid-cols-3 md:grid-cols-2 grid-cols-1":
+                          layout === "grid",
+                      }
+                    )}
+                  >
+                    {filteredDocuments.map((doc) => (
+                      <Document
+                        key={doc.href}
+                        layout={layout}
+                        document={doc}
+                      />
+                    ))}
+                  </div>
+                  {user.isAISearch && <p className="absolute bottom-0 right-5 text-xs text-neutral-300">Using AI</p>}
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center">
@@ -491,7 +456,7 @@ const SearchPage = () => {
               payload: "FullScreenModal",
               data: {
                 type: "FullScreenModal",
-                data: { type: "Message", aiMessage, documents, layout },
+                data: { type: "Message", documents, layout },
               },
             })
           }

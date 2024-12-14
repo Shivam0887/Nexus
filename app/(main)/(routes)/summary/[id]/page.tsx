@@ -16,11 +16,13 @@ import { getProcessedContent } from "@/actions/utils.actions";
 import { useSearchDocument } from "@/hooks/useSearchDocument";
 import { notFound } from "next/navigation";
 import { TooltipContainer } from "@/components/tooltip";
+import useUser from "@/hooks/useUser";
 
 type TChat = { role: "user" | "assistant"; content: string };
 
 const SummaryPage = ({ params }: { params: { id: string } }) => {
   const { searchContextDocuments } = useSearchDocument();
+  const { user } = useUser();
 
   const [isSearching, setIsSearching] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
@@ -90,13 +92,14 @@ const SummaryPage = ({ params }: { params: { id: string } }) => {
       setIsContentLoading(false);
       setIsContentLoaded(true);
 
-      const response = await fetch("/api/ollama", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           data: newChats,
+          model: user.aiModel
         }),
       });
 
@@ -105,13 +108,6 @@ const SummaryPage = ({ params }: { params: { id: string } }) => {
       }, 0);
 
       if (!response.body) {
-        setChats((prevChats) => [
-          ...prevChats.slice(0, -1),
-          {
-            role: "assistant",
-            content: "Having some issues, try again later!",
-          },
-        ]);
         throw new Error("No response body");
       }
 
@@ -135,6 +131,14 @@ const SummaryPage = ({ params }: { params: { id: string } }) => {
       }
     } catch (error: any) {
       toast.error("Service is currenly unavailable");
+
+      setChats((prevChats) => [
+        ...prevChats.slice(0, -1),
+        {
+          role: "assistant",
+          content: "Having some issues, please try again later.",
+        },
+      ]);
       setIsContentLoading(false);
       setIsSearching(false);
     }

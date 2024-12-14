@@ -16,6 +16,7 @@ const InitialState: StateType = {
   isAISearch: false,
   shouldRemember: false,
   username: "",
+  aiModel: "ollama",
   plan: "Starter",
   credits: {
     ai: 0,
@@ -103,6 +104,11 @@ const reducer = (state: StateType, action: ActionType): StateType => {
           ai: state.credits.ai,
         },
       };
+    case "CHANGE_AI_MODEL":
+      return {
+        ...state,
+        aiModel: action.payload
+      }
     default:
       throw new Error("Invalid action");
   }

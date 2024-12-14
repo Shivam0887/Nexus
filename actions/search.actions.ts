@@ -13,17 +13,9 @@ import {
   searchSlack,
 } from "./utils.actions";
 
+import { cosineSimilarity } from "ai";
 import {
-  CoreMessage,
-  ImagePart,
-  streamText,
-  TextPart,
-  cosineSimilarity,
-  embed,
-} from "ai";
-import { createStreamableValue, StreamableValue } from "ai/rsc";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import {
+  CombinedFilterKey,
   DocumentType,
   TActionResponse,
   TDocumentResponse,
@@ -33,26 +25,21 @@ import { createSearchHistoryInstance } from "./user.actions";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { decryptedUserData } from "./security.actions";
 import { TUser } from "@/models/user.model";
-import { HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
+import { safetySettings } from "@/lib/constants";
+import { OllamaEmbeddings } from "@langchain/ollama";
+import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai"
 
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
-  },
-];
+const ollamaEmbeddings = new OllamaEmbeddings({
+  baseUrl: process.env.OLLAMA_BASE_URL!,
+  model: "nomic-embed-text",
+  maxRetries: 2
+});
+
+const geminiEmbeddings = new GoogleGenerativeAIEmbeddings({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
+  model: "text-embedding-004",
+  maxRetries: 2,
+});
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
@@ -82,10 +69,6 @@ const tunedModel_GitHub = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
   model: "tunedModels/github-data-qw3h8evn8n45",
   safetySettings,
-});
-
-const googleGenAI = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY!,
 });
 
 const checkEnabledServices = (user: TUser) => {
@@ -190,9 +173,10 @@ const generateSearchResult = async (
 };
 
 export const searchAction = async (
-  data: string
+  data: string,
+  model: "gemini" | "ollama"
 ): Promise<
-  TActionResponse<TDocumentResponse[] | StreamableValue<string, any>>
+  TActionResponse<TDocumentResponse[]>
 > => {
   try {
     const { userId } = await auth();
@@ -227,82 +211,61 @@ export const searchAction = async (
     const response = await generateSearchResult(user, query, enabledServices);
     if (!response.success) throw new Error(response.error);
 
-    const result = response.data;
+    const results = response.data;
 
     // If no AI-Search, then just return the result.
-    if (!user.isAISearch) return { success: true, data: result };
+    if (!user.isAISearch) return { success: true, data: results };
 
-    const { embedding: userEmbedding } = await embed({
-      model: googleGenAI.textEmbeddingModel("text-embedding-004"),
-      value: query,
-    });
+    const groupByPlatform: Record<
+      Exclude<CombinedFilterKey, "GOOGLE_DRIVE" | "GOOGLE_CALENDAR">,
+      (TDocumentResponse & { similarity: number })[]
+    > = {
+      DISCORD: [],
+      GITHUB: [],
+      GMAIL: [],
+      GOOGLE_DOCS: [],
+      GOOGLE_SHEETS: [],
+      GOOGLE_SLIDES: [],
+      MICROSOFT_TEAMS: [],
+      NOTION: [],
+      SLACK: [],
+    };
 
-    const similarDocs = await Promise.all(
-      result.map(async (item) => {
-        const { embedding } = await embed({
-          model: googleGenAI.textEmbeddingModel("text-embedding-004"),
-          value: item.content,
-        });
+    const queryEmbedding = model === "gemini" 
+      ? await geminiEmbeddings.embedQuery(query) 
+      : await ollamaEmbeddings.embedQuery(query);
 
-        return {
+    await Promise.all(
+      results.map(async (item) => {
+        const embedding = model === "gemini" 
+          ? await geminiEmbeddings.embedQuery(query) 
+          : await ollamaEmbeddings.embedQuery(query);
+  
+        groupByPlatform[item.key].push({
           ...item,
-          similarity: cosineSimilarity(userEmbedding, embedding),
-        };
+          similarity: cosineSimilarity(queryEmbedding, embedding),
+        });
       })
     );
 
-    similarDocs.sort((a, b) => a.similarity - b.similarity);
-
-    const messages = similarDocs.map(({ content }): TextPart | ImagePart => {
-      return {
-        text: content,
-        type: "text",
-      };
-    });
-
-    messages.unshift({
-      text: `User query: ${query} \n Following messages contain the context from which you have to answer.`,
-      type: "text",
-    });
-
-    const coreMessages: CoreMessage[] = [
-      {
-        content: `Generate a detailed and well-structured Markdown response on the topic below. The output should be visually appealing, using proper Markdown elements such as:
-          Main headings (for major sections)
-          Subheadings (to organize subsections)
-          Bullet points or numbered lists (for listing features/benefits)
-          Code blocks (for any code examples)
-          Hyperlinks (for external references or documentation)
-          Bold or italicized text for emphasis
-          Blockquotes or notes (to highlight key points)`,
-        role: "system",
-      },
-      {
-        content: messages,
-        role: "user",
-      },
-      {
-        content: `Generate to the point response to the users query using the context given by the user.`,
-        role: "assistant",
-      },
-    ];
-
-    const streamResult = await streamText({
-      model: googleGenAI("gemini-1.5-flash"),
-      messages: coreMessages,
-      temperature: 1,
-    });
+    const releventResults = Object.entries(groupByPlatform).flatMap(
+      ([_, item]) =>
+        item
+          .sort((a, b) => a.similarity - b.similarity)
+          .slice(0, 6)
+          .map(({ similarity, ...rest }) => rest)
+    );
 
     return {
       success: true,
-      data: createStreamableValue(streamResult.textStream).value,
+      data: releventResults,
     };
   } catch (error: any) {
     console.error("Search error:", error.message);
 
     return {
       success: false,
-      error: error.name,
+      error: error.message,
     };
   }
 };

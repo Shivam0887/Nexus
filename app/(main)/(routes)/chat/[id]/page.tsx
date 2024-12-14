@@ -17,10 +17,12 @@ import { getProcessedContent } from "@/actions/utils.actions";
 import { useSearchDocument } from "@/hooks/useSearchDocument";
 import { TooltipContainer } from "@/components/tooltip";
 import { notFound } from "next/navigation";
+import useUser from "@/hooks/useUser";
 
 const ChatPage = ({ params }: { params: { id: string } }) => {
   const { searchContextChats, setSearchContextChats, searchContextDocuments } = useSearchDocument();
   const [userQuery, setUserQuery] = useState("");
+  const { user } = useUser();
 
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isUserScrolling, setIsUserScrolling] = useState<boolean>(false);
@@ -116,7 +118,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
     }, 0);
 
     try {
-      const response = await fetch("/api/ollama", {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,18 +126,12 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
         body: JSON.stringify({
           data: chats,
           nextQuery: userQuery,
+          model: user.aiModel
         }),
         signal: controller.signal,
       });
 
       if (!response.body) {
-        setChats((prevChats) => [
-          ...prevChats.slice(0, -1),
-          {
-            role: "assistant",
-            content: "Having some issues, please try again later.",
-          },
-        ]);
         throw new Error("No response body");
       }
 
@@ -165,6 +161,14 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
 
     } catch (error: any) {
       if(error.name !== "AbortError") toast.error("Service is currenly unavailable");
+
+      setChats((prevChats) => [
+        ...prevChats.slice(0, -1),
+        {
+          role: "assistant",
+          content: "Having some issues, please try again later.",
+        },
+      ]);
       setIsSearching(false);
     } finally {
       setIsStreaming(false);

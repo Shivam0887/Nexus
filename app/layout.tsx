@@ -40,7 +40,8 @@ export default async function RootLayout({
     hasSubscription: Boolean(user?.hasSubscription),
     imageUrl: user?.imageUrl ?? "",
     isAISearch: Boolean(user?.isAISearch),
-    plan: "Starter",
+    plan: user?.plan ? user.plan as ("Starter" | "Professional") : "Starter",
+    aiModel: "ollama",
     credits: {
       ai: user?.credits?.ai ?? 0,
       search: user?.credits?.search ?? 0
