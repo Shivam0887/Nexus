@@ -25,6 +25,7 @@ export const createPasskey = async (
     };
   }
 
+  await ConnectToDB();
   const user = await User.findOne<Pick<TUser, "hasSubscription">>(
     { userId },
     { hasSubscription: 1, _id: 0 }
@@ -50,7 +51,6 @@ export const createPasskey = async (
     const salt = await genSalt(10);
     const passkeyHash = await hash(passkey, salt);
 
-    await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },
       {
@@ -87,6 +87,7 @@ export const validatePasskey = async (
     };
   }
 
+  await ConnectToDB();
   const user = await User.findOne<Pick<TUser, "hasSubscription">>(
     { userId },
     { hasSubscription: 1, _id: 0 }
@@ -109,7 +110,6 @@ export const validatePasskey = async (
   const { success, data: passkey } = passkeySchmea.safeParse(key);
 
   if (success) {
-    await ConnectToDB();
     const user = await User.findOne<Pick<TUser, "passkey">>(
       { userId },
       { passkey: 1, _id: 0 }

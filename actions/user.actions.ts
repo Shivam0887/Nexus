@@ -39,7 +39,8 @@ export const AISearchPreference = async (
         error: "Unauthorized"
       }
     }
-
+    
+    await ConnectToDB();
     const user = await User.findOne<Pick<TUser, "hasSubscription">>({ userId }, { _id: 0, hasSubscription: 1 });
     if(!user){
       return {
@@ -123,6 +124,7 @@ export const toggleSearchService = async (
         };
     }
 
+    await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },
       {
@@ -294,6 +296,7 @@ export const createSearchHistoryInstance = async (
       },
     };
 
+    await ConnectToDB();
     const searchQuery = encrypt(searchItem);
     const searchHistory = await SearchHistory.create({
       userId,
@@ -460,15 +463,11 @@ export const revokeAccessToken = async (
       case "DISCORD":
         break;
       case "GITHUB":
-        const gitHubClient = (await getPlatformClient(
-          user,
-          platform
-        )) as Octokit;
+        const gitHubClient = (await getPlatformClient(user, platform)) as Octokit;
         gitHubClient.apps.deleteInstallation({
           installation_id: parseInt(user[platform].installationId),
         });
-        const gitHubResp =
-          await gitHubClient.apps.revokeInstallationAccessToken();
+        const gitHubResp = await gitHubClient.apps.revokeInstallationAccessToken();
         status = gitHubResp.status;
         break;
       case "MICROSOFT_TEAMS":
@@ -476,22 +475,15 @@ export const revokeAccessToken = async (
       case "NOTION":
         break;
       case "SLACK":
-        const slackClient = (await getPlatformClient(
-          user,
-          platform
-        )) as WebClient;
+        const slackClient = (await getPlatformClient(user, platform)) as WebClient;
         const slackResp = await slackClient.auth.revoke({ token });
         if (slackResp.error) throw new Error(slackResp.error);
         break;
       default:
-        const oauth2Client = (await getPlatformClient(
-          user,
-          platform
-        )) as OAuth2Client;
+        const oauth2Client = (await getPlatformClient(user, platform)) as OAuth2Client;
         await checkAndRefreshToken(user, platform, oauth2Client);
-        const googleResp = await oauth2Client.revokeToken(
-          user[platform].accessToken
-        );
+        
+        const googleResp = await oauth2Client.revokeToken(user[platform].accessToken);
         status = googleResp.status;
     }
 

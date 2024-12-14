@@ -1,4 +1,5 @@
 import { safetySettings } from "@/lib/constants";
+import { ConnectToDB } from "@/lib/utils";
 import { TUser, User } from "@/models/user.model";
 import { auth } from "@clerk/nextjs/server";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -42,6 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     if(!userId) throw new Error("Unauthorized");
 
+    await ConnectToDB();
     const user = await User.findOne<Pick<TUser, "isAISearch">>({ userId }, { _id: 0, isAiSearch: 1 });
     if(!user) throw new Error("User not found");
     if(!user.isAISearch) throw new Error("Bad request");
