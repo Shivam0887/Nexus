@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if(!userId) throw new Error("Unauthorized");
 
     await ConnectToDB();
-    const user = await User.findOne<Pick<TUser, "isAISearch">>({ userId }, { _id: 0, isAiSearch: 1 });
+    const user = await User.findOne<Pick<TUser, "isAISearch">>({ userId }, { _id: 0, isAISearch: 1 });
     if(!user) throw new Error("User not found");
     if(!user.isAISearch) throw new Error("Bad request");
 
