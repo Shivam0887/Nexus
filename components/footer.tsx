@@ -88,7 +88,8 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex flex-col gap-4">
               <div className="sapce-x-3 max-w-40">
-                Address: Panipat, Haryana, India (132102)
+                Address: Mata Puli Road, Beniwal Chowk, Baag Walla Mohalla,
+                Samalkha, Haryana 132101
               </div>
               <div className="flex items-center gap-3" id="contact-us">
                 Contact us:
