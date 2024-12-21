@@ -839,11 +839,11 @@ export default function TermsAndConditionsPage() {
           </p>
           <p className="text-gray-700  mb-6">
             <Link
-              href="mailto:gguru3073@gmail.com"
-              className="text-blue-600 hover:underline"
               id="contact-us"
+              href="mailto:privacy@<nexus.shivam2000.xyz>"
+              className="text-blue-600 hover:underline"
             >
-              gguru3073@gmail.com
+              {"privacy@<nexus.shivam2000.xyz>"}
             </Link>
           </p>
         </div>

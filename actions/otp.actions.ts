@@ -1,32 +1,24 @@
 "use server";
 
 import { createHash } from "crypto";
-import { ConnectToDB } from "@/lib/utils";
-import { User, TUser } from "@/models/user.model";
+import { ConnectToDB, encrypt } from "@/lib/utils";
+import { User } from "@/models/user.model";
 import { auth } from "@clerk/nextjs/server";
 import { genSalt, hash } from "bcrypt";
-import nodemailer from "nodemailer";
 import { z } from "zod";
 import { TActionResponse } from "@/lib/types";
-import { render } from "@react-email/components";
-import Email from "@/emails/email";
-import { createElement } from "react";
 import OTP, { TOtp } from "@/models/otp.model";
+import { EmailTemplate, getPlainTextEmail } from "@/components/email-template";
+import { Resend } from "resend";
+import { decryptedUserData } from "./security.actions";
+import { Subscription, TSubscription } from "@/models/subscription.model";
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const OTPSchmea = z
   .string()
   .length(6, "Must contain 6 digits.")
   .refine((passkey) => /^\d{6}$/.test(passkey), "Invalid OTP");
-
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  secure: true,
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
 
 // Generate OTP
 const generateOTP = () =>
@@ -46,10 +38,7 @@ export const sendOTP = async (): Promise<TActionResponse> => {
     }
 
     await ConnectToDB();
-    const user = await User.findOne<Pick<TUser, "email">>(
-      { userId },
-      { email: 1, _id: 0 }
-    );
+    const user = await decryptedUserData(userId, ["email", "hasSubscription", "currentSubId"]);
     if (!user) {
       return {
         success: false,
@@ -57,30 +46,61 @@ export const sendOTP = async (): Promise<TActionResponse> => {
       };
     }
 
+    if(!user.hasSubscription){
+      return {
+        success: false,
+        error: "Bad request. Subscribe to Professional plan",
+      };
+    }
+
+    const subscription = await Subscription.findOne<Pick<TSubscription, "currentEnd">>(
+      { subId: user.currentSubId }, 
+      { currentEnd: 1, _id: 0 }
+    );
+    
+    const isSubscriptionExpired = subscription ? subscription.currentEnd < Date.now() : true;
+
+    if(user.hasSubscription && isSubscriptionExpired){
+      return {
+        success: false,
+        error: "Subscription expired, please re-subscribe to the Professional plan",
+      };
+    }
+
     const otp = generateOTP();
     const hashedOTP = hashOTP(otp);
 
+    const OtpResponse = await OTP.findOne<TOtp>({ email: user.email });
+    if (OtpResponse) {
+      await OTP.deleteOne({ _id: OtpResponse._id });
+    }
+
     await OTP.create({ email: user.email, otp: hashedOTP });
 
-    const emailComponent = createElement(Email, { otp });
-    const emailHTML = await render(emailComponent);
-
-    // Send OTP to user's email
-    await transporter.sendMail({
-      from: process.env.EMAIL,
+    const { error } = await resend.emails.send({
+      from: "Nexus <privacy@shivam2000.xyz>",
       to: user.email,
-      subject: "Passkey Reset OTP",
-      html: emailHTML,
+      subject: "Passkey reset OTP",
+      react: EmailTemplate({ otp }),
+      text: await getPlainTextEmail({ otp }),
     });
+
+    if (error) {
+      return {
+        success: false,
+        error: "Error while sending the OTP to reset Passkey",
+      };
+    }
 
     return {
       success: true,
       data: "A 6-digit OTP code has been sent to your registered email.",
     };
   } catch (error: any) {
+    console.log("Error while sending the OTP to reset Passkey :", error.message);
     return {
       success: false,
-      error: error.name,
+      error: "Oops! Something went wrong while sending OTP email, please try again later.",
     };
   }
 };
@@ -95,14 +115,18 @@ export const verifyOTP = async (otp: string): Promise<TActionResponse> => {
   }
 
   await ConnectToDB();
-  const user = await User.findOne<Pick<TUser, "email">>(
-    { userId },
-    { email: 1, _id: 0 }
-  );
+  const user = await decryptedUserData(userId, ["email", "hasSubscription"]);
   if (!user) {
     return {
       success: false,
       error: "User not found",
+    };
+  }
+
+  if(!user.hasSubscription){
+    return {
+      success: false,
+      error: "Bad request. Subscribe to Professional plan",
     };
   }
 
@@ -124,6 +148,11 @@ export const verifyOTP = async (otp: string): Promise<TActionResponse> => {
   }
 
   await OTP.deleteOne({ _id: OtpResponse._id });
+  await User.findOneAndUpdate({ userId }, {
+    $set: {
+      isOTPVerified: true
+    }
+  });
 
   return {
     success: true,
@@ -140,12 +169,20 @@ export const resetPasskey = async (key: string): Promise<TActionResponse> => {
     };
   }
 
-  const user = await User.findOne({ userId }, { _id: 1 });
+  await ConnectToDB();
+  const user = await decryptedUserData(userId, ["email", "hasSubscription", "isOTPVerified"]);
   if (!user) {
     return {
       success: false,
       error: "User not found",
     };
+  }
+
+  if(!user.hasSubscription || !user.isOTPVerified){
+    return {
+      success: false,
+      error: "Bad request. Either unsubscribed or OTP unverified"
+    }
   }
 
   const response = OTPSchmea.safeParse(key);
@@ -165,7 +202,8 @@ export const resetPasskey = async (key: string): Promise<TActionResponse> => {
     { userId },
     {
       $set: {
-        passkey: passkeyHash,
+        passkey: encrypt(passkeyHash),
+        isOTPVerified: false
       },
     }
   );

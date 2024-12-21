@@ -15,6 +15,7 @@ import DrawerManager from "@/providers/drawer-provider";
 import ModalManager from "@/providers/modal-provider";
 import { decryptedUserData } from "@/actions/security.actions";
 import { TUser } from "@/models/user.model";
+import { Subscription, TSubscription } from "@/models/subscription.model";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,6 +34,7 @@ export default async function RootLayout({
 
   await ConnectToDB();
   const user = (await decryptedUserData(userId)) as TUser | undefined;
+  const subscription = await Subscription.findOne<TSubscription>({ subId: user?.currentSubId ?? "" });
 
   const userData: StateType = {
     email: user?.email ?? "",
@@ -40,6 +42,10 @@ export default async function RootLayout({
     hasSubscription: Boolean(user?.hasSubscription),
     imageUrl: user?.imageUrl ?? "",
     isAISearch: Boolean(user?.isAISearch),
+    isExpired: subscription ? subscription.currentEnd < Date.now() : false,
+    subscriptionStatus: subscription ? subscription.status as any : "none",
+    startDate: subscription?.currentStart,
+    endDate: subscription?.currentEnd,
     plan: user?.plan ? user.plan as ("Starter" | "Professional") : "Starter",
     aiModel: "ollama",
     credits: {

@@ -72,11 +72,19 @@ const userSchema = new Schema(
         ref: "SearchHistory",
       },
     ],
+    subscriptionId: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Subscription",
+      },
+    ],
     passkey: defaultStringSchema,
     hasPasskey: defaultBooleanSchema,
+    isOTPVerified: defaultBooleanSchema,
     shouldRemember: defaultBooleanSchema,
     isAISearch: defaultBooleanSchema,
     hasSubscription: defaultBooleanSchema,
+    currentSubId: defaultStringSchema,
     plan: {
       type: String,
       default: () => "Starter",

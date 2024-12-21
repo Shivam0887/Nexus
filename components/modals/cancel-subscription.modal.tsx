@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteAccount } from "@/actions/user.actions";
+import { cancelSubscription } from "@/actions/user.actions";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +9,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useModalSelection } from "@/hooks/useModalSelection";
+import useUser from "@/hooks/useUser";
 import { Inter } from "next/font/google";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const AccountDeletionModal = () => {
-  const { modalDispatch, modalState } = useModalSelection();
-  const router = useRouter();
-
-  const isModalOpen = modalState.isOpen && modalState.type === "AccountDelete";
-
+const CancelSubscriptionModal = () => {
   const [value, setValue] = useState("");
+  const { modalDispatch, modalState } = useModalSelection();
+  const { dispatch } = useUser();
+
+  const isModalOpen =
+    modalState.isOpen && modalState.type === "CancelSubscription";
 
   return (
     <Dialog
@@ -35,13 +35,17 @@ const AccountDeletionModal = () => {
         <DialogHeader>
           <DialogTitle className="w-max mx-auto">
             <h2 className="text-lg sm:text-xl text-red-600 font-semibold">
-              Confirm Account Deletion
+              Confirm Subscription Cancellation
             </h2>
           </DialogTitle>
           <DialogDescription className="text-text-secondary text-center w-full">
             <p className="text-xs sm:text-sm">
-              Are you sure you want to delete your account? This action is
-              irreversible. <br /> Type {"'CONFIRM'"} to delete your account.
+              Are you sure you want to cancel you subscription? This action is
+              irreversible.
+              <br />
+              <sup>*</sup>Note: You can access all the Professional plan
+              features till the end of the subscription.
+              <br /> Type {"'CONFIRM'"} to delete your account.{" "}
             </p>
           </DialogDescription>
         </DialogHeader>
@@ -71,17 +75,16 @@ const AccountDeletionModal = () => {
               type="button"
               className="rounded-lg text-sm bg-red-800 max-w-max px-4 py-2 font-medium hover:bg-red-800/85 transition-colors text-white disabled:bg-red-800/50 disabled:cursor-not-allowed"
               onClick={async () => {
-                const response = await deleteAccount(value);
-                if (!response.success) {
-                  toast.error(response.error);
-                  modalDispatch({ type: "onClose" });
-                  return;
-                }
+                const response = await cancelSubscription();
+                if (response.success) {
+                  toast.success(response.data);
+                  dispatch({
+                    type: "SUBSCRIPTION_STATUS_CHANGE",
+                    payload: "cancelled",
+                  });
+                } else toast.error(response.error);
 
                 modalDispatch({ type: "onClose" });
-                setTimeout(() => {
-                  router.replace("/account-delete");
-                }, 0);
               }}
             >
               Done
@@ -93,4 +96,4 @@ const AccountDeletionModal = () => {
   );
 };
 
-export default AccountDeletionModal;
+export default CancelSubscriptionModal;

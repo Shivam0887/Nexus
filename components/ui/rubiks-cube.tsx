@@ -12,6 +12,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, RoundedBox } from "@react-three/drei";
 import { gsap } from "gsap";
 import { Vector3, Group, Object3DEventMap, MathUtils, Color } from "three";
+import { Pause, Play } from "lucide-react";
 
 // Constants
 const CUBE_CONFIG = {
@@ -41,10 +42,10 @@ const SubCube = ({ position }: { position: Vector3 }) => {
       position={position}
       radius={CUBE_CONFIG.radius}
     >
-      <meshPhongMaterial
+      <meshStandardMaterial
         color={new Color(0x000000)}
-        shininess={300}
-        specular={new Color(0xffffff)}
+        metalness={0.3}
+        roughness={0.15}
       />
     </RoundedBox>
   );
@@ -97,9 +98,10 @@ const CubeRow = forwardRef<Group<Object3DEventMap> | null, { y: number }>(
 CubeRow.displayName = "CubeRow";
 
 // Main RubiksCube component
-const RubiksCube = () => {
+const RubiksCube = ({ isPaused }: { isPaused: boolean }) => {
   const [isTablet, setIsTablet] = useState(false);
 
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const cubeGroupRef = useRef<Group<Object3DEventMap> | null>(null);
   const row1Ref = useRef<Group<Object3DEventMap> | null>(null);
   const row2Ref = useRef<Group<Object3DEventMap> | null>(null);
@@ -114,15 +116,15 @@ const RubiksCube = () => {
 
   // Initial setup
   useEffect(() => {
-    if (cubeGroupRef.current) {
+    if (cubeGroupRef.current && !isPaused) {
       cubeGroupRef.current.rotation.x = MathUtils.degToRad(45);
       cubeGroupRef.current.rotation.y = MathUtils.degToRad(45);
     }
 
     // Animation timeline
-    const timeline = gsap.timeline({ repeat: -1 });
+    const timeline = (timelineRef.current = gsap.timeline({ repeat: -1 }));
 
-    if (row1Ref.current && row3Ref.current) {
+    if (row1Ref.current && row3Ref.current && !isPaused) {
       timeline
         .to(row1Ref.current.rotation, { y: "+=3.14", duration: 3 })
         .to(row3Ref.current.rotation, { y: "+=3.14", duration: 3 }, 4)
@@ -134,10 +136,12 @@ const RubiksCube = () => {
         .to(row3Ref.current.rotation, { y: "+=6.28", duration: 3 }, 20.5);
     }
 
+    isPaused ? timeline.pause() : timeline.resume();
+
     return () => {
       timeline.kill();
     };
-  }, [camera]);
+  }, [isPaused, camera]);
 
   useEffect(() => {
     window.addEventListener("resize", handleResize);
@@ -151,7 +155,7 @@ const RubiksCube = () => {
 
   // Continuous rotation animation
   useFrame(() => {
-    if (cubeGroupRef.current) {
+    if (cubeGroupRef.current && !isPaused) {
       const rotationInRad = 0.01;
       cubeGroupRef.current.rotation.x += rotationInRad;
       cubeGroupRef.current.rotation.y += rotationInRad;
@@ -179,10 +183,21 @@ const RubiksCube = () => {
 };
 
 const AnimatedRubiksCube = () => {
+  const [isPaused, setIsPaused] = useState(false);
+
   return (
-    <Canvas>
-      <RubiksCube />
-    </Canvas>
+    <div className="relative w-full h-full">
+      <button
+        onClick={() => setIsPaused(!isPaused)}
+        className="absolute top-4 right-4 z-10 p-2 bg-neutral-800 backdrop-blur-sm rounded-md text-white hover:bg-neutral-900 transition-colors"
+      >
+        {isPaused ? <Play className="size-3"/> : <Pause className="size-3"/>}
+      </button>
+
+      <Canvas>
+        <RubiksCube isPaused={isPaused} />
+      </Canvas>
+    </div>
   );
 };
 

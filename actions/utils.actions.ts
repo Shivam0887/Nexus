@@ -11,7 +11,7 @@ import {
   refreshGitHubAccessToken,
   refreshSlackAccessToken,
 } from "@/lib/utils";
-import { docs_v1, gmail_v1, google } from "googleapis";
+import { docs_v1, drive_v3, gmail_v1, google } from "googleapis";
 import { User, TUser } from "@/models/user.model";
 import {
   DocumentType,
@@ -32,7 +32,7 @@ import {
   isFullBlock,
   isFullUser,
 } from "@notionhq/client";
-import { LogoMap } from "@/lib/constants";
+import { LogoMap, Scopes } from "@/lib/constants";
 import {
   BlockObjectResponse,
   PageObjectResponse,
@@ -42,6 +42,7 @@ import {
 import { format } from "date-fns";
 import { auth } from "@clerk/nextjs/server";
 import { decryptedUserData } from "./security.actions";
+import { Match } from "@slack/web-api/dist/types/response/SearchMessagesResponse";
 
 const textSplitter = new CharacterTextSplitter({ separator: "</html>" });
 
@@ -531,21 +532,49 @@ export const searchGmail = async (
     auth: oauth2Client,
   });
 
+  let retry = 4;
+  const regex1 = /\b\w+:[^\s]+\b/g; //find key:value pairs
+  const regex2 = /(?<=subject:)("[^"]+"|\S+)/g // extracting the value of key "subject"
+  const regex3 = /\b(?!subject\b)\w+:[^\s]+/g // find key:value pairs except the subject as key and it's respective value
+  let q: string = "";
+  let updatedGmailQuery: string | undefined = searchQuery;
+
+  let gmailMessages: gmail_v1.Schema$ListMessagesResponse = {};
   let pageToken: string | undefined;
+
   do {
-    // Fetch emails
+    if(retry <= 3) {
+      if(retry === 3) updatedGmailQuery = updatedGmailQuery.match(regex1)?.join(' ')?.trim();
+      else {
+        updatedGmailQuery = updatedGmailQuery.match(regex3)?.join(' ');
+        if(retry === 2 && updatedGmailQuery) updatedGmailQuery += updatedGmailQuery.match(regex2)?.join(' ')?.trim();
+      }
+      
+      if(!updatedGmailQuery) break;
+    }
+
+    q = updatedGmailQuery;
+
+     // Fetch emails
     const { data } = await gmail.users.messages.list({
       userId: user.email,
-      q: searchQuery,
+      q,
       maxResults: 25,
       pageToken,
     });
 
-    if (!data.messages) break;
+    gmailMessages = data;
+
+    retry--;
+  } while (user.isAISearch && !gmailMessages.messages && retry > 0);
+
+
+  do {
+    if (!gmailMessages.messages) break;
 
     // Process each email
     const emails = await Promise.all(
-      data.messages.map(async ({ id }): Promise<DocumentType> => {
+      gmailMessages.messages.map(async ({ id }): Promise<DocumentType> => {
         const { author, content, date, href, title } = await processEmailContent(user, oauth2Client, id!);
 
         return {
@@ -566,10 +595,11 @@ export const searchGmail = async (
       result.push(email);
     });
 
-    pageToken = data.nextPageToken ?? undefined;
+    pageToken = gmailMessages.nextPageToken ?? undefined;
   } while (pageToken && result.length < 50); // Limit total results to 50
 
   await updateSearchResultCount("GMAIL", result.length);
+
   return {
     success: true,
     data: result,
@@ -595,13 +625,28 @@ export const searchDocs = async (
     version: "v3",
   });
 
-  const docsIds = await drive.files.list({
-    q: searchQuery,
-    fields: "files(id,createdTime,owners(emailAddress))",
-    corpus: "user",
-  });
+  let q = searchQuery;
+  let docsData: drive_v3.Schema$FileList = {};
+  let retry = 2;
 
-  const resultWithPromise = docsIds.data.files?.map(
+  do {
+    if(retry === 1){
+      q.replace(/\bname(?= contains)\b/g, "fullText");
+      q.replace(/\bname\s!=/g, "fullText contains");
+    }
+
+    const { data } = await drive.files.list({
+      q,
+      fields: "files(id,createdTime,owners(emailAddress))",
+      corpus: "user",
+    });
+
+    docsData = data;
+
+    retry--;
+  } while (user.isAISearch && !docsData.files && retry > 0);
+
+  const resultWithPromise = docsData.files?.map(
     async ({ id, createdTime, owners }): Promise<DocumentType> => {
       const { content, title } = await processDocsContent(
         user,
@@ -646,20 +691,35 @@ export const searchSheets = async (
       error: response.error,
     };
 
-  const [q, ...ranges] = searchQuery.split("_");
+  const [query, ...ranges] = searchQuery.split("_");
 
   const drive = google.drive({
     version: "v3",
     auth: oauth2Client,
   });
 
-  const fileList = await drive.files.list({
-    q,
-    fields: "files(id,createdTime,owners(emailAddress))",
-    corpus: "user",
-  });
+  let q = query;
+  let sheetsData: drive_v3.Schema$FileList = {};
+  let retry = 2;
 
-  const files = fileList.data.files || [];
+  do {
+    if(retry === 1){
+      q.replace(/\bname(?= contains)\b/g, "fullText");
+      q.replace(/\bname\s!=/g, "fullText contains");
+    }
+
+    const { data } = await drive.files.list({
+      q,
+      fields: "files(id,createdTime,owners(emailAddress))",
+      corpus: "user",
+    });
+
+    sheetsData = data;
+
+    retry--;
+  } while (user.isAISearch && !sheetsData.files && retry > 0);
+
+  const files = sheetsData.files || [];
 
   const resultWithPromise = files.map(
     async ({id, createdTime, owners }): Promise<DocumentType & { ranges: string[] }> => {
@@ -707,15 +767,33 @@ export const searchSlack = async (
     };
 
   const slackClient = (await getPlatformClient(user, "SLACK")) as WebClient;
-  const slackMsg = await slackClient.search.messages({ query: searchQuery });
+  let matches: Match[] = [];
+  let query = searchQuery;
+  let retry = 2;
 
-  if (!slackMsg.ok)
-    return {
-      success: false,
-      error: "Slack error, please try again later.",
-    };
+  do {
 
-  const matches = slackMsg.messages?.matches ?? [];
+    if(retry === 1) {
+      const expWithoutQuotes = query.match(/"[^"]+"/g)?.join(" ").replace(/"/g, '').trim();
+      if(!expWithoutQuotes) break;
+
+      const pairs = query.match(/\b\w+:\S+\b/g)?.join(" ").trim();
+      if(!pairs) break;
+
+      query = expWithoutQuotes + " " + pairs;
+    }
+
+    const slackMsg = await slackClient.search.messages({ query });
+    matches = slackMsg.messages?.matches ?? [];
+
+    if (!slackMsg.ok)
+      return {
+        success: false,
+        error: "Slack error, please try again later.",
+      };
+
+    retry--;
+  } while (user.isAISearch && matches.length === 0 && retry > 0);
 
   const resultWithPromise = matches.map(
     async ({
@@ -820,7 +898,7 @@ export const searchNotion = async (
 
 export const searchGitHub = async (
   searchQuery: string,
-  user: TUser
+  user: TUser,
 ): Promise<TActionResponse<DocumentType[]>> => {
   const response = await checkAndRefreshToken(user, "GITHUB");
   if (!response.success)
@@ -828,86 +906,114 @@ export const searchGitHub = async (
       success: false,
       error: response.error,
     };
+  
+  const isSearchSpace = searchQuery.match(/\btype=\w+\b/);
+  let q = searchQuery;
+  let searchSpace: ("Repositories" | "Commits" | "PullRequests" | "Issues") = "Repositories"
 
-  const index = searchQuery.search(/type=/);
-  const startIndex = index + 5;
-  const str = searchQuery.slice(startIndex);
-  const endIndex = str.search(/\s/);
-  const searchSpace = str.slice(0, endIndex === -1 ? undefined : endIndex) as ("Repositories" | "Commits" | "PullRequests" | "Issues");
+  if(isSearchSpace){
+    searchSpace = isSearchSpace[0].slice(5) as ("Repositories" | "Commits" | "PullRequests" | "Issues");
+    q.replace(isSearchSpace[0], "");
+  }
 
   const gitHub = (await getPlatformClient(user, "GITHUB")) as Octokit;
 
-  const result: DocumentType[] = [];
-  const searchParams = {
-    q: searchQuery.replace(`type=${searchSpace}`, ""),
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-  };
+  let result: DocumentType[] = [];
+  let retry = 2;
 
-  switch (searchSpace) {
-    case "Commits":
-      const { data: commitData } = await gitHub.rest.search.commits(
-        searchParams as RestEndpointMethodTypes["search"]["commits"]["parameters"]
-      );
-      commitData.items.forEach(({ url, commit, node_id }) => {
-        const { author, message } = commit;
-        const { date, email, name } = author;
+  do {
+    const searchParams = {
+      q,
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    };
 
-        result.push({
-          author: name,
-          content: message,
-          date,
-          email,
-          href: url,
-          id: node_id,
-          key: "GITHUB",
-          logo: LogoMap["GITHUB"],
-          title: message,
-        });
-      });
-      break;
-    case "Repositories":
-      const { data: repoData } = await gitHub.rest.search.repos(
-        searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]
-      );
+    // Will try one more time, if no result found. 
+    if(retry < 2){
+      if(!(/\bin:\w+\b/.test(q))) break; // if no in:[value] key-value pair found    
 
-      repoData.items.forEach(
-        ({ created_at, description, full_name, id, html_url }) => {
+      const extractInOperator = q.match(/\bin:\w+\b/)!;
+      const value = extractInOperator[0].split(":")[1];
+
+      if(searchSpace === "Commits" || searchSpace === "PullRequests"){
+        if(!(/^[title|body]$/.test(value)) || value !== "title,body") break;
+
+        q.replace(value, "in:title,body");
+      }
+      else {
+        if(!(/^[name|description]$/.test(value)) || value !== "name,description") break;
+          
+        q.replace(value, "in:name,description");
+      }
+    }
+    
+    switch (searchSpace) {
+      case "Commits":
+        const { data: commitData } = await gitHub.rest.search.commits(
+          searchParams as RestEndpointMethodTypes["search"]["commits"]["parameters"]
+        );
+        commitData.items.forEach(({ url, commit, node_id }) => {
+          const { author, message } = commit;
+          const { date, email, name } = author;
+  
           result.push({
-            author: full_name,
-            content: description ?? "",
+            author: name,
+            content: message,
+            date,
+            email,
+            href: url,
+            id: node_id,
+            key: "GITHUB",
+            logo: LogoMap["GITHUB"],
+            title: message,
+          });
+        });
+        break;
+      case "Repositories":
+        const { data: repoData } = await gitHub.rest.search.repos(
+          searchParams as RestEndpointMethodTypes["search"]["repos"]["parameters"]
+        );
+  
+        repoData.items.forEach(
+          ({ created_at, description, full_name, id, html_url }) => {
+            result.push({
+              author: full_name,
+              content: description ?? "",
+              date: created_at,
+              email: "",
+              href: html_url,
+              id: id.toString(),
+              key: "GITHUB",
+              logo: LogoMap["GITHUB"],
+              title: description ?? "",
+            });
+          }
+        );
+        break;
+      default:
+        const { data } = await gitHub.rest.search.issuesAndPullRequests(
+          searchParams as RestEndpointMethodTypes["search"]["issuesAndPullRequests"]["parameters"]
+        );
+  
+        data.items.forEach(({ html_url, id, title, user, created_at, body }) => {
+          result.push({
+            author: user?.name ?? "",
+            content: body ?? "",
             date: created_at,
-            email: "",
+            email: user?.email ?? "",
             href: html_url,
             id: id.toString(),
             key: "GITHUB",
             logo: LogoMap["GITHUB"],
-            title: description ?? "",
+            title,
           });
-        }
-      );
-      break;
-    default:
-      const { data } = await gitHub.rest.search.issuesAndPullRequests(
-        searchParams as RestEndpointMethodTypes["search"]["issuesAndPullRequests"]["parameters"]
-      );
-
-      data.items.forEach(({ html_url, id, title, user, created_at, body }) => {
-        result.push({
-          author: user?.name ?? "",
-          content: body ?? "",
-          date: created_at,
-          email: user?.email ?? "",
-          href: html_url,
-          id: id.toString(),
-          key: "GITHUB",
-          logo: LogoMap["GITHUB"],
-          title,
         });
-      });
-  }
+    }
+
+    retry--;
+  } while (user.isAISearch && result.length === 0 && retry > 0);
 
   await updateSearchResultCount("GITHUB", result.length);
   return {
@@ -1016,3 +1122,29 @@ export const getProcessedContent = async (
     };
   }
 };
+
+export const getOAuthUrl = async (platform: FilterKey, userId: string | null | undefined) => {
+  if (!userId) return undefined;
+
+  let url: string | undefined = undefined;
+
+  switch (platform) {
+    case "DISCORD":
+      break;
+    case "SLACK":
+      url = `https://slack.com/oauth/v2/authorize/?client_id=${process.env.SLACK_CLIENT_ID!}&redirect_uri=${process.env.OAUTH_REDIRECT_URI!}/slack&response_type=code&state=${userId}&user_scope=${Scopes[platform].join(",")}`;
+      break;
+    case "NOTION":
+      url = `https://api.notion.com/v1/oauth/authorize?client_id=${process.env.NOTION_CLIENT_ID!}&response_type=code&owner=user&redirect_uri=${process.env.OAUTH_REDIRECT_URI!}/notion&state=${userId}`;
+      break;
+    case "GITHUB":
+      url = "https://github.com/apps/nexus-ai-search-assistant/installations/new";
+      break;
+    case "MICROSOFT_TEAMS":
+      break;
+    default:
+      url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env[`${platform}_CLIENT_ID`]}&redirect_uri=${process.env.OAUTH_REDIRECT_URI!}/${platform.toLowerCase()}&response_type=code&scope=openid ${Scopes[platform].join(" ")}&access_type=offline&prompt=consent select_account&state=${userId}`;
+  }
+
+  return url;
+}

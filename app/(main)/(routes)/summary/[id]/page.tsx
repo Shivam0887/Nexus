@@ -22,7 +22,7 @@ type TChat = { role: "user" | "assistant"; content: string };
 
 const SummaryPage = ({ params }: { params: { id: string } }) => {
   const { searchContextDocuments } = useSearchDocument();
-  const { user } = useUser();
+  const { user, dispatch } = useUser();
 
   const [isSearching, setIsSearching] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
@@ -99,11 +99,13 @@ const SummaryPage = ({ params }: { params: { id: string } }) => {
         },
         body: JSON.stringify({
           data: newChats,
-          model: user.aiModel
+          model: user.aiModel,
+          nextQuery: "Summarize the content"
         }),
       });
 
       setTimeout(() => {
+        if(!user.hasSubscription && user.credits.ai > 0) dispatch({ type: "CREDIT_DESC_AI" });
         setIsSearching(false);
       }, 0);
 
@@ -130,7 +132,8 @@ const SummaryPage = ({ params }: { params: { id: string } }) => {
         ]);
       }
     } catch (error: any) {
-      toast.error("Service is currenly unavailable");
+      if(error.name !== "AbortError") toast.error("Service is currenly unavailable");
+      else toast.error(error.message);
 
       setChats((prevChats) => [
         ...prevChats.slice(0, -1),

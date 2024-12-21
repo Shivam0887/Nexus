@@ -27,6 +27,13 @@ import { Octokit } from "@octokit/rest";
 import { WebClient } from "@slack/web-api";
 import axios from "axios";
 import { decryptedUserData } from "./security.actions";
+import Razorpay from "razorpay";
+import { Subscription, TSubscription } from "@/models/subscription.model";
+
+const razorpay = new Razorpay({ 
+  key_id: process.env.RAZORPAY_CLIENT_ID!, 
+  key_secret: process.env.RAZORPAY_CLIENT_SECRET!
+});
 
 export const AISearchPreference = async (
   isAISearch: boolean
@@ -41,18 +48,11 @@ export const AISearchPreference = async (
     }
     
     await ConnectToDB();
-    const user = await User.findOne<Pick<TUser, "hasSubscription">>({ userId }, { _id: 0, hasSubscription: 1 });
+    const user = await User.findOne({ userId }, { _id: 1 });
     if(!user){
       return {
         success: false, 
         error: "User not found"
-      }
-    }
-
-    if(!user.hasSubscription){
-      return {
-        success: false, 
-        error: "Upgrade to Professional plan"
       }
     }
 
@@ -74,7 +74,7 @@ export const AISearchPreference = async (
     console.log("AI Search Preference Error:", error.message);
     return {
       success: false,
-      error: error.message,
+      error: "Error while toggling the AI-Search",
     };
   }
 };
@@ -112,7 +112,7 @@ export const toggleSearchService = async (
       if (user.GOOGLE_DRIVE.connectionStatus !== 1)
         return {
           success: false,
-          error: "Please connect to your google drive account...",
+          error: "Please connect to your Google Drive account...",
         };
     } else {
       if (user[service].connectionStatus !== 1)
@@ -120,7 +120,8 @@ export const toggleSearchService = async (
           success: false,
           error: `Please connect to your ${service
             .replace("_", " ")
-            .toLowerCase()} account...`,
+            .toLowerCase()
+            .replace(/\b\w/g, (r) => r.toUpperCase())} account...`,
         };
     }
 
@@ -210,15 +211,9 @@ export const getSearchResultCount = async (): Promise<
       GITHUB: user.hasSubscription ? user.GITHUB.searchResults : 0,
       GMAIL: user.hasSubscription ? user.GMAIL.searchResults : 0,
       GOOGLE_DOCS: user.hasSubscription ? user.GOOGLE_DOCS.searchResults : 0,
-      GOOGLE_SHEETS: user.hasSubscription
-        ? user.GOOGLE_SHEETS.searchResults
-        : 0,
-      GOOGLE_SLIDES: user.hasSubscription
-        ? user.GOOGLE_SLIDES.searchResults
-        : 0,
-      MICROSOFT_TEAMS: user.hasSubscription
-        ? user.MICROSOFT_TEAMS.searchResults
-        : 0,
+      GOOGLE_SHEETS: user.hasSubscription ? user.GOOGLE_SHEETS.searchResults : 0,
+      GOOGLE_SLIDES: user.hasSubscription ? user.GOOGLE_SLIDES.searchResults : 0,
+      MICROSOFT_TEAMS: user.hasSubscription ? user.MICROSOFT_TEAMS.searchResults : 0,
       NOTION: user.hasSubscription ? user.NOTION.searchResults : 0,
       SLACK: user.hasSubscription ? user.SLACK.searchResults : 0,
     };
@@ -288,10 +283,8 @@ export const createSearchHistoryInstance = async (
 
     const update = {
       [`searchCount.${now}`]: {
-        "AI Search":
-          Number(isAISearch) + (searchCount.get(now)?.["AI Search"] ?? 0),
-        "Keyword Search":
-          Number(!isAISearch) + (searchCount.get(now)?.["Keyword Search"] ?? 0),
+        "AI Search": Number(isAISearch) + (searchCount.get(now)?.["AI Search"] ?? 0),
+        "Keyword Search": Number(!isAISearch) + (searchCount.get(now)?.["Keyword Search"] ?? 0),
         "Total Search": 1 + (searchCount.get(now)?.["Total Search"] ?? 0),
       },
     };
@@ -303,6 +296,7 @@ export const createSearchHistoryInstance = async (
       searchItem: searchQuery,
     });
 
+    // Save temporarily for 3 months for security concerns
     await TemporarySearchHistory.create({
       email,
       userId,
@@ -371,9 +365,9 @@ export const getSearchHistory = async (
 
     await ConnectToDB();
 
-    const user = await User.findOne<Pick<TUser, "hasSubscription">>(
+    const user = await User.findOne<Pick<TUser, "hasSubscription" | "currentSubId">>(
       { userId },
-      { hasSubscription: 1, _id: 0 }
+      { hasSubscription: 1, currentSubId: 1, _id: 0 }
     );
 
     if (!user) {
@@ -384,6 +378,23 @@ export const getSearchHistory = async (
     }
 
     if (!user.hasSubscription) {
+      return {
+        success: true,
+        data: {
+          nextPageToken: null,
+          searchHistory: [],
+        },
+      };
+    }
+
+    const subscription = await Subscription.findOne<Pick<TSubscription, "currentEnd">>(
+      { subId: user.currentSubId }, 
+      { currentEnd: 1, _id: 0 }
+    );
+    
+    const isSubscriptionExpired = subscription ? subscription.currentEnd < Date.now() : true;
+
+    if(user.hasSubscription && isSubscriptionExpired){
       return {
         success: true,
         data: {
@@ -619,3 +630,72 @@ export const updateUsername = async (
     };
   }
 };
+
+export const createSubscription = async (): Promise<TActionResponse> => {
+  const planId = process.env.SUBSCRIPTION_PLAN_ID!
+  try {
+    const { userId } = await auth();
+    if(!userId){
+      return {
+        success: false,
+        error: "Unauthenticated"
+      }
+    }
+
+    const { id } = await razorpay.subscriptions.create({
+      plan_id: planId,
+      total_count: 1,
+      quantity: 1,
+      notes: {
+        userId: encrypt(userId)
+      }
+    });
+
+    return {
+      success: true,
+      data: id
+    };
+  } catch (error: any) {
+    console.log("Subscription creation error: ", error.message);
+    return {
+      success: false,
+      error: "Unable to create subscription, please try again later."
+    }
+  }
+}
+
+export const cancelSubscription = async (): Promise<TActionResponse> => {
+  try {
+    const { userId } = await auth();
+    if(!userId){
+      return {
+        success: false,
+        error: "Unauthenticated"
+      }
+    }
+
+    const user = await User.findOne<Pick<TUser, "currentSubId">>({ userId }, { _id: 0, currentSubId: 1 });
+    if(!user){
+      return {
+        success: false,
+        error: "User not found"
+      }
+    }
+
+    const subscription = await Subscription.findOne<Pick<TSubscription, "status">>({ subId: user.currentSubId }, { status: 1, _id: 0 });
+    if(subscription && subscription.status === "active"){
+      await razorpay.subscriptions.cancel(user.currentSubId);
+    }
+
+    return {
+      success: true,
+      data: "Subscription cancelled successfully"
+    };
+  } catch (error: any) {
+    console.log("Subscription cancellation error: ", error);
+    return {
+      success: false,
+      error: "Unable to cancel subscription, please try again later."
+    }
+  }
+}

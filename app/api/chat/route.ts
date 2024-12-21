@@ -1,5 +1,6 @@
 import { safetySettings } from "@/lib/constants";
 import { ConnectToDB } from "@/lib/utils";
+import { Subscription, TSubscription } from "@/models/subscription.model";
 import { TUser, User } from "@/models/user.model";
 import { auth } from "@clerk/nextjs/server";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -44,9 +45,41 @@ export async function POST(req: NextRequest) {
     if(!userId) throw new Error("Unauthorized");
 
     await ConnectToDB();
-    const user = await User.findOne<Pick<TUser, "isAISearch">>({ userId }, { _id: 0, isAISearch: 1 });
+    const user = await User.findOne<Pick<TUser, "isAISearch" | "hasSubscription" | "currentSubId" | "credits">>(
+      { userId }, 
+      { 
+        _id: 0, 
+        isAISearch: 1, 
+        hasSubscription: 1, 
+        currentSubId: 1,
+        credits: 1
+      }
+    );
+
     if(!user) throw new Error("User not found");
-    if(!user.isAISearch) throw new Error("Bad request");
+    if(!user.isAISearch) throw new Error("Bad request. Please enable AI-Search");
+    
+    if(!user.hasSubscription && (user.credits.ai === 0)) 
+      throw new Error("Credits exceed, please subscribe to the Professional plan");
+    
+    const subscription = await Subscription.findOne<Pick<TSubscription, "currentEnd">>(
+      { subId: user.currentSubId }, 
+      { currentEnd: 1, _id: 0 }
+    );
+
+    const isSubscriptionExpired = subscription ? subscription.currentEnd < Date.now() : true;
+
+    if(user.hasSubscription && isSubscriptionExpired){
+      throw new Error("Subscription expired, please re-subscribe to the Professional plan");
+    }
+
+    if(!user.hasSubscription){
+      await User.findOneAndUpdate({ userId }, {
+        $inc: {
+          "credits.ai": -1
+        }
+      });
+    }
 
     // Parse and validate request body
     const { data, nextQuery, model } = requestBodySchema.parse(

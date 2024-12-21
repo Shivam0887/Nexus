@@ -117,12 +117,12 @@ export const plans: PLAN[] = [
     desc: "For starter, get started with free plan forever and ever.",
     features: [
       {
-        content: "50 credits global search",
+        content: "Limited 50 credits global search",
         icon: Check,
         available: true,
       },
       {
-        content: "50 credits for AI chat, and summarize",
+        content: "Limited 50 credits for AI chat, and summarize",
         icon: Check,
         available: true,
       },
@@ -349,6 +349,7 @@ export const CalendarTimeFormat = "h:mmaaa";
 export const UserKeys = [
   "birthday",
   "imageUrl",
+  "plan",
   "passkey",
   "hasPasskey",
   "shouldRemember",
@@ -372,12 +373,16 @@ export const UserKeys = [
   "SLACK",
   "createdAt",
   "updatedAt",
+  "currentSubId",
+  "subscriptionId",
+  "isOTPVerified",
+  "credits"
 ];
 
 export const safetySettings = [
   {
     category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
   },
   {
     category: HarmCategory.HARM_CATEGORY_HARASSMENT,

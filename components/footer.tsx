@@ -94,7 +94,7 @@ export default function Footer() {
               <div className="flex items-center gap-3" id="contact-us">
                 Contact us:
                 <Link
-                  href="mailto:gguru3073@gmail.com"
+                  href="mailto:contact@<nexus.shivam2000.xyz>"
                   className="text-gray-600 hover:underline text-sm"
                 >
                   <Mail />

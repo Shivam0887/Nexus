@@ -61,7 +61,7 @@ export default function Navbar() {
         <div className="flex gap-3 sm:gap-4 items-center">
           {pathname === "/" ? (
             <ul className="hidden relative lg:text-lg md:text-base text-sm md:flex justify-center sm:gap-4">
-              {/* <li
+              <li
                 onMouseOver={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 className="cursor-pointer p-2"
@@ -86,7 +86,7 @@ export default function Navbar() {
                     DocInsight-AI
                   </Link>
                 </span>
-              </li> */}
+              </li>
               <li className="p-2">
                 <Link href="/#features">Features</Link>
               </li>

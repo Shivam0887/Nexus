@@ -235,6 +235,8 @@ const SearchPage = () => {
         return;
       }
 
+      if(!user.hasSubscription && user.credits.search > 0) dispatch({ type: "CREDIT_DESC_SEARCH" });
+
       setDocuments(response.data);
       setFilteredDocuments(response.data);
 

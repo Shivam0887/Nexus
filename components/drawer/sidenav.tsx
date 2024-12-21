@@ -15,7 +15,6 @@ const SidenavDrawer = () => {
   return (
     <Drawer open={isOpen} onOpenChange={() => {}} drawerDirection="right">
       <DrawerContent
-        direction="right"
         containerClassName="h-full mt-0 w-full"
         drawerClassName="!w-[60vw]"
         handleStyles={{ display: "none" }}

@@ -5,6 +5,7 @@ import FullScreenModal from "@/components/modals/full-screen.modal";
 import AccountDeletionModal from "@/components/modals/account-deletion.modal";
 import SecurityModal from "@/components/modals/security-modal";
 import { useEffect, useState } from "react";
+import CancelSubscriptionModal from "@/components/modals/cancel-subscription.modal";
 
 const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -20,6 +21,7 @@ const ModalProvider = () => {
       <AccountDeletionModal />
       <CalendarModal />
       <SecurityModal />
+      <CancelSubscriptionModal />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import SearchResultGraph from "@/components/graphs/search-result-graph";
 
 import { useRouter } from "next/navigation";
 import { TActionResponse, TSearchCount, TSearchResult } from "@/lib/types";
+import useUser from "@/hooks/useUser";
 
 type GraphWrapperProps = {
   searchCount: TActionResponse<
@@ -16,15 +17,14 @@ type GraphWrapperProps = {
     } & TSearchCount)[]
   >;
   searchResultCount: TActionResponse<TSearchResult>;
-  hasSubscription: boolean;
 };
 
 const GraphWrapper = ({
   searchCount,
   searchResultCount,
-  hasSubscription,
 }: GraphWrapperProps) => {
   const router = useRouter();
+  const { hasSubscription } = useUser().user;
 
   return (
     <div className="h-full w-full relative">

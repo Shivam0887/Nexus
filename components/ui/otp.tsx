@@ -13,9 +13,7 @@ const OTP = ({
   setIsSubmitting?: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const [passkey, setPasskey] = useState<string[]>(new Array(6).fill(""));
-  const inputRefs = useRef<(HTMLInputElement | null)[]>(
-    new Array(6).fill(null)
-  );
+  const inputRefs = useRef<(HTMLInputElement | null)[]>(new Array(6).fill(null));
 
   const { pending } = useFormStatus();
 
@@ -76,6 +74,7 @@ const OTP = ({
           value={passkey[i]}
           onKeyDown={(e) => handleKeyDown(e, i)}
           onChange={(e) => e.preventDefault()}
+          autoFocus={i === 0}
           className="sm:w-14 w-12 sm:h-14 h-12 text-center rounded-md bg-neutral-800 font-semibold outline-none focus:outline focus:outline-neutral-700 focus:outline-offset-2"
           required
           disabled={pending}

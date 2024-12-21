@@ -21,7 +21,12 @@ const FullScreenModal = () => {
       onOpenChange={() => modalDispatch({ type: "onClose" })}
     >
       <DialogContent
-        className="!h-[80vh] max-w-screen-lg p-4"
+        className={cn(
+          "!h-[80vh] max-w-screen-lg p-4",
+          modalState.data.data.type === "Element"
+            ? modalState.data.data.className
+            : ""
+        )}
         disableXCloseButton={modalState.data.data.type === "Element"}
       >
         {modalState.data.data.type === "Message" ? (

@@ -16,14 +16,12 @@ const searchParamsSchema = z.object({
   platform: z.enum(Platforms),
 });
 
-const IntegrationWrapper = ({
-  hasSubscription,
-}: {
-  hasSubscription: boolean;
-}) => {
+const IntegrationWrapper = () => {
   const { user } = useUser();
   const { modalDispatch } = useModalSelection();
   const searchParams = useSearchParams();
+
+  const hasSubscription = user.hasSubscription;
 
   useEffect(() => {
     const isSucceed = searchParams.get("success");
@@ -53,7 +51,7 @@ const IntegrationWrapper = ({
         );
       }
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => {
     if (!user.hasPasskey && hasSubscription) {

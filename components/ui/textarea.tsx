@@ -125,15 +125,7 @@ const Textarea = ({
 
   useEffect(() => {
     handleChange();
-  }, [deboundedTranscript, handleChange]);
-
-  useEffect(() => {
-    if(isContentLoaded || isSubmitting){
-      handleChange();
-    }
-
-    // eslint-disable-next-line
-  }, [isContentLoaded, isSubmitting]);
+  }, [deboundedTranscript, handleChange, isContentLoaded, isSubmitting]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!e.shiftKey && (e.key === "Enter" || e.key === "NumpadEnter")) {

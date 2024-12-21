@@ -7,7 +7,8 @@ type ModalType =
   | "CalendarModal"
   | "FullScreenModal"
   | "AccountDelete"
-  | "SecurityModal";
+  | "SecurityModal"
+  | "CancelSubscription"
 
 type ActionData =
   | {
@@ -17,6 +18,7 @@ type ActionData =
       };
     }
   | { type: "AccountDelete" }
+  | { type: "CancelSubscription", data: {} }
   | { type: "SecurityModal"; data: { url?: string } }
   | {
       type: "FullScreenModal";
@@ -24,7 +26,7 @@ type ActionData =
         type: "Message"
         documents: DocumentType[];
         layout: "grid" | "list";
-      } | { type: "Element", element: React.ReactNode };
+      } | { type: "Element", element: React.ReactNode, className?: string };
     };
 
 type ActionType =

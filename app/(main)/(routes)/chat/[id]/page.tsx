@@ -22,9 +22,9 @@ import useUser from "@/hooks/useUser";
 const ChatPage = ({ params }: { params: { id: string } }) => {
   const { searchContextChats, setSearchContextChats, searchContextDocuments } = useSearchDocument();
   const [userQuery, setUserQuery] = useState("");
-  const { user } = useUser();
+  const { user, dispatch } = useUser();
 
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUserScrolling, setIsUserScrolling] = useState<boolean>(false);
 
   const [chats, setChats] = useState<TChat[]>(searchContextChats[params.id] ? searchContextChats[params.id] : []);
@@ -61,7 +61,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
 
       scrollTimeoutRef.current = setTimeout(() => {
         setIsUserScrolling(false);
-      }, 3000);
+      }, 1000);
     };
 
     container?.addEventListener("scroll", handleScroll);
@@ -100,7 +100,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSearching(true);
+    setIsLoading(true);
     setIsSubmitting(true);
 
     const newChats = [
@@ -136,8 +136,9 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
       }
 
       setTimeout(() => {
+        if(!user.hasSubscription && user.credits.ai > 0) dispatch({ type: "CREDIT_DESC_AI" });
         setIsStreaming(true);
-        setIsSearching(false);
+        setIsLoading(false);
       }, 0);
 
       const reader = response.body.getReader();
@@ -161,6 +162,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
 
     } catch (error: any) {
       if(error.name !== "AbortError") toast.error("Service is currenly unavailable");
+      else toast.error(error.message);
 
       setChats((prevChats) => [
         ...prevChats.slice(0, -1),
@@ -169,7 +171,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
           content: "Having some issues, please try again later.",
         },
       ]);
-      setIsSearching(false);
+      setIsLoading(false);
     } finally {
       setIsStreaming(false);
       setIsSubmitting(false);
@@ -237,7 +239,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
                   </p>
                 ) : (
                   <>
-                    {isSearching && idx === chats.length - 1 ? (
+                    {isLoading && idx === chats.length - 1 ? (
                       <>
                         <Skeleton />
                         <Skeleton className="w-3/4 mt-2" />

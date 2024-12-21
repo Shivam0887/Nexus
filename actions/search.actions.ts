@@ -24,10 +24,13 @@ import {
 import { createSearchHistoryInstance } from "./user.actions";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { decryptedUserData } from "./security.actions";
-import { TUser } from "@/models/user.model";
+import { TUser, User } from "@/models/user.model";
 import { safetySettings } from "@/lib/constants";
 import { OllamaEmbeddings } from "@langchain/ollama";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai"
+import { Subscription, TSubscription } from "@/models/subscription.model";
+
+const SIMILAR_RESULT_COUNT = 6;
 
 const ollamaEmbeddings = new OllamaEmbeddings({
   baseUrl: process.env.OLLAMA_BASE_URL!,
@@ -43,31 +46,31 @@ const geminiEmbeddings = new GoogleGenerativeAIEmbeddings({
 
 const tunedModel_Gmail = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/gmailquery-ham7ian0yejt",
+  model: "tunedModels/gmaildata-eeqty1uf9miv",
   safetySettings,
 });
 
 const tunedModel_Docs = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/google-docs-data-5u6szrdsitel",
+  model: "tunedModels/docs-query-model-abcbb2id94jh",
   safetySettings,
 });
 
 const tunedModel_Sheets = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/google-sheets-data-rsvd22fipb8n",
+  model: "tunedModels/sheets-query-model-r3bnikss6b7y",
   safetySettings,
 });
 
 const tunedModel_Slack = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/slack-data-oglib9jwnvqj",
+  model: "tunedModels/slack-query-model-lts7iivnuy2z",
   safetySettings,
 });
 
 const tunedModel_GitHub = new ChatGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENAI_API_KEY!,
-  model: "tunedModels/github-data-qw3h8evn8n45",
+  model: "tunedModels/github-query-model-dxh0979jx84e",
   safetySettings,
 });
 
@@ -107,25 +110,25 @@ const generateSearchResult = async (
             // Implemented soon;
             break;
           case "GITHUB":
-            const githubQuery = (await tunedModel_GitHub.invoke(input)).content.toString();
+            const githubQuery = (await tunedModel_GitHub.invoke(`'${input}'`)).content.toString();
             const githubResponse = await searchGitHub(githubQuery.trim(), user);
             if (githubResponse.success) githubResult = githubResponse.data;
             else throw new Error(githubResponse.error);
             break;
           case "GMAIL":
-            const emailQuery = (await tunedModel_Gmail.invoke(input)).content.toString();
-            const gmailResponse = await searchGmail(emailQuery.trim(), user);
+            const emailQuery = (await tunedModel_Gmail.invoke(`'${input}'`)).content.toString();
+            let gmailResponse = await searchGmail(emailQuery.trim(), user);
             if (gmailResponse.success) gmailResult = gmailResponse.data;
             else throw new Error(gmailResponse.error);
             break;
           case "GOOGLE_DOCS":
-            const docsQuery = (await tunedModel_Docs.invoke(input)).content.toString();
+            const docsQuery = (await tunedModel_Docs.invoke(`'${input}'`)).content.toString();
             const docsResponse = await searchDocs(docsQuery.trim(), user);
             if (docsResponse.success) docsResult = docsResponse.data;
             else throw new Error(docsResponse.error);
             break;
           case "GOOGLE_SHEETS":
-            const sheetsQuery = (await tunedModel_Sheets.invoke(input)).content.toString();
+            const sheetsQuery = (await tunedModel_Sheets.invoke(`'${input}'`)).content.toString();
             const sheetsResponse = await searchSheets(sheetsQuery.trim(), user);
             if (sheetsResponse.success) sheetsResult = sheetsResponse.data;
             else throw new Error(sheetsResponse.error);
@@ -142,7 +145,7 @@ const generateSearchResult = async (
             else throw new Error(notionResponse.error);
             break;
           default:
-            const slackQuery = (await tunedModel_Slack.invoke(input)).content.toString();
+            const slackQuery = (await tunedModel_Slack.invoke(`'${input}'`)).content.toString();
             const slackResponse = await searchSlack(slackQuery.trim(), user);
             if (slackResponse.success) slackResult = slackResponse.data;
             else throw new Error(slackResponse.error);
@@ -165,9 +168,10 @@ const generateSearchResult = async (
       ],
     };
   } catch (error: any) {
+    console.log("Error while generating search results: ", error.message);
     return {
       success: false,
-      error: error.message,
+      error: "Error while generating search results, please try again later",
     };
   }
 };
@@ -180,12 +184,9 @@ export const searchAction = async (
 > => {
   try {
     const { userId } = await auth();
-    if (!userId) throw new Error("Unauthenticated user. Please login first.");
+    if (!userId) throw new Error("Unauthenticated");
 
-    if (!data) throw new Error("Bad request. Please enter your query.");
-
-    // Trying to remove sensitive information before it is processed
-    const query = redactText(data);
+    if (!data) throw new Error("Bad request. Search input can't be empty");
 
     await ConnectToDB();
     const user = (await decryptedUserData(userId)) as TUser | undefined;
@@ -198,6 +199,39 @@ export const searchAction = async (
         error: "Please enable at least one service",
       };
     }
+
+    // If no subscription, and free search credits also exceeds
+    if(!user.hasSubscription && user.credits.search === 0){
+      return {
+        success: false,
+        error: "Credits exceed, please subscribe to the Professional plan",
+      };
+    }
+
+    const subscription = await Subscription.findOne<Pick<TSubscription, "currentEnd">>(
+      { subId: user.currentSubId }, 
+      { currentEnd: 1, _id: 0 }
+    );
+    
+    const isSubscriptionExpired = subscription ? subscription.currentEnd < Date.now() : true;
+
+    if(user.hasSubscription && isSubscriptionExpired){
+      return {
+        success: false,
+        error: "Subscription expired, please re-subscribe to the Professional plan",
+      };
+    }
+
+    if(!user.hasSubscription){
+      await User.findOneAndUpdate({ userId }, {
+        $inc: {
+          "credits.search": -1
+        }
+      });
+    }
+
+    // Trying to remove sensitive information before it is processed
+    const query = redactText(data);
 
     await createSearchHistoryInstance(
       query,
@@ -231,19 +265,16 @@ export const searchAction = async (
       SLACK: [],
     };
 
-    const queryEmbedding = model === "gemini" 
-      ? await geminiEmbeddings.embedQuery(query) 
-      : await ollamaEmbeddings.embedQuery(query);
+    const embeddingModel = model === "gemini" ? geminiEmbeddings : ollamaEmbeddings;
+    const queryEmbedding = await embeddingModel.embedQuery(query);
 
     await Promise.all(
       results.map(async (item) => {
-        const embedding = model === "gemini" 
-          ? await geminiEmbeddings.embedQuery(query) 
-          : await ollamaEmbeddings.embedQuery(query);
+        const contentEmbedding = await embeddingModel.embedQuery(item.content);
   
         groupByPlatform[item.key].push({
           ...item,
-          similarity: cosineSimilarity(queryEmbedding, embedding),
+          similarity: cosineSimilarity(queryEmbedding, contentEmbedding),
         });
       })
     );
@@ -252,7 +283,7 @@ export const searchAction = async (
       ([_, item]) =>
         item
           .sort((a, b) => a.similarity - b.similarity)
-          .slice(0, 6)
+          .slice(0, SIMILAR_RESULT_COUNT)
           .map(({ similarity, ...rest }) => rest)
     );
 
@@ -265,7 +296,7 @@ export const searchAction = async (
 
     return {
       success: false,
-      error: error.message,
+      error: "Oops! Something went wrong. Try searching later",
     };
   }
 };

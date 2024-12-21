@@ -99,12 +99,14 @@ export const DialogContent = ({
   disableBackdropClose = false,
   disableXCloseButton = false,
   disableEscapseClose = false,
+  onXCloseButtonClick
 }: {
   children: React.ReactNode;
   className?: string;
   disableBackdropClose?: boolean;
   disableXCloseButton?: boolean;
   disableEscapseClose?: boolean;
+  onXCloseButtonClick?: () => void;
 }) => {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const { modal, open, onClose } = useDialog();
@@ -179,7 +181,7 @@ export const DialogContent = ({
       {!disableXCloseButton && (
         <button
           type="button"
-          onClick={onClose}
+          onClick={onXCloseButtonClick || onClose}
           className="absolute top-4 right-4 float-end"
           aria-label="close button"
         >

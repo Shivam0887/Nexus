@@ -45,10 +45,10 @@ const Page = () => {
             contact us{" "}
             <Link
               id="contact-us"
-              href="mailto:gguru3073@gmail.com"
+              href="mailto:privacy@<nexus.shivam2000.xyz>"
               className="text-blue-600 hover:underline"
             >
-              gguru3073@gmail.com
+              {"privacy@<nexus.shivam2000.xyz>"}
             </Link>
             .
           </p>

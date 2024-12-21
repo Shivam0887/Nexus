@@ -16,7 +16,6 @@ type Props = {
 
 type DrawerContentProps = {
   children: React.ReactNode;
-  direction?: DrawerDirection;
   handleStyles?: React.CSSProperties;
   drawerClassName?: string;
   containerClassName?: string;

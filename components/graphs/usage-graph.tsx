@@ -117,7 +117,7 @@ const UsageGraph = ({ hasSubscription }: { hasSubscription: boolean }) => {
                                 isMobile ? "text-xl" : "text-3xl"
                               } font-bold`}
                             >
-                              {searchCredits}
+                              {hasSubscription ? "Unlimited" : searchCredits}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
@@ -172,7 +172,7 @@ const UsageGraph = ({ hasSubscription }: { hasSubscription: boolean }) => {
                                 isMobile ? "text-xl" : "text-3xl"
                               } font-bold`}
                             >
-                              {chatCredits}
+                              {hasSubscription ? "Unlimited" : searchCredits}
                             </tspan>
                             <tspan
                               x={viewBox.cx}

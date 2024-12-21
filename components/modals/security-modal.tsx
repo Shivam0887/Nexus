@@ -3,7 +3,7 @@
 import { createPasskey, validatePasskey } from "@/actions/passkey.actions";
 import useUser from "@/hooks/useUser";
 import { CirclePlus, KeyRound, Loader2, ShieldAlert } from "lucide-react";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogItem } from "@/components/ui/dialog";
 import { useModalSelection } from "@/hooks/useModalSelection";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ const SecurityModal = () => {
   const [passkey, setPasskey] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [shouldRemember, setShouldRemember] = useState(false);
+
+  const submitButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const isModalOpen = modalState.type === "SecurityModal" && modalState.isOpen;
   const validate = user.hasPasskey && !user.shouldRemember;
@@ -47,27 +49,33 @@ const SecurityModal = () => {
         modalState.data.data.url
       ) {
         const url = modalState.data.data.url;
-        const data = await axios.post(url);
-        if (data) {
-          router.replace(data.data);
-        }
+        console.log({url})
+        router.push(url);
       }
 
       setPasskey("");
       setShouldRemember(false);
       toast.success(response.data);
+
       modalDispatch({ type: "onClose" });
     } else {
       setError(response.error);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!e.shiftKey && (e.key === "Enter" || e.key === "NumpadEnter")) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit(submitButtonRef.current);
+    }
+  };
+
   return (
     <Dialog
       open={isModalOpen}
-      onOpenChange={() => modalDispatch({ type: "onClose" })}
+      onOpenChange={() => {}}
     >
-      <DialogContent className="max-w-fit h-auto max-h-max text-white">
+      <DialogContent className="max-w-fit h-auto max-h-max text-white" onXCloseButtonClick={() => { modalDispatch({ type: "onClose" }) }}>
         <DialogItem>
           <form
             action={validate ? handleValidatePasskey : handleCreatePasskey}
@@ -97,6 +105,7 @@ const SecurityModal = () => {
                   id="remember"
                   checked={shouldRemember}
                   onChange={(e) => setShouldRemember(e.target.checked)}
+                  onKeyDown={handleKeyDown}
                   className="customCheckbox"
                   disabled={isSubmitting}
                 />
@@ -106,10 +115,9 @@ const SecurityModal = () => {
               </div>
               <button
                 disabled={isSubmitting}
+                ref={submitButtonRef}
                 type="submit"
-                className={`py-3 px-6 flex items-center justify-center gap-2 rounded-2xl bg-btn-primary text-black font-semibold text-sm ${
-                  isSubmitting ? "cursor-not-allowed" : "cursor-pointer"
-                }`}
+                className="py-3 px-6 flex items-center justify-center gap-2 rounded-2xl bg-btn-primary text-black font-semibold text-sm disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

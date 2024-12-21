@@ -6,14 +6,18 @@ import {
   Heading,
   Html,
   Img,
+  render,
   Section,
   Text,
 } from "@react-email/components";
 
+type EmailTemplateProps = {
+  otp: string;
+};
+
 const main = {
   backgroundColor: "#ffffff",
   fontFamily: "HelveticaNeue,Helvetica,Arial,sans-serif",
-  maxHeight: "max-content",
 };
 
 const container = {
@@ -24,7 +28,7 @@ const container = {
   marginTop: "20px",
   maxWidth: "360px",
   margin: "0 auto",
-  padding: "68px 0",
+  padding: "68px 0 130px",
 };
 
 const logo = {
@@ -90,7 +94,9 @@ const paragraph = {
   textAlign: "center" as const,
 };
 
-export const Email = ({ otp }: { otp: string }) => (
+export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
+  otp,
+}) => (
   <Html>
     <Head />
     <Body style={main}>
@@ -109,10 +115,14 @@ export const Email = ({ otp }: { otp: string }) => (
         <Section style={codeContainer}>
           <Text style={code}>{otp}</Text>
         </Section>
-        <Text style={paragraph}> (This OTP is valid for 10 minutes)</Text>
+        <Text style={paragraph}>(This OTP is valid for 10 minutes)</Text>
       </Container>
     </Body>
   </Html>
 );
 
-export default Email;
+export const getPlainTextEmail = async ({ otp }: EmailTemplateProps) => {
+  return await render(<EmailTemplate otp={otp} />, {
+    plainText: true,
+  });
+};

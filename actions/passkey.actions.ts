@@ -4,8 +4,10 @@ import { z } from "zod";
 import { genSalt, hash, compare } from "bcrypt";
 import { auth } from "@clerk/nextjs/server";
 import { User, TUser } from "@/models/user.model";
-import { ConnectToDB, decrypt, encrypt } from "@/lib/utils";
+import { ConnectToDB, encrypt } from "@/lib/utils";
 import { TActionResponse } from "@/lib/types";
+import { decryptedUserData } from "./security.actions";
+import { Subscription, TSubscription } from "@/models/subscription.model";
 
 const passkeySchmea = z
   .string()
@@ -26,9 +28,9 @@ export const createPasskey = async (
   }
 
   await ConnectToDB();
-  const user = await User.findOne<Pick<TUser, "hasSubscription">>(
+  const user = await User.findOne<Pick<TUser, "hasSubscription" | "currentSubId">>(
     { userId },
-    { hasSubscription: 1, _id: 0 }
+    { hasSubscription: 1, currentSubId: 1, _id: 0 }
   );
 
   if (!user) {
@@ -42,6 +44,20 @@ export const createPasskey = async (
     return {
       success: false,
       error: "Bad request",
+    };
+  }
+
+  const subscription = await Subscription.findOne<Pick<TSubscription, "currentEnd">>(
+    { subId: user.currentSubId }, 
+    { currentEnd: 1, _id: 0 }
+  );
+  
+  const isSubscriptionExpired = subscription ? subscription.currentEnd < Date.now() : true;
+
+  if(user.hasSubscription && isSubscriptionExpired){
+    return {
+      success: false,
+      error: "Subscription expired, please re-subscribe to the Professional plan",
     };
   }
 
@@ -87,16 +103,11 @@ export const validatePasskey = async (
     };
   }
 
-  await ConnectToDB();
-  const user = await User.findOne<Pick<TUser, "hasSubscription">>(
-    { userId },
-    { hasSubscription: 1, _id: 0 }
-  );
-
+  const user = await decryptedUserData(userId, ["hasSubscription", "passkey"])
   if (!user) {
     return {
-      success: false,
       error: "User not found",
+      success: false,
     };
   }
 
@@ -110,19 +121,7 @@ export const validatePasskey = async (
   const { success, data: passkey } = passkeySchmea.safeParse(key);
 
   if (success) {
-    const user = await User.findOne<Pick<TUser, "passkey">>(
-      { userId },
-      { passkey: 1, _id: 0 }
-    );
-
-    if (!user) {
-      return {
-        error: "User not found",
-        success: false,
-      };
-    }
-
-    const match = await compare(passkey, decrypt(user.passkey));
+    const match = await compare(passkey, user.passkey);
     if (!match) {
       return {
         error: "Invalid Passkey",

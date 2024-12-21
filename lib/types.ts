@@ -61,6 +61,10 @@ export type StateType = Connection & {
   imageUrl: string;
   hasPasskey: boolean;
   hasSubscription: boolean;
+  isExpired: boolean;
+  subscriptionStatus: "active" | "completed" | "cancelled" | "none";
+  startDate?: number;
+  endDate?: number;
   isAISearch: boolean;
   shouldRemember: boolean;
   aiModel: "gemini" | "ollama";
@@ -97,6 +101,10 @@ export type ActionType =
     }
   | {
       type: "CREDIT_DESC_AI";
+    }
+  | {
+      type: "SUBSCRIPTION_STATUS_CHANGE";
+      payload: "active" | "completed" | "cancelled" | "none";
     }
   | {
       type: "CHANGE_AI_MODEL";

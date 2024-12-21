@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import { PATTERNS } from "./sensitive-regex";
 import {
   CombinedFilterKey,
+  FilterKey,
   TNotionPageBlockType,
   TSlackAxiosResponse,
 } from "./types";
@@ -28,7 +29,7 @@ export function cn(...inputs: ClassValue[]) {
 
 let isConnected = false;
 
-export const absoluteUrl = "https://nexus-ai-search.vercel.app";
+export const absoluteUrl = "https://nexus.shivam2000.xyz";
 
 export async function ConnectToDB() {
   const URI = process.env.MONGODB_URI;
@@ -203,6 +204,7 @@ export function decrypt(data: string | null | undefined) {
   if (!data) return "";
 
   const [authTag, encryptedData, iv] = data.split(":");
+  if(!authTag || !encryptedData || !iv) return "";
 
   const decipher = createDecipheriv(
     algorithm,

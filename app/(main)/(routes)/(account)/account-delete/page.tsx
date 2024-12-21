@@ -15,7 +15,7 @@ const DeletedAccountPage = () => {
             again.
           </p>
           <SignInButton
-            mode="modal"
+            mode="redirect"
             signUpFallbackRedirectUrl={"/search"}
             fallbackRedirectUrl={"/search"}
           >

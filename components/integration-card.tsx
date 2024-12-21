@@ -1,7 +1,6 @@
 "use client";
 
 import useUser from "@/hooks/useUser";
-import axios from "axios";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,6 +8,8 @@ import { FilterKey } from "@/lib/types";
 import { toast } from "sonner";
 import { useModalSelection } from "@/hooks/useModalSelection";
 import { revokeAccessToken } from "@/actions/user.actions";
+import { useUser as useClerkUser } from "@clerk/nextjs"
+import { getOAuthUrl } from "@/actions/utils.actions";
 
 type IntegrationCardProps = {
   src: string;
@@ -29,6 +30,7 @@ const IntegrationCard = ({
   const router = useRouter();
 
   const { dispatch, user } = useUser();
+  const { user: clerkUser } = useClerkUser();
   const { modalDispatch } = useModalSelection();
 
   useEffect(() => {
@@ -77,23 +79,20 @@ const IntegrationCard = ({
     platform: FilterKey
   ) => {
     try {
+      let url: string | undefined = await getOAuthUrl(platform, clerkUser?.id);
+
       e.stopPropagation();
       if (hasSubscription && (!user.hasPasskey || !user.shouldRemember)) {
-        const url = user.shouldRemember
-          ? undefined
-          : `/api/auth?platform=${platform}`;
-
         modalDispatch({
           type: "onOpen",
           payload: "SecurityModal",
-          data: { type: "SecurityModal", data: { url } },
+          data: { type: "SecurityModal", data: { url: user.hasPasskey ? url : undefined } },
         });
         return;
       }
 
-      const response = await axios.post(`/api/auth?platform=${platform}`);
-      if (response) {
-        router.replace(response.data);
+      if (url) {
+        router.push(url);
       }
     } catch (error: any) {
       toast.error(error.message);

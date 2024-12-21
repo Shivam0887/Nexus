@@ -1,14 +1,7 @@
 import Image from "next/image";
 import IntegrationWrapper from "./_integration-wrapper";
-import { decryptedUserData } from "@/actions/security.actions";
-import { auth } from "@clerk/nextjs/server";
 
 const Page = async () => {
-  const { userId } = await auth();
-  const hasSubscription = !!(
-    await decryptedUserData(userId, ["hasSubscription"])
-  )?.hasSubscription;
-
   return (
     <div className="relative select-none sm:mx-4 my-4 mx-0 h-[calc(100%-2rem)] flex lg:flex-row flex-col overflow-y-auto bg-neutral-900 rounded-2xl">
       <Image
@@ -54,7 +47,7 @@ const Page = async () => {
         </div>
       </div>
 
-      <IntegrationWrapper hasSubscription={hasSubscription} />
+      <IntegrationWrapper />
     </div>
   );
 };

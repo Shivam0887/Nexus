@@ -15,6 +15,8 @@ const InitialState: StateType = {
   imageUrl: "",
   isAISearch: false,
   shouldRemember: false,
+  isExpired: true,
+  subscriptionStatus: "none",
   username: "",
   aiModel: "ollama",
   plan: "Starter",
@@ -54,19 +56,16 @@ const reducer = (state: StateType, action: ActionType): StateType => {
         ...state,
         hasPasskey: action.payload,
       };
-
     case "PLAN_CHANGE":
       return {
         ...state,
         plan: action.payload,
       };
-
     case "PROFILE_IMAGE_CHANGE":
       return {
         ...state,
         imageUrl: action.payload,
       };
-
     case "USERNAME_CHANGE":
       return {
         ...state,
@@ -108,6 +107,11 @@ const reducer = (state: StateType, action: ActionType): StateType => {
       return {
         ...state,
         aiModel: action.payload
+      }
+    case "SUBSCRIPTION_STATUS_CHANGE":
+      return {
+        ...state,
+        subscriptionStatus: action.payload
       }
     default:
       throw new Error("Invalid action");
