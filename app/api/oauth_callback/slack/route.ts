@@ -47,31 +47,8 @@ export async function GET(req: NextRequest) {
       throw new Error(
         response.data.error ?? "Slack error: unable to authenticate"
       );
-
-    const tokenExchangeUrl = "https://slack.com/api/oauth.v2.exchange";
-    const tokenExchangeResponse = await axios.post<TSlackAxiosResponse>(
-      tokenExchangeUrl,
-      {},
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        params: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          redirect_uri: redirectUri,
-          token: response.data.authed_user.access_token,
-        }),
-      }
-    );
-
-    if (!tokenExchangeResponse.data.ok)
-      throw new Error(
-        tokenExchangeResponse.data.error ??
-          "Slack error: unable to refresh token"
-      );
-
-    const { authed_user, team } = tokenExchangeResponse.data;
+    
+    const { authed_user, team } = response.data;
     await ConnectToDB();
     await User.findOneAndUpdate(
       { userId },

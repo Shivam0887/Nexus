@@ -224,31 +224,28 @@ const processEmailContent = async (
   // Construct email URL
   const href = `https://mail.google.com/mail/u/${user.GMAIL!.authUser}/#${label}/${id}`;
 
-  // Process email content
-  let content = "";
-  if (user.isAISearch) {
-    const contentPromises = (payload!.parts ?? []).map(
-      async ({ body, mimeType }) => {
-        if (!body?.data) return "";
+  // Process email content  
+  const contentPromises = (payload!.parts ?? []).map(
+    async ({ body, mimeType }) => {
+      if (!body?.data) return "";
 
-        let content = Buffer.from(body.data, "base64").toString("utf8");
+      let tempContent = Buffer.from(body.data, "base64").toString("utf8");
 
-        if (mimeType === "text/html") {
-          const htmlContent = await textSplitter.splitText(content);
-          content = htmlContent
-            .map((html) => {
-              const dom = new JSDOM(html.concat("</html>"));
-              return (dom.window.document.querySelector("body")?.textContent ?? "");
-            })
-            .join(" ");
-        }
-
-        return content;
+      if (mimeType === "text/html") {
+        const htmlContent = await textSplitter.splitText(content);
+        tempContent = htmlContent
+          .map((html) => {
+            const dom = new JSDOM(html.concat("</html>"));
+            return (dom.window.document.querySelector("body")?.textContent ?? "");
+          })
+          .join(" ");
       }
-    );
 
-    content = (await Promise.all(contentPromises)).join(" ");
-  }
+      return tempContent;
+    }
+  );
+
+  const content = (await Promise.all(contentPromises)).join(" ");
 
   // Helper function to extract header value
   const getHeader = (
@@ -301,7 +298,7 @@ const processDocsContent = async (
   });
 
   let content = "";
-  if (document.data.tabs && user.isAISearch) {
+  if (document.data.tabs) {
     const structuralElement = document.data.tabs[0].documentTab?.body?.content ?? [];
     content = structuralElement.reduce((curContent, item) => (curContent += accumulateDocsContent(item)), "");
   }
@@ -338,8 +335,7 @@ const processSheetsContent = async (
 
   if (
     properties!.sheetType === "GRID" &&
-    !properties!.hidden &&
-    user.isAISearch
+    !properties!.hidden
   ) {
     data?.forEach(({ rowData }) => {
       rowData?.forEach(({ values }) => {

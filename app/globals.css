@@ -58,20 +58,12 @@
   --chart4-curve3: #167d7f;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: white;
   cursor: url("./../public/cursor.svg"), auto;
   scrollbar-color: rgb(34, 34, 34);
   scrollbar-width: 20px;

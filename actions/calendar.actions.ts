@@ -17,6 +17,7 @@ import { auth } from "@clerk/nextjs/server";
 import { User, TUser } from "@/models/user.model";
 import { checkAndRefreshToken, getPlatformClient } from "./utils.actions";
 import { OAuth2Client } from "@/lib/types";
+import { decryptedUserData } from "./security.actions";
 
 type CalenderResponse =
   | {
@@ -111,7 +112,7 @@ export const createCalender = async (
   const { userId } = await auth();
 
   await ConnectToDB();
-  const user = await User.findOne<TUser>({ userId });
+  const user = await decryptedUserData(userId);
 
   if (!user) {
     return {
@@ -205,8 +206,7 @@ export const createCalender = async (
   };
 
   try {
-    const oauth2Client = await (async () =>
-      (await getPlatformClient(user, "GOOGLE_CALENDAR")) as OAuth2Client)();
+    const oauth2Client = await (async () => (await getPlatformClient(user, "GOOGLE_CALENDAR")) as OAuth2Client)();
     const response = await checkAndRefreshToken(
       user,
       "GOOGLE_CALENDAR",
