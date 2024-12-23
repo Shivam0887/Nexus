@@ -8,14 +8,16 @@ import mongoose from "mongoose";
 import { PATTERNS } from "./sensitive-regex";
 import {
   CombinedFilterKey,
-  FilterKey,
   TNotionPageBlockType,
+  TRedactText,
   TSlackAxiosResponse,
 } from "./types";
 import { createCipheriv, createDecipheriv } from "crypto";
 import { TUser } from "@/models/user.model";
 
-const algorithm = "aes-256-gcm";
+const algorithmAtRest = "aes-256-gcm";
+const algorithmInTransition = "aes-256-cbc";
+
 const key = process.env.ENCRYPTION_KEY!;
 
 type TResponse = {
@@ -76,9 +78,17 @@ export async function ConnectToDB() {
 export function redactText(text: string) {
   const patterns = Object.entries(PATTERNS);
 
-  return patterns.reduce((curMaskedText, [key, regex]) => {
-    return curMaskedText.replace(regex, `[${key}]`);
-  }, text);
+  return patterns.reduce((data, [_, regex]) => {
+    data.redactedText = data.redactedText.replace(regex, (r, i) => {
+      data.positions[i] = redactEncrypt(r);
+      return `[REDACTED_INDEX_${i}_]`;
+    });
+
+    return data;
+  }, { 
+    redactedText: text, 
+    positions: {} 
+  } as TRedactText);
 }
 
 export const typedEntries = <T extends Object>(
@@ -190,7 +200,7 @@ export function encrypt(text: string | null | undefined) {
 
   const iv = randomBytes(16);
   const cipher = createCipheriv(
-    algorithm,
+    algorithmAtRest,
     Uint8Array.from(Buffer.from(key, 'hex')),
     Uint8Array.from(iv)
   );
@@ -207,12 +217,41 @@ export function decrypt(data: string | null | undefined) {
   if(!authTag || !encryptedData || !iv) return "";
 
   const decipher = createDecipheriv(
-    algorithm,
+    algorithmAtRest,
     Uint8Array.from(Buffer.from(key, "hex")),
     Uint8Array.from(Buffer.from(iv, "hex"))
   );
 
   decipher.setAuthTag(Uint8Array.from(Buffer.from(authTag, "hex")));
   const decrypted = decipher.update(encryptedData, "hex", "utf8") + decipher.final("utf8");
+  return decrypted;
+}
+
+export function redactEncrypt(text: string) {
+  if(!text) return "";
+
+  const iv = randomBytes(16);
+  const cipher = createCipheriv(
+    algorithmInTransition,
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(iv)
+  );
+
+  const encrypted = cipher.update(text, "utf8", "base64") + cipher.final("base64");
+  return `${encrypted}|${iv.toString("base64")}`;
+}
+
+export function redactDecrypt(data: string) {
+  const [encryptedData, iv] = data.split("|");
+
+  if(!encryptedData || !iv) return "";
+
+  const decipher = createDecipheriv(
+    algorithmInTransition,
+    Uint8Array.from(Buffer.from(key, "hex")),
+    Uint8Array.from(Buffer.from(iv, "base64"))
+  );
+
+  const decrypted = decipher.update(encryptedData, "base64", "utf8") + decipher.final("utf8");
   return decrypted;
 }

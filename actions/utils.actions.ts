@@ -7,6 +7,7 @@ import {
   generateGitHubJWT,
   hasRichTextObject,
   isGoogleService,
+  redactDecrypt,
   redactText,
   refreshGitHubAccessToken,
   refreshSlackAccessToken,
@@ -229,19 +230,19 @@ const processEmailContent = async (
     async ({ body, mimeType }) => {
       if (!body?.data) return "";
 
-      let tempContent = Buffer.from(body.data, "base64").toString("utf8");
+      let rawContent = Buffer.from(body.data, "base64").toString("utf8");
 
       if (mimeType === "text/html") {
-        const htmlContent = await textSplitter.splitText(content);
-        tempContent = htmlContent
+        const htmlContentSplitter = await textSplitter.splitText(rawContent);
+        rawContent = htmlContentSplitter
           .map((html) => {
             const dom = new JSDOM(html.concat("</html>"));
             return (dom.window.document.querySelector("body")?.textContent ?? "");
           })
           .join(" ");
       }
-
-      return tempContent;
+      
+      return rawContent;
     }
   );
 
@@ -511,6 +512,7 @@ const processNotionDatabaseContent = async (
 
 export const searchGmail = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser
 ): Promise<TActionResponse<DocumentType[]>> => {
   const oauth2Client = (await getPlatformClient(user, "GMAIL")) as OAuth2Client;
@@ -529,29 +531,36 @@ export const searchGmail = async (
   });
 
   let retry = 4;
-  const regex1 = /\b\w+:[^\s]+\b/g; //find key:value pairs
-  const regex2 = /(?<=subject:)("[^"]+"|\S+)/g // extracting the value of key "subject"
-  const regex3 = /\b(?!subject\b)\w+:[^\s]+/g // find key:value pairs except the subject as key and it's respective value
+  const regex1 = /\b\w+:(?:["'][^"]+["']|\S+)(?!\))/g //find key:value pairs
+  const regex2 = /(?<=subject:)(?:["'][^"']+["']|\S+)/g // extracting the value of key "subject"
+  const regex3 = /\b(?!subject\b)\w+:\S+/g // find key:value pairs except the subject as key and it's respective value
   let q: string = "";
-  let updatedGmailQuery: string | undefined = searchQuery;
+  let updatedGmailQuery: string | undefined = searchQuery.replace(/\)/, '');
 
   let gmailMessages: gmail_v1.Schema$ListMessagesResponse = {};
   let pageToken: string | undefined;
 
   do {
     if(retry <= 3) {
-      if(retry === 3) updatedGmailQuery = updatedGmailQuery.match(regex1)?.join(' ')?.trim();
-      else {
-        updatedGmailQuery = updatedGmailQuery.match(regex3)?.join(' ');
-        if(retry === 2 && updatedGmailQuery) updatedGmailQuery += updatedGmailQuery.match(regex2)?.join(' ')?.trim();
-      }
+      if(retry === 3) updatedGmailQuery = updatedGmailQuery.match(regex1)?.join(' ')?.trim(); // extract key:value pairs
+      else if(retry === 2) { // replace the "subject:value" pair with the value of the "subject" key itself
+        const value = updatedGmailQuery.match(regex2)?.join(' ');
+        updatedGmailQuery = updatedGmailQuery.match(regex3)?.join(' ')?.trim() + " " + value;
+      } 
+      else updatedGmailQuery = updatedGmailQuery.match(regex1)?.join(' '); // if still no result found, again use the key:value pairs, but this time we neither include "subject:value" nor the value of "subject"
       
       if(!updatedGmailQuery) break;
     }
 
+    // assigning the updated query
     q = updatedGmailQuery;
 
-     // Fetch emails
+    q.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+      const index = parseInt(r.split("_")[2]);
+      return isNaN(index) ? "" : redactDecrypt(positions[index]);
+    });
+
+    // Fetch emails
     const { data } = await gmail.users.messages.list({
       userId: user.email,
       q,
@@ -563,7 +572,6 @@ export const searchGmail = async (
 
     retry--;
   } while (user.isAISearch && !gmailMessages.messages && retry > 0);
-
 
   do {
     if (!gmailMessages.messages) break;
@@ -581,7 +589,7 @@ export const searchGmail = async (
           href,
           email: user.GMAIL.email,
           logo: LogoMap["GMAIL"],
-          content,
+          content: redactText(content).redactedText,
           key: "GMAIL",
         };
       })
@@ -604,6 +612,7 @@ export const searchGmail = async (
 
 export const searchDocs = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser
 ): Promise<TActionResponse<DocumentType[]>> => {
   const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
@@ -631,6 +640,11 @@ export const searchDocs = async (
       q.replace(/\bname\s!=/g, "fullText contains");
     }
 
+    q.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+      const index = parseInt(r.split("_")[2]);
+      return isNaN(index) ? "" : redactDecrypt(positions[index]);
+    });
+
     const { data } = await drive.files.list({
       q,
       fields: "files(id,createdTime,owners(emailAddress))",
@@ -653,7 +667,7 @@ export const searchDocs = async (
       return {
         id: id!,
         author: owners![0].emailAddress!,
-        content: redactText(content),
+        content: redactText(content).redactedText,
         date: createdTime!,
         email: user.email,
         title,
@@ -676,6 +690,7 @@ export const searchDocs = async (
 
 export const searchSheets = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser
 ): Promise<TActionResponse<(DocumentType & { ranges: string[] })[]>> => {
   const oauth2Client = (await getPlatformClient(user, "GOOGLE_DRIVE")) as OAuth2Client;
@@ -704,6 +719,11 @@ export const searchSheets = async (
       q.replace(/\bname\s!=/g, "fullText contains");
     }
 
+    q.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+      const index = parseInt(r.split("_")[2]);
+      return isNaN(index) ? "" : redactDecrypt(positions[index]);
+    });
+
     const { data } = await drive.files.list({
       q,
       fields: "files(id,createdTime,owners(emailAddress))",
@@ -730,7 +750,7 @@ export const searchSheets = async (
         date: createdTime!,
         author: owners ? owners[0].emailAddress! : "",
         email: user.email,
-        content: redactText(content),
+        content: redactText(content).redactedText,
         href,
         id: id!,
         key: "GOOGLE_SHEETS",
@@ -753,6 +773,7 @@ export const searchSheets = async (
 
 export const searchSlack = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser
 ): Promise<TActionResponse<DocumentType[]>> => {
   const response = await checkAndRefreshToken(user, "SLACK");
@@ -764,22 +785,21 @@ export const searchSlack = async (
 
   const slackClient = (await getPlatformClient(user, "SLACK")) as WebClient;
   let matches: Match[] = [];
-  let query = searchQuery;
-  let retry = 2;
+  let retry = 3;
 
   do {
 
-    if(retry === 1) {
-      const expWithoutQuotes = query.match(/"[^"]+"/g)?.join(" ").replace(/"/g, '').trim();
-      if(!expWithoutQuotes) break;
-
-      const pairs = query.match(/\b\w+:\S+\b/g)?.join(" ").trim();
-      if(!pairs) break;
-
-      query = expWithoutQuotes + " " + pairs;
+    if(retry <= 2) {
+      if(retry === 2) searchQuery.match(/(?<![:#])"[^"]+"/g)?.join(" ").replace(/"/g, '').trim();
+      else searchQuery.match(/\b\w+:\S+\b/g)?.join(" ").trim();
     }
 
-    const slackMsg = await slackClient.search.messages({ query });
+    searchQuery.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+      const index = parseInt(r.split("_")[2]);
+      return isNaN(index) ? "" : redactDecrypt(positions[index]);
+    });
+
+    const slackMsg = await slackClient.search.messages({ query: searchQuery });
     matches = slackMsg.messages?.matches ?? [];
 
     if (!slackMsg.ok)
@@ -804,7 +824,7 @@ export const searchSlack = async (
     }): Promise<DocumentType> => {
       const date = new Date(parseInt(String(parseFloat(ts!) * 1000).slice(0, -4))).toISOString();
 
-      const content = redactText(files ? files[0].title! : text!);
+      const content = redactText(files ? files[0].title! : text!).redactedText;
 
       return {
         id: iid ?? "",
@@ -831,9 +851,16 @@ export const searchSlack = async (
 
 export const searchNotion = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser
 ): Promise<TActionResponse<(DocumentType & { type: "Page" | "Database" })[]>> => {
   const notionClient = (await getPlatformClient(user, "NOTION")) as NotionClient;
+
+  searchQuery.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+    const index = parseInt(r.split("_")[2]);
+    return isNaN(index) ? "" : redactDecrypt(positions[index]);
+  });
+
   const response = await notionClient.search({ query: searchQuery });
 
   const resultWithPromise = response.results.map(async (item) => {
@@ -864,7 +891,7 @@ export const searchNotion = async (
 
         if (isFullPage(item)) {
           document.content = user.isAISearch
-                             ? redactText(await processNotionPageContent(notionClient, item.id))
+                             ? redactText(await processNotionPageContent(notionClient, item.id)).redactedText
                              : "";
           document.title = item.properties?.title?.type === "title"
                            ? item.properties.title.title[0].plain_text
@@ -873,7 +900,7 @@ export const searchNotion = async (
           document.type = "Database";
           document.title = item.title[0].plain_text;
           document.content = user.isAISearch
-                             ? redactText(await processNotionDatabaseContent(notionClient, item.id))
+                             ? redactText(await processNotionDatabaseContent(notionClient, item.id)).redactedText
                              : "";
         }
       }
@@ -894,6 +921,7 @@ export const searchNotion = async (
 
 export const searchGitHub = async (
   searchQuery: string,
+  positions: { [index: number]: string },
   user: TUser,
 ): Promise<TActionResponse<DocumentType[]>> => {
   const response = await checkAndRefreshToken(user, "GITHUB");
@@ -918,14 +946,7 @@ export const searchGitHub = async (
   let retry = 2;
 
   do {
-    const searchParams = {
-      q,
-      headers: {
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    };
-
+    
     // Will try one more time, if no result found. 
     if(retry < 2){
       if(!(/\bin:\w+\b/.test(q))) break; // if no in:[value] key-value pair found    
@@ -944,6 +965,19 @@ export const searchGitHub = async (
         q.replace(value, "in:name,description");
       }
     }
+
+    q.replace(/\[REDACTED_INDEX_\d+_\]/g, (r) => {
+      const index = parseInt(r.split("_")[2]);
+      return isNaN(index) ? "" : redactDecrypt(positions[index]);
+    });
+
+    const searchParams = {
+      q,
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    };
     
     switch (searchSpace) {
       case "Commits":

@@ -19,6 +19,7 @@ import {
   DocumentType,
   TActionResponse,
   TDocumentResponse,
+  TRedactText,
   TSearchableService,
 } from "@/lib/types";
 import { createSearchHistoryInstance } from "./user.actions";
@@ -29,8 +30,11 @@ import { safetySettings } from "@/lib/constants";
 import { OllamaEmbeddings } from "@langchain/ollama";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai"
 import { Subscription, TSubscription } from "@/models/subscription.model";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter"
 
 const SIMILAR_RESULT_COUNT = 6;
+
+const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1800 });
 
 const ollamaEmbeddings = new OllamaEmbeddings({
   baseUrl: process.env.OLLAMA_BASE_URL!,
@@ -89,7 +93,7 @@ const checkEnabledServices = (user: TUser) => {
 
 const generateSearchResult = async (
   user: TUser,
-  input: string,
+  input: TRedactText,
   enabledServices: TSearchableService[]
 ): Promise<TActionResponse<TDocumentResponse[]>> => {
   let discordResult: DocumentType[] = [];
@@ -110,26 +114,26 @@ const generateSearchResult = async (
             // Implemented soon;
             break;
           case "GITHUB":
-            const githubQuery = (await tunedModel_GitHub.invoke(`'${input}'`)).content.toString();
-            const githubResponse = await searchGitHub(githubQuery.trim(), user);
+            const githubQuery = (await tunedModel_GitHub.invoke(`'${input.redactedText}'`)).content.toString();
+            const githubResponse = await searchGitHub(githubQuery.trim(), input.positions, user);
             if (githubResponse.success) githubResult = githubResponse.data;
             else throw new Error(githubResponse.error);
             break;
           case "GMAIL":
-            const emailQuery = (await tunedModel_Gmail.invoke(`'${input}'`)).content.toString();
-            let gmailResponse = await searchGmail(emailQuery.trim(), user);
+            const emailQuery = (await tunedModel_Gmail.invoke(`'${input.redactedText}'`)).content.toString();
+            let gmailResponse = await searchGmail(emailQuery.trim(),input.positions, user);
             if (gmailResponse.success) gmailResult = gmailResponse.data;
             else throw new Error(gmailResponse.error);
             break;
           case "GOOGLE_DOCS":
-            const docsQuery = (await tunedModel_Docs.invoke(`'${input}'`)).content.toString();
-            const docsResponse = await searchDocs(docsQuery.trim(), user);
+            const docsQuery = (await tunedModel_Docs.invoke(`'${input.redactedText}'`)).content.toString();
+            const docsResponse = await searchDocs(docsQuery.trim(), input.positions, user);
             if (docsResponse.success) docsResult = docsResponse.data;
             else throw new Error(docsResponse.error);
             break;
           case "GOOGLE_SHEETS":
-            const sheetsQuery = (await tunedModel_Sheets.invoke(`'${input}'`)).content.toString();
-            const sheetsResponse = await searchSheets(sheetsQuery.trim(), user);
+            const sheetsQuery = (await tunedModel_Sheets.invoke(`'${input.redactedText}'`)).content.toString();
+            const sheetsResponse = await searchSheets(sheetsQuery.trim(), input.positions, user);
             if (sheetsResponse.success) sheetsResult = sheetsResponse.data;
             else throw new Error(sheetsResponse.error);
             break;
@@ -140,13 +144,13 @@ const generateSearchResult = async (
             // Implemented soon;
             break;
           case "NOTION":
-            const notionResponse = await searchNotion(input, user);
+            const notionResponse = await searchNotion(input.redactedText, input.positions, user);
             if (notionResponse.success) notionResult = notionResponse.data;
             else throw new Error(notionResponse.error);
             break;
           default:
-            const slackQuery = (await tunedModel_Slack.invoke(`'${input}'`)).content.toString();
-            const slackResponse = await searchSlack(slackQuery.trim(), user);
+            const slackQuery = (await tunedModel_Slack.invoke(`'${input.redactedText}'`)).content.toString();
+            const slackResponse = await searchSlack(slackQuery.trim(), input.positions, user);
             if (slackResponse.success) slackResult = slackResponse.data;
             else throw new Error(slackResponse.error);
         }
@@ -177,7 +181,7 @@ const generateSearchResult = async (
 };
 
 export const searchAction = async (
-  data: string,
+  query: string,
   model: "gemini" | "ollama"
 ): Promise<
   TActionResponse<TDocumentResponse[]>
@@ -186,7 +190,7 @@ export const searchAction = async (
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthenticated");
 
-    if (!data) throw new Error("Bad request. Search input can't be empty");
+    if (!query) throw new Error("Bad request. Search input can't be empty");
 
     await ConnectToDB();
     const user = (await decryptedUserData(userId)) as TUser | undefined;
@@ -230,9 +234,7 @@ export const searchAction = async (
       });
     }
 
-    // Trying to remove sensitive information before it is processed
-    const query = redactText(data);
-
+    const redactedQuery = redactText(query);
     await createSearchHistoryInstance(
       query,
       user.email,
@@ -242,7 +244,7 @@ export const searchAction = async (
     );
 
     // Search the query against every platform the user is connected to.
-    const response = await generateSearchResult(user, query, enabledServices);
+    const response = await generateSearchResult(user, redactedQuery, enabledServices);
     if (!response.success) throw new Error(response.error);
 
     const results = response.data;
@@ -266,15 +268,20 @@ export const searchAction = async (
     };
 
     const embeddingModel = model === "gemini" ? geminiEmbeddings : ollamaEmbeddings;
-    const queryEmbedding = await embeddingModel.embedQuery(query);
+    const queryEmbedding = await embeddingModel.embedQuery(redactedQuery.redactedText);
 
     await Promise.all(
       results.map(async (item) => {
-        const contentEmbedding = await embeddingModel.embedQuery(item.content);
+        const chunks = await textSplitter.splitText(item.content);
+        const contentEmbedding = await embeddingModel.embedDocuments(chunks);
+
+        const similarity = (contentEmbedding.reduce((accu, embedding) => (
+          accu + cosineSimilarity(queryEmbedding, embedding))
+        , 0)) / contentEmbedding.length;
   
         groupByPlatform[item.key].push({
           ...item,
-          similarity: cosineSimilarity(queryEmbedding, contentEmbedding),
+          similarity,
         });
       })
     );

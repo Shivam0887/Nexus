@@ -257,3 +257,8 @@ export type TNotionPageBlockType =
   | "video";
 
 export type TChat = { role: "user" | "assistant"; content: string };
+
+export type TRedactText = { 
+  redactedText: string, 
+  positions: { [index: number]: string} 
+}

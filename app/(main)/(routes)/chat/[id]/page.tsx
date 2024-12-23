@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, redactText } from "@/lib/utils";
 import { TChat, TDocumentResponse } from "@/lib/types";
 
 import { toast } from "sonner";
@@ -86,7 +86,7 @@ const ChatPage = ({ params }: { params: { id: string } }) => {
       if (!(key === "GITHUB" || key === "SLACK")) {
         const response = await getProcessedContent(key, id, type, ranges);
         if (!response.success) throw new Error(response.error);
-        processedContent = response.data;
+        processedContent = redactText(response.data).redactedText;
       }
 
       setIsContentLoaded(true);
