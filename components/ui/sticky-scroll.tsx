@@ -198,7 +198,6 @@ export const StickyScroll = ({
                   <video
                     src={content[activeCard].src}
                     className="w-full h-full"
-                    preload="none"
                     autoPlay
                     loop
                     muted

@@ -123,8 +123,12 @@ const RubiksCube = ({ isPaused }: { isPaused: boolean }) => {
 
     // Animation timeline
     const timeline = (timelineRef.current = gsap.timeline({ repeat: -1 }));
-
+    isPaused ? timeline.pause() : timeline.resume();
+   
     if (row1Ref.current && row3Ref.current && !isPaused) {
+      row1Ref.current.rotation.set(0, 0, 0);
+      row3Ref.current.rotation.set(0, 0, 0);
+
       timeline
         .to(row1Ref.current.rotation, { y: "+=3.14", duration: 3 })
         .to(row3Ref.current.rotation, { y: "+=3.14", duration: 3 }, 4)
@@ -135,8 +139,6 @@ const RubiksCube = ({ isPaused }: { isPaused: boolean }) => {
         .to(row1Ref.current.rotation, { y: "+=6.28", duration: 3 }, 20)
         .to(row3Ref.current.rotation, { y: "+=6.28", duration: 3 }, 20.5);
     }
-
-    isPaused ? timeline.pause() : timeline.resume();
 
     return () => {
       timeline.kill();
