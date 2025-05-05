@@ -43,7 +43,7 @@ export default async function RootLayout({
     imageUrl: user?.imageUrl ?? "",
     isAISearch: Boolean(user?.isAISearch),
     isExpired: subscription ? subscription.currentEnd < Date.now() : false,
-    subscriptionStatus: subscription ? subscription.status as any : "none",
+    subscriptionStatus: subscription ? subscription.status : "none",
     startDate: subscription?.currentStart,
     endDate: subscription?.currentEnd,
     plan: user?.plan ? user.plan as ("Starter" | "Professional") : "Starter",

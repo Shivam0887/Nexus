@@ -62,7 +62,7 @@ export type StateType = Connection & {
   hasPasskey: boolean;
   hasSubscription: boolean;
   isExpired: boolean;
-  subscriptionStatus: "active" | "completed" | "cancelled" | "none";
+  subscriptionStatus: "active" | "completed" | "cancelled" | "none" | "expired";
   startDate?: number;
   endDate?: number;
   isAISearch: boolean;

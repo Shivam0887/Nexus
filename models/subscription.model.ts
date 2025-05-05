@@ -15,6 +15,7 @@ const subscriptionSchema = new Schema({
   },
   status: {
     type: String,
+    enum: ["active", "cancelled", "expired"],
     required: true,
   },
   currentStart: {
@@ -42,4 +43,5 @@ const subscriptionSchema = new Schema({
 subscriptionSchema.index({ subId: 1 });
 
 export type TSubscription = InferSchemaType<typeof subscriptionSchema>;
-export const Subscription = models.Subscription || model("Subscription", subscriptionSchema);
+export const Subscription =
+  models.Subscription || model("Subscription", subscriptionSchema);

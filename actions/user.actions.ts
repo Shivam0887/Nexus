@@ -685,6 +685,11 @@ export const cancelSubscription = async (): Promise<TActionResponse> => {
     const subscription = await Subscription.findOne<Pick<TSubscription, "status">>({ subId: user.currentSubId }, { status: 1, _id: 0 });
     if(subscription && subscription.status === "active"){
       await razorpay.subscriptions.cancel(user.currentSubId);
+      
+      await Subscription.findOneAndUpdate(
+        { subId: user.currentSubId }, 
+        { $set: { status: "cancelled" } }
+      );
     }
 
     return {

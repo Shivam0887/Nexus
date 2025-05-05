@@ -58,8 +58,8 @@ const Page = ({
   const curPlan = user.hasSubscription
     ? "Professional"
     : searchParams?.plan === "Starter" || searchParams.plan === "Professional"
-    ? searchParams.plan
-    : user.plan;
+      ? searchParams.plan
+      : user.plan;
 
   useEffect(() => {
     const tab =
@@ -313,19 +313,29 @@ const Page = ({
                 <>
                   {user.hasSubscription ? (
                     <>
-                      {
-                        user.subscriptionStatus === "cancelled" 
-                        ? <Badge>Subscription cancelled</Badge>
-                        : (
-                          <button
-                            type="button"
-                            onClick={handleManageSubscription}
-                            className="rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
-                          >
-                            Cancel Subscription
-                          </button>
-                        )
-                      }
+                      {user.subscriptionStatus === "cancelled" ? (
+                        <Badge>Subscription cancelled</Badge>
+                      ) : (
+                        <>
+                          {user.isExpired ? (
+                            <button
+                              onClick={handlePurchase}
+                              type="button"
+                              className="rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
+                            >
+                              Subscribe now
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleManageSubscription}
+                              className="rounded-lg text-sm bg-neutral-950 border border-neutral-800 px-4 py-2 font-medium hover:bg-neutral-800 transition-colors text-white disabled:cursor-not-allowed disabled:bg-neutral-800"
+                            >
+                              Cancel Subscription
+                            </button>
+                          )}
+                        </>
+                      )}
                     </>
                   ) : (
                     <>
